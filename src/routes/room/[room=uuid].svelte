@@ -125,17 +125,17 @@
 	</div>
 </main>
 <div>
-	<div class="flex space-x-4 justify-evenly">
+	<div class="flex flex-wrap space-x-4 justify-evenly">
 		{#each schedules as schedule}
 			<div
-				class="my-3 collapse w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
+				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
 			>
 				<input type="checkbox" />
 				<div class="collapse-title text-xl font-medium">
 					{schedule.student}'s schedule
 					<!-- TODO: Show if in common -->
 				</div>
-				<div class="collapse-content">
+				<div class="collapse-content hidden">
 					<div class="overflow-x-auto">
 						<table class="table w-full">
 							<thead>
@@ -217,3 +217,9 @@
 		{/each}
 	</div>
 </div>
+
+<style>
+	input[type='checkbox']:checked ~ .collapse-content {
+		display: block;
+	}
+</style>
