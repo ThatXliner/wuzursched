@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import type { definitions } from '$lib/db.d';
 	import { createClient } from '@supabase/supabase-js';
-
+	import { titlecase, sqlEscape } from '$lib/utils';
 	const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 	const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 	export const supabase = createClient(supabaseUrl, supabaseKey);
@@ -12,36 +12,7 @@
 	import type { Schedule } from '$lib/InfoInput.d';
 	export let schedules: definitions['schedules'][];
 	let _cache: { [key: string]: definitions['classes'] } = {};
-	function titlecase(x: string) {
-		return x[0].toUpperCase() + x.slice(1);
-	}
-	function sqlEscape(str: string) {
-		// this better work well
-		return str.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char: string) {
-			switch (char) {
-				case '\0':
-					return '\\0';
-				case '\x08':
-					return '\\b';
-				case '\x09':
-					return '\\t';
-				case '\x1a':
-					return '\\z';
-				case '\n':
-					return '\\n';
-				case '\r':
-					return '\\r';
-				case '"':
-				case "'":
-				case '\\':
-				case '%':
-					return '\\' + char; // prepends a backslash to backslash, percent,
-				// and double/single quotes
-				default:
-					return char;
-			}
-		});
-	}
+
 	async function getClass(id: string) {
 		if (id in _cache) {
 			return _cache[id];
@@ -74,15 +45,30 @@
 			throw error;
 		}
 		schedules = data;
+		if (
+			you !== null &&
+			(
+				await supabase
+					.from('schedules')
+					.select('*')
+					.eq('room', $page.params['room'])
+					.eq('student', you['name'])
+			).data === []
+		) {
+			let toInsert = { room: $page.params['room'], student: you.name };
+			for (const x of ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b']) {
+				toInsert[x] = you['schedule'][x].id;
+			}
+			await supabase.from('schedules').insert([toInsert]);
+		}
 		// please don't let this be an SQL injection
 		// (theoretically, this should never be an
 		// sql injection because $page.params
 		// is being validated)
-		const subscription = supabase
-			.from(`schedules:room=${sqlEscape($page.params['room'])}`)
+		supabase
+			.from(`schedules:room=eq.${sqlEscape($page.params['room'])}`)
 			.on('INSERT', (payload) => {
-				console.log('Change received!', payload);
-				schedules.push(payload.new);
+				schedules = [...schedules, payload.new];
 			})
 			.subscribe();
 	});
@@ -211,7 +197,7 @@
 				</div>
 			</div>
 		{:else}
-			<div class="alert alert-warning shadow-lg">
+			<div class="alert alert-warning shadow-lg mx-auto w-fit">
 				<div>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"

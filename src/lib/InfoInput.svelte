@@ -32,7 +32,7 @@
 		{#each ['1A', '2A', '3A', '4A'] as period}
 			{@const key = period.toLowerCase()}
 			<div class="dropdown">
-				<span tabindex="0" class="btn m-1" class:btn-success={periods[key]}>{period}</span>
+				<span tabindex="0" class="btn m-1" class:btn-success={periods[key] !== null}>{period}</span>
 				<div tabindex="0" class="dropdown-content">
 					<ClassPicker bind:selected={periods[key]} />
 				</div>
@@ -43,7 +43,7 @@
 		{#each ['1B', '2B', '3B', '4B'] as period}
 			{@const key = period.toLowerCase()}
 			<div class="dropdown dropdown-end">
-				<span tabindex="0" class="btn m-1" class:btn-success={periods[key]}>{period}</span>
+				<span tabindex="0" class="btn m-1" class:btn-success={periods[key] !== null}>{period}</span>
 				<div tabindex="0" class="dropdown-content">
 					<ClassPicker bind:selected={periods[key]} />
 				</div>

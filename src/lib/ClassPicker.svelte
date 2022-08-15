@@ -3,8 +3,11 @@
 	import { page } from '$app/stores';
 	import { createClient } from '@supabase/supabase-js';
 	import { onMount } from 'svelte';
+	import { titlecase, sqlEscape } from '$lib/utils';
 	let classes: definitions['classes'][] = [];
-	let className: string, firstName: string, lastName: string;
+	let className: string = '',
+		firstName: string = '',
+		lastName: string = '';
 	export let selected: null | definitions['classes'] = null;
 	const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 	const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
@@ -19,17 +22,24 @@
 			throw error;
 		}
 		classes = data;
+		db.from(`classes:room=eq.${sqlEscape($page.params['room'])}`)
+			.on('INSERT', (payload) => {
+				classes = [...classes, payload.new];
+			})
+			.subscribe();
 	});
-	function titlecase(x: string) {
-		return x[0].toUpperCase() + x.slice(1);
-	}
+	$: isValid =
+		className.length > 0 && /^\w+$/.test(firstName.trim()) && /^\w+$/.test(lastName.trim());
 </script>
 
 <div class="card w-96 bg-base-100 shadow-xl">
 	<div class="card-body">
 		<div class="form-control">
-			<label class="input-group"
-				><input
+			<label class="label">
+				<span class="label-text">Create a class</span>
+			</label>
+			<label class="input-group">
+				<input
 					type="text"
 					placeholder="Class name"
 					class="input input-bordered w-28"
@@ -37,22 +47,27 @@
 				/>
 				<input
 					type="text"
-					placeholder="First"
+					placeholder="John"
 					class="input input-bordered w-20"
 					bind:value={firstName}
 				/>
 				<input
 					type="text"
-					placeholder="Last"
+					placeholder="Doe"
 					class="input input-bordered w-20"
 					bind:value={lastName}
 				/>
 				<button
 					class="btn btn-primary"
-					disabled={!(className && firstName && lastName)}
+					disabled={!isValid}
 					on:click={async () => {
 						const payload = {
-							name: className.trim().replace(' II', ' 2').replace(/ I$/, ' 1').toLowerCase(),
+							name: className
+								.trim()
+								.replace(' II', ' 2')
+								.replace(/ I$/, ' 1')
+								.replace(/\s+/, ' ')
+								.toLowerCase(),
 							teacher_first: firstName.trim().toLowerCase(),
 							teacher_last: lastName.trim().toLowerCase(),
 							room: $page.params['room']
@@ -62,8 +77,6 @@
 						if (error || data === null) {
 							throw error;
 						}
-						// @ts-ignore
-						classes = [...classes, data[0]];
 						selected = data[0];
 					}}
 					><svg
@@ -86,16 +99,16 @@
 			{#each classes as klass (klass['id'])}
 				<li
 					on:click={() => {
-						if (selected == klass) {
+						if (selected?.id == klass.id) {
 							selected = null;
 						} else {
 							selected = klass;
 						}
 					}}
 				>
-					<span class:active={selected == klass}
+					<span class:active={selected?.id == klass.id}
 						>{titlecase(klass['name'])}
-						<span class="text-sm text-gray-500" class:text-white={selected == klass}
+						<span class="text-sm text-gray-500" class:text-white={selected?.id == klass.id}
 							>{titlecase(klass['teacher_first'])} {titlecase(klass['teacher_last'])}</span
 						></span
 					>
