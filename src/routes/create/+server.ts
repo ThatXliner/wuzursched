@@ -1,7 +1,8 @@
+import { redirect } from '@sveltejs/kit';
 import { supabase } from '$lib/db';
 import type { definitions } from '$lib/db.d';
 
-/** @type {import('./__types/items').RequestHandler} */
+/** @type {import('./$types').RequestHandler} */
 export async function GET() {
 	// TODO: Manage the rare case when crypto.randomUUID()
 	// is a pre-existing database
@@ -9,15 +10,7 @@ export async function GET() {
 		.from<definitions['rooms']>('rooms')
 		.insert([{ id: crypto.randomUUID() }]);
 	if (data === null) {
-		return {
-			status: 500,
-			body: error
-		};
+		throw error;
 	}
-	return {
-		status: 303,
-		headers: {
-			location: `/room/${data![0]['id']}`
-		}
-	};
+	throw redirect(303, `/room/${data![0]['id']}`);
 }

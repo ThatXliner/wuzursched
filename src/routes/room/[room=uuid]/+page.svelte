@@ -1,4 +1,7 @@
 <script lang="ts">
+	/** @type {import('./$types').PageData */
+	export let data;
+	let schedules: definitions['schedules'][] = data.schedules;
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import type { definitions } from '$lib/db.d';
@@ -6,11 +9,11 @@
 	import { titlecase, sqlEscape } from '$lib/utils';
 	const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 	const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
-	export const supabase = createClient(supabaseUrl, supabaseKey);
+	const supabase = createClient(supabaseUrl, supabaseKey);
 
 	import InfoInput from '$lib/InfoInput.svelte';
 	import type { Schedule } from '$lib/InfoInput.d';
-	export let schedules: definitions['schedules'][];
+
 	let _cache: { [key: string]: definitions['classes'] } = {};
 
 	async function getClass(id: string) {
@@ -37,14 +40,6 @@
 		if (window.localStorage.getItem($page.params['room']) !== null) {
 			you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
 		}
-		let { data, error } = await supabase
-			.from('schedules')
-			.select('*')
-			.eq('room', $page.params['room']);
-		if (error || data === null) {
-			throw error;
-		}
-		schedules = data;
 		if (
 			you !== null &&
 			(

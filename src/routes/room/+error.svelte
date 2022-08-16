@@ -1,21 +1,9 @@
-<script context="module">
-	/** @type {import('@sveltejs/kit').Load} */
-	export function load({ error, status }) {
-		return {
-			props: {
-				status,
-				error
-			}
-		};
-	}
-</script>
-
 <script lang="ts">
-	export let status: number, error: Error;
-	console.error(error.message);
+	import { page } from '$app/stores';
+	console.error($page.error.message);
 </script>
 
-{#if status === 404}
+{#if $page.status === 404}
 	<main class="hero h-screen">
 		<div class="hero-content flex-col">
 			<div class="alert alert-error shadow-lg">
