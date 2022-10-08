@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Fuse from 'fuse.js';
 	import type { definitions } from '$lib/db.d';
 	import { page } from '$app/stores';
 	import { createClient } from '@supabase/supabase-js';
@@ -28,6 +29,10 @@
 			})
 			.subscribe();
 	});
+	$: searcher = new Fuse(classes, {
+		keys: ['name', 'teacher_first', 'teacher_last']
+	});
+	$: filtered = className.length == 0 ? classes : searcher.search(className);
 	$: isValid =
 		className.length > 0 && /^\w+$/.test(firstName.trim()) && /^\w+$/.test(lastName.trim());
 </script>
@@ -35,9 +40,7 @@
 <div class="card w-96 bg-base-100 shadow-xl">
 	<div class="card-body">
 		<div class="form-control">
-			<label class="label">
-				<span class="label-text">Create a class</span>
-			</label>
+			<span>Create a class</span>
 			<label class="input-group">
 				<input
 					type="text"
@@ -94,9 +97,10 @@
 				></label
 			>
 		</div>
-		<ul class="menu w-fit max-h-28 overflow-y-scroll p-2">
+		<ul class="menu overflow-x-hidden max-h-64 overflow-y-scroll p-2 flex-row">
 			<li class="menu-title"><span>Classes</span></li>
-			{#each classes as klass (klass['id'])}
+			{#each filtered as entry (entry?.item?.id ?? entry.id)}
+				{@const klass = entry?.item ?? entry}
 				<li
 					on:click={() => {
 						if (selected?.id == klass.id) {

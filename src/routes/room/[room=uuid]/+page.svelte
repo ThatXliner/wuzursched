@@ -48,7 +48,7 @@
 					.select('*')
 					.eq('room', $page.params['room'])
 					.eq('student', you['name'])
-			).data === []
+			).data?.length == 0
 		) {
 			let toInsert = { room: $page.params['room'], student: you.name };
 			for (const x of ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b']) {
