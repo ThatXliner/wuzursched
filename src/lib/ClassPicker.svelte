@@ -45,7 +45,7 @@
 				<input
 					type="text"
 					placeholder="Class name"
-					class="input input-bordered w-28"
+					class="input input-bordered w-32"
 					bind:value={className}
 				/>
 				<input
@@ -97,27 +97,29 @@
 				></label
 			>
 		</div>
-		<ul class="menu overflow-x-hidden max-h-64 overflow-y-scroll p-2 flex-row">
-			<li class="menu-title"><span>Classes</span></li>
-			{#each filtered as entry (entry?.item?.id ?? entry.id)}
-				{@const klass = entry?.item ?? entry}
-				<li
-					on:click={() => {
-						if (selected?.id == klass.id) {
-							selected = null;
-						} else {
-							selected = klass;
-						}
-					}}
-				>
-					<span class:active={selected?.id == klass.id}
-						>{titlecase(klass['name'])}
-						<span class="text-sm text-gray-500" class:text-white={selected?.id == klass.id}
-							>{titlecase(klass['teacher_first'])} {titlecase(klass['teacher_last'])}</span
-						></span
+		<div class="overflow-y-scroll max-h-60">
+			<ul class="menu z-99">
+				<li class="menu-title"><span>Classes</span></li>
+				{#each filtered as entry (entry?.item?.id ?? entry.id)}
+					{@const klass = entry?.item ?? entry}
+					<li
+						on:click={() => {
+							if (selected?.id == klass.id) {
+								selected = null;
+							} else {
+								selected = klass;
+							}
+						}}
 					>
-				</li>
-			{/each}
-		</ul>
+						<span class:active={selected?.id == klass.id}
+							>{titlecase(klass['name'])}
+							<span class="text-sm text-gray-500" class:text-white={selected?.id == klass.id}
+								>{titlecase(klass['teacher_first'])} {titlecase(klass['teacher_last'])}</span
+							></span
+						>
+					</li>
+				{/each}
+			</ul>
+		</div>
 	</div>
 </div>
