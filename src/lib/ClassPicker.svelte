@@ -15,10 +15,7 @@
 	const db = createClient(supabaseUrl, supabaseKey);
 
 	onMount(async () => {
-		const { data, error } = await db
-			.from<definitions['classes']>('classes')
-			.select('*')
-			.eq('room', $page.params['room']);
+		const { data, error } = await db.from('classes').select('*').eq('room', $page.params['room']);
 		if (data === null) {
 			throw error;
 		}

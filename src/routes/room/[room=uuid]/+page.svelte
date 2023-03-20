@@ -20,10 +20,7 @@
 		if (id in _cache) {
 			return _cache[id];
 		}
-		let { data, error } = await supabase
-			.from<definitions['classes']>('classes')
-			.select('*')
-			.eq('id', id);
+		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		// Probably unnecessary
 		// .eq('room',$page.params['room']);
 		if (error || data === null) {

@@ -7,7 +7,7 @@ export async function GET() {
 	// TODO: Manage the rare case when crypto.randomUUID()
 	// is a pre-existing database
 	const { data, error } = await supabase
-		.from<definitions['rooms']>('rooms')
+		.from('rooms')
 		.insert([{ id: crypto.randomUUID() }]);
 	if (data === null) {
 		throw error;
