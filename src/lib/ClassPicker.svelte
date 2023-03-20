@@ -75,6 +75,7 @@
 					class="btn btn-primary"
 					disabled={!isValid}
 					on:click={async () => {
+						// TODO: Seperate to utility
 						const payload = {
 							name: className
 								.trim()
@@ -86,7 +87,7 @@
 							teacher_last: lastName.trim().toLowerCase(),
 							room: $page.params['room']
 						};
-						const { data, error } = await db.from('classes').insert([payload]);
+						const { data, error } = await supabase.from('classes').insert([payload]);
 						className = firstName = lastName = '';
 						if (error || data === null) {
 							throw error;

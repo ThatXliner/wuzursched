@@ -1,13 +1,10 @@
-import { supabase } from '$lib/db';
+import { supabase } from '$lib/server/db';
 import { error } from '@sveltejs/kit';
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
 	if (
-		(
-			(await supabase.from('rooms').select('*').eq('id', params.room))[
-				'data'
-			] ?? []
-		).length === 0
+		// Because reading rooms is not a all-public thing
+		((await supabase.from('rooms').select('*').eq('id', params.room))['data'] ?? []).length === 0
 	) {
 		throw error(404, 'Room does not exist');
 	}

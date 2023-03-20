@@ -20,9 +20,7 @@
 		schedule: Database['public']['Tables']['schedules']['Row'];
 	} = null;
 	onMount(async () => {
-		if (window.localStorage.getItem($page.params['room']) !== null) {
-			you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
-		}
+		you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
 		if (
 			you !== null &&
 			(
