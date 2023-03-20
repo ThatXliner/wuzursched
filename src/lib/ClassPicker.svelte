@@ -1,29 +1,43 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
-	import type { definitions } from '$lib/db.d';
 	import { page } from '$app/stores';
-	import { createClient } from '@supabase/supabase-js';
 	import { onMount } from 'svelte';
 	import { titlecase, sqlEscape } from '$lib/utils';
-	let classes: definitions['classes'][] = [];
+	import { supabase } from './db';
+	async function getClasses(room: string) {
+		return await supabase.from('classes').select('*').eq('room', room);
+	}
+	let classes: NonNullable<Awaited<ReturnType<typeof getClasses>>['data']> = [];
 	let className: string = '',
 		firstName: string = '',
 		lastName: string = '';
-	export let selected: null | definitions['classes'] = null;
-	const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-	const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
-	const db = createClient(supabaseUrl, supabaseKey);
+	export let selected: null | any = null;
 
 	onMount(async () => {
-		const { data, error } = await db.from('classes').select('*').eq('room', $page.params['room']);
+		const { data, error } = await getClasses($page.params['room']);
 		if (data === null) {
 			throw error;
 		}
 		classes = data;
-		db.from(`classes:room=eq.${sqlEscape($page.params['room'])}`)
-			.on('INSERT', (payload) => {
-				classes = [...classes, payload.new];
-			})
+		supabase
+			.channel('any')
+			.on(
+				'postgres_changes',
+				{
+					event: 'INSERT',
+					schema: 'public',
+					table: 'classes',
+					// please don't let this be an SQL injection
+					// (theoretically, this should never be an
+					// sql injection because $page.params
+					// is being validated)
+					filter: `room=eq.${sqlEscape($page.params['room'])}`
+				},
+				(payload) => {
+					console.log('Change received!', payload);
+					classes = [...classes, payload.new];
+				}
+			)
 			.subscribe();
 	});
 	$: searcher = new Fuse(classes, {

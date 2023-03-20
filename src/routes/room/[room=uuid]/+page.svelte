@@ -1,37 +1,23 @@
 <script lang="ts">
 	/** @type {import('./$types').PageData */
-	export let data;
-	let schedules: definitions['schedules'][] = data.schedules;
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import type { definitions } from '$lib/db.d';
-	import { createClient } from '@supabase/supabase-js';
+	import { supabase } from '$lib/db';
 	import { titlecase, sqlEscape } from '$lib/utils';
-	const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-	const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
-	const supabase = createClient(supabaseUrl, supabaseKey);
-
 	import InfoInput from '$lib/InfoInput.svelte';
-	import type { Schedule } from '$lib/InfoInput.d';
-
-	let _cache: { [key: string]: definitions['classes'] } = {};
-
+	import type { Database } from '$lib/supabase';
+	export let data;
+	let schedules = data.schedules;
 	async function getClass(id: string) {
-		if (id in _cache) {
-			return _cache[id];
-		}
 		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
-		// Probably unnecessary
-		// .eq('room',$page.params['room']);
 		if (error || data === null) {
 			throw error;
 		}
-		_cache[id] = data[0];
-		return _cache[id];
+		return data[0];
 	}
 	let you: null | {
 		name: string;
-		schedule: Schedule;
+		schedule: Database['public']['Tables']['schedules']['Row'];
 	} = null;
 	onMount(async () => {
 		if (window.localStorage.getItem($page.params['room']) !== null) {
@@ -53,15 +39,26 @@
 			}
 			await supabase.from('schedules').insert([toInsert]);
 		}
-		// please don't let this be an SQL injection
-		// (theoretically, this should never be an
-		// sql injection because $page.params
-		// is being validated)
+
 		supabase
-			.from(`schedules:room=eq.${sqlEscape($page.params['room'])}`)
-			.on('INSERT', (payload) => {
-				schedules = [...schedules, payload.new];
-			})
+			.channel('any')
+			.on(
+				'postgres_changes',
+				{
+					event: 'INSERT',
+					schema: 'public',
+					table: 'schedules',
+					// please don't let this be an SQL injection
+					// (theoretically, this should never be an
+					// sql injection because $page.params
+					// is being validated)
+					filter: `room=eq.${sqlEscape($page.params['room'])}`
+				},
+				(payload) => {
+					console.log('Change received!', payload);
+					schedules = [...schedules, payload.new];
+				}
+			)
 			.subscribe();
 	});
 </script>
