@@ -11,7 +11,7 @@
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"generate-types": "npx openapi-typescript ${SUPABASE_URL}/rest/v1/?apikey=${SUPABASE_ANON_KEY} --output src/lib/db.d.ts"
+		"generate-types": "openapi-typescript ${VITE_SUPABASE_URL}/rest/v1/?apikey=${VITE_SUPABASE_ANON_KEY} --output src/lib/db.d.ts"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.27.0",

@@ -369,7 +369,11 @@ export interface definitions {
      * This is a Foreign Key to `rooms.id`.<fk table='rooms' column='id'/>
      */
     room: string;
-    /** Format: text */
+    /**
+     * Format: text
+     * @description Note:
+     * This is a Primary Key.<pk/>
+     */
     student: string;
     /**
      * Format: uuid
