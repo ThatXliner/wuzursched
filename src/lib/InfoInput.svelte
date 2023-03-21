@@ -34,7 +34,7 @@
 	<div class="w-36">
 		{#each aDay as period}
 			<div class="dropdown">
-				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] !== undefined}
+				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] != undefined}
 					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content">
@@ -46,7 +46,7 @@
 	<div class="w-36">
 		{#each bDay as period}
 			<div class="dropdown dropdown-end">
-				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] !== undefined}
+				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] != undefined}
 					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content">
