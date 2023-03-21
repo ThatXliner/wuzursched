@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import ClassPicker from './ClassPicker.svelte';
-	import type { Schedule } from './InfoInput.d';
-	let name: string = '';
-	let periods: Schedule = {
+	import type { UnfinishedSchedule } from './InfoInput.d';
+	let name = '';
+	let periods: UnfinishedSchedule = {
 		'1a': undefined,
 		'2a': undefined,
 		'3a': undefined,
@@ -19,6 +19,8 @@
 		name.length > 0 &&
 		values.every((x) => x !== undefined) &&
 		[...new Set(values)].length == values.length;
+	const aDay = ['1a', '2a', '3a', '4a'] as const;
+	const bDay = ['1b', '2b', '3b', '4b'] as const;
 </script>
 
 <div class="form-control">
@@ -27,29 +29,28 @@
 		<input bind:value={name} type="text" placeholder="Bryan Hu" class="input input-bordered" />
 	</label>
 </div>
+<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 <div class="flex flex-row justify-evenly">
 	<div class="w-36">
-		{#each ['1A', '2A', '3A', '4A'] as period}
-			{@const key = period.toLowerCase()}
+		{#each aDay as period}
 			<div class="dropdown">
-				<span tabindex="0" class="btn m-1" class:btn-success={periods[key] !== undefined}
-					>{period}</span
+				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] !== undefined}
+					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content">
-					<ClassPicker bind:selected={periods[key]} />
+					<ClassPicker bind:selected={periods[period]} />
 				</div>
 			</div>
 		{/each}
 	</div>
 	<div class="w-36">
-		{#each ['1B', '2B', '3B', '4B'] as period}
-			{@const key = period.toLowerCase()}
+		{#each bDay as period}
 			<div class="dropdown dropdown-end">
-				<span tabindex="0" class="btn m-1" class:btn-success={periods[key] !== undefined}
-					>{period}</span
+				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] !== undefined}
+					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content">
-					<ClassPicker bind:selected={periods[key]} />
+					<ClassPicker bind:selected={periods[period]} />
 				</div>
 			</div>
 		{/each}

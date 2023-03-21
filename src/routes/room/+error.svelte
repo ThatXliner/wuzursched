@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	// We're in the error page, of course there's an error
-	console.error($page.error!.message);
+	console.error($page.error?.message);
 </script>
 
 <main class="hero h-screen">

@@ -1,11 +1,15 @@
 <script lang="ts">
+	import ScheduleDisplay from './ScheduleDisplay.svelte';
+
 	/** @type {import('./$types').PageData */
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { supabase } from '$lib/db';
-	import { titlecase, sqlEscape } from '$lib/utils';
+	import { sqlEscape } from '$lib/utils';
+	import type { ArrElement } from '$lib/utils';
 	import InfoInput from '$lib/InfoInput.svelte';
-	import type { Database } from '$lib/supabase';
+	import type { Schedule } from '$lib/InfoInput.d';
+
 	export let data;
 	let schedules = data.schedules;
 	async function getClass(id: string) {
@@ -17,7 +21,7 @@
 	}
 	let you: null | {
 		name: string;
-		schedule: Database['public']['Tables']['schedules']['Row'];
+		schedule: Schedule;
 	} = null;
 	onMount(async () => {
 		you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
@@ -31,10 +35,12 @@
 					.eq('student', you['name'])
 			).data?.length == 0
 		) {
-			let toInsert = { room: $page.params['room'], student: you.name };
-			for (const x of ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b']) {
-				toInsert[x] = you['schedule'][x].id;
-			}
+			let toInsert: ArrElement<typeof schedules> = {
+				...you['schedule'],
+				room: $page.params['room'],
+				student: you.name
+			};
+
 			await supabase.from('schedules').insert([toInsert]);
 		}
 
@@ -52,6 +58,7 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
+				// TODO: Figure type
 				(payload) => {
 					console.log('Change received!', payload);
 					schedules = [...schedules, payload.new];
@@ -69,11 +76,7 @@
 			<InfoInput
 				on:submit={(event) => {
 					const got = event.detail;
-					let toInsert = { room: $page.params['room'], student: got.name };
-					for (const x of ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b']) {
-						toInsert[x] = got['schedule'][x].id;
-					}
-					// @ts-ignore
+					let toInsert = { ...got['schedule'], room: $page.params['room'], student: got.name };
 					supabase
 						.from('schedules')
 						.insert([toInsert])
@@ -124,62 +127,10 @@
 				</div>
 				<div class="collapse-content hidden">
 					<div class="overflow-x-auto">
-						<table class="table w-full">
-							<thead>
-								<tr class="text-center">
-									<th />
-									<th>A day</th>
-									<th>B day</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each ['1', '2', '3', '4'] as period}
-									{@const scheduleA = schedule[period + 'a']}
-									{@const scheduleB = schedule[period + 'b']}
-									{@const classA = getClass(scheduleA)}
-									{@const classB = getClass(scheduleB)}
-									{@const aInCommon = you && you['schedule'][period + 'a']?.id == scheduleA}
-									{@const bInCommon = you && you['schedule'][period + 'b']?.id == scheduleB}
-									{@const resolved = Promise.all([classA, classB])}
-									{#await resolved then [classA, classB]}
-										<!-- row 1 -->
-										<tr>
-											<th>Period {period}</th>
-											<td
-												><div
-													class="rounded-box p-2 py-3 w-fit"
-													class:bg-success={aInCommon}
-													class:text-success-content={aInCommon}
-												>
-													<span
-														>{titlecase(classA['name'])}
-														<span class="text-xs text-gray-500"
-															>{titlecase(classA['teacher_first'])}
-															{titlecase(classA['teacher_last'])}</span
-														></span
-													>
-												</div></td
-											>
-											<td
-												><div
-													class="rounded-box p-2 py-3 w-fit"
-													class:bg-success={bInCommon}
-													class:text-success-content={bInCommon}
-												>
-													<span
-														>{titlecase(classB['name'])}
-														<span class="text-xs text-gray-500"
-															>{titlecase(classB['teacher_first'])}
-															{titlecase(classB['teacher_last'])}</span
-														></span
-													>
-												</div></td
-											>
-										</tr>
-									{/await}
-								{/each}
-							</tbody>
-						</table>
+						<!-- If statement to appease type checker -->
+						{#if you !== null}
+							<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
+						{/if}
 					</div>
 				</div>
 			</div>

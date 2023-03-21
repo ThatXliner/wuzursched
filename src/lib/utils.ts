@@ -28,3 +28,14 @@ export function sqlEscape(str: string) {
 		}
 	});
 }
+export function normalize(className: string) {
+	return className
+		.trim()
+		.replace(' II', ' 2')
+		.replace(/ I$/, ' 1')
+		.replace(/\s+/, ' ')
+		.toLowerCase();
+}
+export type ArrElement<ArrType> = ArrType extends readonly (infer ElementType)[]
+	? ElementType
+	: never;

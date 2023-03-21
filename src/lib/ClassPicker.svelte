@@ -2,16 +2,33 @@
 	import Fuse from 'fuse.js';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { titlecase, sqlEscape } from '$lib/utils';
+	import { titlecase, sqlEscape, normalize } from '$lib/utils';
+	import type { ArrElement } from '$lib/utils';
 	import { supabase } from './db';
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	let classes: NonNullable<Awaited<ReturnType<typeof getClasses>>['data']> = [];
-	let className: string = '',
-		firstName: string = '',
-		lastName: string = '';
-	export let selected: null | any = null;
+	async function addClass(className: string, firstName: string, lastName: string) {
+		const payload = {
+			name: normalize(className),
+			teacher_first: firstName.trim().toLowerCase(),
+			teacher_last: lastName.trim().toLowerCase(),
+			room: $page.params['room']
+		};
+		// XXX: Uh am I actually able to read this
+		const { data, error } = await supabase.from('classes').insert([payload]).select();
+		className = firstName = lastName = '';
+		if (error !== null) {
+			throw error;
+		}
+		return data;
+	}
+	type Classes = NonNullable<Awaited<ReturnType<typeof getClasses>>['data']>;
+	let classes: Classes = [];
+	let className = '',
+		firstName = '',
+		lastName = '';
+	export let selected: null | ArrElement<Classes> = null;
 
 	onMount(async () => {
 		const { data, error } = await getClasses($page.params['room']);
@@ -43,7 +60,8 @@
 	$: searcher = new Fuse(classes, {
 		keys: ['name', 'teacher_first', 'teacher_last']
 	});
-	$: filtered = className.length == 0 ? classes : searcher.search(className);
+	$: filtered = searcher.search(className);
+
 	$: isValid =
 		className.length > 0 && /^\w+$/.test(firstName.trim()) && /^\w+$/.test(lastName.trim());
 </script>
@@ -75,24 +93,7 @@
 					class="btn btn-primary"
 					disabled={!isValid}
 					on:click={async () => {
-						// TODO: Seperate to utility
-						const payload = {
-							name: className
-								.trim()
-								.replace(' II', ' 2')
-								.replace(/ I$/, ' 1')
-								.replace(/\s+/, ' ')
-								.toLowerCase(),
-							teacher_first: firstName.trim().toLowerCase(),
-							teacher_last: lastName.trim().toLowerCase(),
-							room: $page.params['room']
-						};
-						const { data, error } = await supabase.from('classes').insert([payload]);
-						className = firstName = lastName = '';
-						if (error || data === null) {
-							throw error;
-						}
-						selected = data[0];
+						selected = (await addClass(className, firstName, lastName))[0];
 					}}
 					><svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -112,20 +113,20 @@
 		<div class="overflow-y-scroll max-h-60">
 			<ul class="menu z-99">
 				<li class="menu-title"><span>Classes</span></li>
-				{#each filtered as entry (entry?.item?.id ?? entry.id)}
-					{@const klass = entry?.item ?? entry}
+				{#each filtered as entry (entry.item.id)}
+					{@const klass = entry.item}
+					{@const isSelected = selected?.id == klass.id}
 					<li
 						on:click={() => {
-							if (selected?.id == klass.id) {
-								selected = null;
-							} else {
-								selected = klass;
-							}
+							selected = isSelected ? null : klass;
+						}}
+						on:keydown={() => {
+							selected = isSelected ? null : klass;
 						}}
 					>
-						<span class:active={selected?.id == klass.id}
+						<span class:active={isSelected}
 							>{titlecase(klass['name'])}
-							<span class="text-sm text-gray-500" class:text-white={selected?.id == klass.id}
+							<span class="text-sm text-gray-500" class:text-white={isSelected}
 								>{titlecase(klass['teacher_first'])} {titlecase(klass['teacher_last'])}</span
 							></span
 						>
