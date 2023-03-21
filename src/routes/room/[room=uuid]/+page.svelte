@@ -58,8 +58,7 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
-				// TODO: Figure type
-				(payload) => {
+				(payload: { new: ArrElement<typeof schedules> }) => {
 					console.log('Change received!', payload);
 					schedules = [...schedules, payload.new];
 				}

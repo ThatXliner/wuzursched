@@ -2,13 +2,12 @@
 	import Fuse from 'fuse.js';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { titlecase, sqlEscape, normalize } from '$lib/utils';
-	import type { ArrElement } from '$lib/utils';
+	import { titlecase, sqlEscape, normalize, type ArrElement } from '$lib/utils';
 	import { supabase } from './db';
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	async function addClass(className: string, firstName: string, lastName: string) {
+	async function addClass() {
 		const payload = {
 			name: normalize(className),
 			teacher_first: firstName.trim().toLowerCase(),
@@ -28,11 +27,11 @@
 	let className = '',
 		firstName = '',
 		lastName = '';
-	export let selected: null | ArrElement<Classes> = null;
+	export let selected: null | string = null;
 
 	onMount(async () => {
 		const { data, error } = await getClasses($page.params['room']);
-		if (data === null) {
+		if (error !== null) {
 			throw error;
 		}
 		classes = data;
@@ -41,7 +40,7 @@
 			.on(
 				'postgres_changes',
 				{
-					event: 'INSERT',
+					event: '*',
 					schema: 'public',
 					table: 'classes',
 					// please don't let this be an SQL injection
@@ -50,9 +49,15 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
-				(payload) => {
+				async (payload: { new: ArrElement<Classes> }) => {
 					console.log('Change received!', payload);
-					classes = [...classes, payload.new];
+					// XXX: Just update the old one
+					const { data, error } = await getClasses($page.params['room']);
+					if (error !== null) {
+						throw error;
+					}
+					classes = data;
+					// classes = [...classes, payload.new];
 				}
 			)
 			.subscribe();
@@ -60,7 +65,12 @@
 	$: searcher = new Fuse(classes, {
 		keys: ['name', 'teacher_first', 'teacher_last']
 	});
-	$: filtered = searcher.search(className);
+	$: filtered =
+		className == ''
+			? classes.map((x) => {
+					return { item: x };
+			  })
+			: searcher.search(className);
 
 	$: isValid =
 		className.length > 0 && /^\w+$/.test(firstName.trim()) && /^\w+$/.test(lastName.trim());
@@ -93,7 +103,7 @@
 					class="btn btn-primary"
 					disabled={!isValid}
 					on:click={async () => {
-						selected = (await addClass(className, firstName, lastName))[0];
+						selected = (await addClass())[0].id;
 					}}
 					><svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -110,29 +120,29 @@
 				></label
 			>
 		</div>
-		<div class="overflow-y-scroll max-h-60">
-			<ul class="menu z-99">
-				<li class="menu-title"><span>Classes</span></li>
-				{#each filtered as entry (entry.item.id)}
-					{@const klass = entry.item}
-					{@const isSelected = selected?.id == klass.id}
-					<li
-						on:click={() => {
-							selected = isSelected ? null : klass;
-						}}
-						on:keydown={() => {
-							selected = isSelected ? null : klass;
-						}}
+		<!-- <div class=""> -->
+		<ul class="menu z-99 max-h-60">
+			<li class="menu-title"><span>Classes</span></li>
+			{#each filtered as entry (entry.item.id)}
+				{@const klass = entry.item}
+				{@const isSelected = selected === klass.id}
+				<li
+					on:click={() => {
+						selected = isSelected ? null : klass.id;
+					}}
+					on:keydown={() => {
+						selected = isSelected ? null : klass.id;
+					}}
+				>
+					<span class:active={isSelected}
+						>{titlecase(klass['name'])}
+						<span class="text-sm text-gray-500" class:text-white={isSelected}
+							>{titlecase(klass['teacher_first'])} {titlecase(klass['teacher_last'])}</span
+						></span
 					>
-						<span class:active={isSelected}
-							>{titlecase(klass['name'])}
-							<span class="text-sm text-gray-500" class:text-white={isSelected}
-								>{titlecase(klass['teacher_first'])} {titlecase(klass['teacher_last'])}</span
-							></span
-						>
-					</li>
-				{/each}
-			</ul>
-		</div>
+				</li>
+			{/each}
+		</ul>
+		<!-- </div> -->
 	</div>
 </div>
