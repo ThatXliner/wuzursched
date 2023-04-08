@@ -7,6 +7,7 @@
 	import type { ArrElement } from '$lib/utils';
 	import InfoInput from '$lib/InfoInput.svelte';
 	import type { Schedule } from '$lib/InfoInput.d';
+	import type { Database } from '$lib/supabase';
 
 	/** @type {import('./$types').PageData */
 	export let data;
@@ -46,7 +47,7 @@
 
 		supabase
 			.channel('any')
-			.on(
+			.on<Database>(
 				'postgres_changes',
 				{
 					event: 'INSERT',

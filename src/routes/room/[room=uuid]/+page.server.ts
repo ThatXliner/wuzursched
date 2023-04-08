@@ -1,5 +1,5 @@
 import { supabase } from '$lib/server/db';
-import { error as returnError} from '@sveltejs/kit';
+import { error as returnError } from '@sveltejs/kit';
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
 	if (
@@ -8,10 +8,7 @@ export async function load({ params }) {
 	) {
 		throw returnError(404, 'Room does not exist');
 	}
-	const { data, error } = await supabase
-		.from('schedules')
-		.select('*')
-		.eq('room', params.room);
+	const { data, error } = await supabase.from('schedules').select('*').eq('room', params.room);
 
 	if (error !== null) {
 		throw error;
