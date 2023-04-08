@@ -3,7 +3,8 @@ export function titlecase(x: string) {
 }
 export function sqlEscape(str: string) {
 	// this better work well
-	return str.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char: string) {
+	// eslint-disable-next-line no-control-regex
+	return str.replace(/[\0\x08\x09\x1a\n\r"'\\%]/g, function (char: string) {
 		switch (char) {
 			case '\0':
 				return '\\0';
