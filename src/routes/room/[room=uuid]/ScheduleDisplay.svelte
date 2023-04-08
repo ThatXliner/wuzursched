@@ -35,7 +35,7 @@
 			{#await resolved then [classA, classB]}
 				<!-- row 1 -->
 				<tr>
-					<th>Period {period}</th>
+					<th>Period {period + 1}</th>
 					<td
 						><div
 							class="rounded-box p-2 py-3 w-fit"
