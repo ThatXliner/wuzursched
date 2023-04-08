@@ -10,7 +10,7 @@
 			teacher_first: string;
 			teacher_last: string;
 		}>;
-	const periods = [...Array(4).map((_, i) => i)];
+	const periods = [0, 1, 2, 3] as const;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;
 </script>

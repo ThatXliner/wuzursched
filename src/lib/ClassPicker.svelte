@@ -1,12 +1,24 @@
-<script lang="ts">
-	import Fuse from 'fuse.js';
-	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
-	import { titlecase, sqlEscape, normalize, type ArrElement } from '$lib/utils';
+<script lang="ts" context="module">
 	import { supabase } from './db';
+	import { writable, derived, type Writable } from 'svelte/store';
+	import type { ArrElement } from '$lib/utils';
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
+
+	type Classes = NonNullable<Awaited<ReturnType<typeof getClasses>>['data']>;
+	type Class = ArrElement<Classes>;
+	let classes: Writable<Classes> = writable([]);
+</script>
+
+<script lang="ts">
+	import Fuse from 'fuse.js';
+	import { titlecase, sqlEscape, normalize } from '$lib/utils';
+	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
+	let className = '',
+		firstName = '',
+		lastName = '';
 	async function addClass() {
 		const payload = {
 			name: normalize(className),
@@ -22,19 +34,20 @@
 		}
 		return data;
 	}
-	type Classes = NonNullable<Awaited<ReturnType<typeof getClasses>>['data']>;
-	let classes: Classes = [];
-	let className = '',
-		firstName = '',
-		lastName = '';
-	export let selected: null | string = null;
 
+	export let selected: null | string = null;
+	let searcher: Fuse<Class> = new Fuse([], {
+		keys: ['name', 'teacher_first', 'teacher_last']
+	});
+	classes.subscribe((value: Classes) => {
+		searcher.setCollection(value);
+	});
 	onMount(async () => {
 		const { data, error } = await getClasses($page.params['room']);
 		if (error !== null) {
 			throw error;
 		}
-		classes = data;
+		$classes = data;
 		supabase
 			.channel('any')
 			.on(
@@ -49,25 +62,21 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
-				async (payload: { new: ArrElement<Classes> }) => {
+				async (payload: { new: Class }) => {
 					console.log('Change received!', payload);
-					// XXX: Just update the old one
+					// XXX: Don't just update the old one
 					const { data, error } = await getClasses($page.params['room']);
 					if (error !== null) {
 						throw error;
 					}
-					classes = data;
-					// classes = [...classes, payload.new];
+					$classes = data;
 				}
 			)
 			.subscribe();
 	});
-	$: searcher = new Fuse(classes, {
-		keys: ['name', 'teacher_first', 'teacher_last']
-	});
 	$: filtered =
 		className == ''
-			? classes.map((x) => {
+			? $classes.map((x) => {
 					return { item: x };
 			  })
 			: searcher.search(className);
@@ -120,8 +129,7 @@
 				></label
 			>
 		</div>
-		<!-- <div class=""> -->
-		<ul class="menu z-99 max-h-60">
+		<ul class="menu z-99 h-60 overflow-hidden overflow-y-scroll flex-nowrap">
 			<li class="menu-title"><span>Classes</span></li>
 			{#each filtered as entry (entry.item.id)}
 				{@const klass = entry.item}
@@ -141,6 +149,7 @@
 						></span
 					>
 				</li>
+			{:else}<p>No class found. Make one!</p>
 			{/each}
 		</ul>
 		<!-- </div> -->

@@ -11,10 +11,10 @@
 	import type { Schedule } from '$lib/InfoInput.d';
 
 	export let data;
-	let schedules = data.schedules;
+	let schedules = data.data;
 	async function getClass(id: string) {
 		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
-		if (error || data === null) {
+		if (error !== null || data == null) {
 			throw error;
 		}
 		return data[0];
@@ -23,6 +23,7 @@
 		name: string;
 		schedule: Schedule;
 	} = null;
+	$: console.log(schedules);
 	onMount(async () => {
 		you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
 		if (
@@ -69,7 +70,7 @@
 
 {#if you === null}
 	<div class="modal modal-bottom modal-open sm:modal-middle">
-		<div class="modal-box max-h-screen h-3/4 max-w-screen overflow-x-hidden">
+		<div class="modal-box max-h-screen h-3/4 max-w-screen">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
 			<InfoInput

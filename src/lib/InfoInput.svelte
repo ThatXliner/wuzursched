@@ -37,9 +37,9 @@
 				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] != undefined}
 					>{period.toUpperCase()}</span
 				>
-				<div tabindex="0" class="dropdown-content">
+				<label tabindex="0" class="dropdown-content">
 					<ClassPicker bind:selected={periods[period]} />
-				</div>
+				</label>
 			</div>
 		{/each}
 	</div>
@@ -49,9 +49,9 @@
 				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] != undefined}
 					>{period.toUpperCase()}</span
 				>
-				<div tabindex="0" class="dropdown-content">
+				<label tabindex="0" class="dropdown-content">
 					<ClassPicker bind:selected={periods[period]} />
-				</div>
+				</label>
 			</div>
 		{/each}
 	</div>
