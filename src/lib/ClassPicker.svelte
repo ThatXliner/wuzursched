@@ -64,7 +64,6 @@
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
 				async (payload) => {
-					console.log('Change received!', payload);
 					// XXX: Don't fetch new, update old based on
 					// payload.eventType: 'INSERT', 'DELETE', or 'UPDATE'
 					const { data, error } = await getClasses($page.params['room']);

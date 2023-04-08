@@ -17,7 +17,7 @@
 	$: values = [...Object.values(periods)];
 	$: isValid =
 		name.length > 0 &&
-		values.every((x) => x !== undefined) &&
+		Object.values(periods).every((x) => x !== undefined) &&
 		[...new Set(values)].length == values.length;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;

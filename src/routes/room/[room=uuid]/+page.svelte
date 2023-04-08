@@ -8,10 +8,11 @@
 	import InfoInput from '$lib/InfoInput.svelte';
 	import type { Schedule } from '$lib/InfoInput.d';
 	import type { Database } from '$lib/supabase';
+	import { writable } from 'svelte/store';
 
 	/** @type {import('./$types').PageData */
 	export let data;
-	let schedules = data.data;
+	let schedules = writable(data.data);
 	async function getClass(id: string) {
 		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		if (error !== null || data == null) {
@@ -23,7 +24,6 @@
 		name: string;
 		schedule: Schedule;
 	} = null;
-	$: console.log(schedules);
 	onMount(async () => {
 		you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
 		if (
@@ -44,7 +44,6 @@
 
 			await supabase.from('schedules').insert([toInsert]);
 		}
-
 		supabase
 			.channel('any')
 			.on<Database>(
@@ -59,9 +58,8 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
-				(payload: { new: ArrElement<typeof schedules> }) => {
-					console.log('Change received!', payload);
-					schedules = [...schedules, payload.new];
+				(payload) => {
+					schedules.update(($schedules) => [...$schedules, payload.new]);
 				}
 			)
 			.subscribe();
@@ -82,7 +80,7 @@
 						.insert([toInsert])
 						.then(() => {
 							you = got;
-							schedules = [...schedules, toInsert];
+							schedules.update(($schedules) => [...$schedules, toInsert]);
 							window.localStorage.setItem($page.params['room'], JSON.stringify(you));
 						});
 				}}
@@ -117,7 +115,7 @@
 </main>
 <div>
 	<div class="flex flex-wrap space-x-4 justify-evenly">
-		{#each schedules as schedule}
+		{#each $schedules as schedule}
 			<div
 				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
 			>
