@@ -35,7 +35,7 @@
 					.eq('student', you['name'])
 			).data?.length == 0
 		) {
-			let toInsert: ArrElement<typeof schedules> = {
+			let toInsert: Schedule & { room: string; student: string } = {
 				...you['schedule'],
 				room: $page.params['room'],
 				student: you.name

@@ -1,6 +1,6 @@
 <script lang="ts" context="module">
 	import { supabase } from './db';
-	import { writable, derived, type Writable } from 'svelte/store';
+	import { writable, type Writable } from 'svelte/store';
 	import type { ArrElement } from '$lib/utils';
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
@@ -16,6 +16,7 @@
 	import { titlecase, sqlEscape, normalize } from '$lib/utils';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import type { Database } from './supabase';
 	let className = '',
 		firstName = '',
 		lastName = '';
@@ -50,7 +51,7 @@
 		$classes = data;
 		supabase
 			.channel('any')
-			.on(
+			.on<Database>(
 				'postgres_changes',
 				{
 					event: '*',
@@ -62,9 +63,10 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
-				async (payload: { new: Class }) => {
+				async (payload) => {
 					console.log('Change received!', payload);
-					// XXX: Don't just update the old one
+					// XXX: Don't fetch new, update old based on
+					// payload.eventType: 'INSERT', 'DELETE', or 'UPDATE'
 					const { data, error } = await getClasses($page.params['room']);
 					if (error !== null) {
 						throw error;
