@@ -82,7 +82,7 @@
 						.insert([toInsert])
 						.then(() => {
 							you = got;
-							schedules = [...schedules, you];
+							schedules = [...schedules, toInsert];
 							window.localStorage.setItem($page.params['room'], JSON.stringify(you));
 						});
 				}}
