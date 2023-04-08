@@ -1,7 +1,5 @@
 <script lang="ts">
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
-
-	/** @type {import('./$types').PageData */
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { supabase } from '$lib/db';
@@ -10,6 +8,7 @@
 	import InfoInput from '$lib/InfoInput.svelte';
 	import type { Schedule } from '$lib/InfoInput.d';
 
+	/** @type {import('./$types').PageData */
 	export let data;
 	let schedules = data.data;
 	async function getClass(id: string) {
@@ -70,7 +69,7 @@
 
 {#if you === null}
 	<div class="modal modal-bottom modal-open sm:modal-middle">
-		<div class="modal-box max-h-screen h-3/4 max-w-screen">
+		<div class="modal-box max-h-screen h-3/4 max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
 			<InfoInput
@@ -82,6 +81,7 @@
 						.insert([toInsert])
 						.then(() => {
 							you = got;
+							schedules = [...schedules, you];
 							window.localStorage.setItem($page.params['room'], JSON.stringify(you));
 						});
 				}}
