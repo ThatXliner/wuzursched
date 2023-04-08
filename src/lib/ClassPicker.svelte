@@ -129,7 +129,7 @@
 				></label
 			>
 		</div>
-		<ul class="menu z-99 h-60 overflow-hidden overflow-y-scroll flex-nowrap">
+		<ul class="menu h-60 overflow-hidden overflow-y-scroll flex-nowrap">
 			<li class="menu-title"><span>Classes</span></li>
 			{#each filtered as entry (entry.item.id)}
 				{@const klass = entry.item}
