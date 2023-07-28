@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import ClassPicker from './ClassPicker.svelte';
-	import type { UnfinishedSchedule } from './InfoInput.d';
+	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
 	let name = '';
 	let periods: UnfinishedSchedule = {
 		'1a': undefined,
@@ -21,6 +21,9 @@
 		[...new Set(values)].length == values.length;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;
+	function submit() {
+		dispatch('submit', { name, schedule: periods as VirtualSchedule });
+	}
 </script>
 
 <div class="form-control">
@@ -58,11 +61,5 @@
 </div>
 
 <div class="form-control mt-6">
-	<button
-		class="btn btn-primary"
-		disabled={!isValid}
-		on:click={() => {
-			dispatch('submit', { name, schedule: periods });
-		}}>Done</button
-	>
+	<button class="btn btn-primary" disabled={!isValid} on:click={submit}>Done</button>
 </div>

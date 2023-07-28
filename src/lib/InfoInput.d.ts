@@ -1,4 +1,4 @@
-export type Schedule = {
+export type VirtualSchedule = {
 	'1a': string;
 	'1b': string;
 	'2a': string;
