@@ -4,7 +4,7 @@ Wuzursched (pronounced [`/wʌzjɜskɛd/`](http://ipa-reader.xyz/?text=wʌzjɜsk�
 
 ## Development
 
-Once you've `git cloned` and installed dependencies with `pnpm install`, start a development server:
+Once you've `git clone`d and installed dependencies with `pnpm install`, start a development server:
 
 ```bash
 pnpm run dev
