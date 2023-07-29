@@ -133,7 +133,6 @@
 		};
 		// XXX: Uh am I actually able to read this
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
-		className = firstName = lastName = '';
 		if (error !== null) {
 			throw error;
 		}
