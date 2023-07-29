@@ -41,7 +41,7 @@
 					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content">
-					<ClassPicker bind:selected={periods[period]} />
+					<ClassPicker bind:selected={periods[period]} alreadySelected={values} />
 				</div>
 			</div>
 		{/each}
@@ -53,7 +53,7 @@
 					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content">
-					<ClassPicker bind:selected={periods[period]} />
+					<ClassPicker bind:selected={periods[period]} alreadySelected={values} />
 				</div>
 			</div>
 		{/each}

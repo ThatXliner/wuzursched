@@ -37,12 +37,14 @@
 	}
 
 	export let selected: null | string = null;
+	export let alreadySelected: string[];
 	let searcher: Fuse<Class> = new Fuse([], {
 		keys: ['name', 'teacher_first', 'teacher_last']
 	});
-	classes.subscribe((value: Classes) => {
-		searcher.setCollection(value);
-	});
+	$: searcher.setCollection($classes);
+	// classes.subscribe((value: Classes) => {
+	// 	searcher.setCollection(value);
+	// });
 	onMount(async () => {
 		const { data, error } = await getClasses($page.params['room']);
 		if (error !== null) {
@@ -75,6 +77,7 @@
 			)
 			.subscribe();
 	});
+	// TODO: remove alreadySelected
 	$: filtered =
 		className == ''
 			? $classes.map((x) => {
