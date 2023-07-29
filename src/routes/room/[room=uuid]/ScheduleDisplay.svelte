@@ -6,7 +6,6 @@
 		getClass: (id: string) => Promise<{
 			id: string;
 			name: string;
-			room: string;
 			teacher_first: string;
 			teacher_last: string;
 		}>;

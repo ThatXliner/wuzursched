@@ -1,10 +1,7 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
 	import type { Class, Classes } from './InfoInput';
-	import { titlecase, sqlEscape, normalize } from '$lib/utils';
-	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
-	import type { Database } from './supabase';
+	import { titlecase } from '$lib/utils';
 	let className = '',
 		firstName = '',
 		lastName = '';
@@ -37,7 +34,7 @@
 <div class="card w-96 bg-base-100 shadow-xl">
 	<div class="card-body">
 		<div class="form-control">
-			<span>Create a class</span>
+			<span>Search/Create a class</span>
 			<label class="input-group">
 				<input
 					type="text"
@@ -62,6 +59,10 @@
 					disabled={!isValidClassInfo}
 					on:click={async () => {
 						selected = await addClass({ className, firstName, lastName });
+						// Reset the search
+						className = '';
+						firstName = '';
+						lastName = '';
 					}}
 					><svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -94,13 +95,12 @@
 					<span class:active={isSelected}
 						>{titlecase(klass['name'])}
 						<span class="text-sm text-gray-500" class:text-white={isSelected}
-							>{titlecase(klass['teacher_first'])} {titlecase(klass['teacher_last'])}</span
+							>{titlecase(klass.teacher_first)} {titlecase(klass.teacher_last)}</span
 						></span
 					>
 				</li>
 			{:else}<p>No class found. Make one!</p>
 			{/each}
 		</ul>
-		<!-- </div> -->
 	</div>
 </div>

@@ -8,8 +8,7 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
-	import type { VirtualSchedule, Classes } from '$lib/InfoInput.d';
-	import type { Database } from '$lib/supabase';
+	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
 
 	type Schedule = VirtualSchedule & {
@@ -33,14 +32,14 @@
 		name: string;
 		schedule: Schedule;
 	} = null;
-	let classes: Classes = [];
+	let classes: Writable<Classes> = writable([]);
 	onMount(async () => {
 		{
 			const { data, error } = await getClasses($page.params['room']);
 			if (error !== null) {
 				throw error;
 			}
-			classes = data;
+			$classes = data;
 		}
 		// Load it from localStorage
 		you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
@@ -66,7 +65,7 @@
 		}
 		supabase
 			.channel('schema-db-changes')
-			.on<Database>(
+			.on<Schedule>(
 				'postgres_changes',
 				{
 					event: '*',
@@ -79,16 +78,17 @@
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
 				(payload) => {
-					// if (payload.eventType === 'INSERT') {
-					// 	schedules.update(($schedules) => [...$schedules, payload.new]);
-					// }
+					if (payload.eventType === 'INSERT') {
+						schedules.update(($schedules) => [...$schedules, payload.new]);
+					}
 					console.log('1', payload);
 				}
 			)
-			.on<Database>(
+			.on<Class>(
 				'postgres_changes',
 				{
-					event: '*',
+					// The only valid event (when I'm not clearing the db/devving)
+					event: 'INSERT',
 					schema: 'public',
 					table: 'classes',
 					// please don't let this be an SQL injection
@@ -98,14 +98,7 @@
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
 				async (payload) => {
-					console.log('2', payload);
-					// XXX: Don't fetch new, update old based on
-					// payload.eventType: 'INSERT', 'DELETE', or 'UPDATE'
-					const { data, error } = await getClasses($page.params['room']);
-					if (error !== null) {
-						throw error;
-					}
-					classes = data;
+					$classes = [...$classes, payload.new];
 				}
 			)
 			.subscribe(console.log);
@@ -118,7 +111,8 @@
 			.insert([toInsert])
 			.then(() => {
 				you = { name: event.detail.name, schedule: toInsert };
-				schedules.update(($schedules) => [...$schedules, toInsert]);
+				// no need to update the local db variable
+				// since that will be updated via the realtime subscription
 				window.localStorage.setItem($page.params['room'], JSON.stringify(you));
 			});
 	}
@@ -152,7 +146,7 @@
 		<div class="modal-box max-h-screen h-3/4 max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
-			<InfoInput on:submit={onInfoSubmitted} {classes} {addClass} />
+			<InfoInput on:submit={onInfoSubmitted} classes={$classes} {addClass} />
 		</div>
 	</div>
 {/if}
