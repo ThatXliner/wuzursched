@@ -1,24 +1,30 @@
 <script lang="ts">
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
+	import InfoInput from '$lib/InfoInput.svelte';
+
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
 	import { supabase } from '$lib/db';
 	import { sqlEscape } from '$lib/utils';
-	import type { ArrElement } from '$lib/utils';
-	import InfoInput from '$lib/InfoInput.svelte';
-	import type { Schedule } from '$lib/InfoInput.d';
-	import type { Database } from '$lib/supabase';
+	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
+	import type { VirtualSchedule } from '$lib/InfoInput.d';
+	import type { Database } from '$lib/supabase';
+	import type { Writable } from 'svelte/store';
+
+	type Schedule = VirtualSchedule & {
+		room: string;
+		student: string;
+	};
 	/** @type {import('./$types').PageData */
 	export let data;
-	let schedules = writable(data.data);
+	let schedules: Writable<Schedule[]> = writable(data.data);
 	async function getClass(id: string) {
 		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
-		if (error !== null || data == null) {
+		if (error !== null) {
 			throw error;
 		}
-		return data[0];
+		return data![0];
 	}
 	let you: null | {
 		name: string;
@@ -45,11 +51,11 @@
 			await supabase.from('schedules').insert([toInsert]);
 		}
 		supabase
-			.channel('any')
+			.channel('schema-db-changes')
 			.on<Database>(
 				'postgres_changes',
 				{
-					event: 'INSERT',
+					event: '*',
 					schema: 'public',
 					table: 'schedules',
 					// please don't let this be an SQL injection
@@ -59,10 +65,13 @@
 					filter: `room=eq.${sqlEscape($page.params['room'])}`
 				},
 				(payload) => {
-					schedules.update(($schedules) => [...$schedules, payload.new]);
+					// if (payload.eventType === 'INSERT') {
+					// 	schedules.update(($schedules) => [...$schedules, payload.new]);
+					// }
+					console.log(payload);
 				}
 			)
-			.subscribe();
+			.subscribe(console.log);
 	});
 </script>
 
@@ -94,6 +103,25 @@
 			Schedules for room <code>{$page.params['room'].slice(0, 8)}</code>
 		</h1>
 		<div class="flex justify-evenly flex-row space-x-4">
+			<button
+				class="btn btn-accent"
+				on:click={() => {
+					navigator.clipboard.writeText(window.location.href);
+				}}
+				><svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					class="w-6 h-6"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M10.5 3A1.501 1.501 0 009 4.5h6A1.5 1.5 0 0013.5 3h-3zm-2.693.178A3 3 0 0110.5 1.5h3a3 3 0 012.694 1.678c.497.042.992.092 1.486.15 1.497.173 2.57 1.46 2.57 2.929V19.5a3 3 0 01-3 3H6.75a3 3 0 01-3-3V6.257c0-1.47 1.073-2.756 2.57-2.93.493-.057.989-.107 1.487-.15z"
+						clip-rule="evenodd"
+					/>
+				</svg>
+				Share Room Link
+			</button>
 			<a href="/" class="btn"
 				><svg
 					xmlns="http://www.w3.org/2000/svg"

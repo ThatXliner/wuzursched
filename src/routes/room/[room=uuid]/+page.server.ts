@@ -8,12 +8,12 @@ export async function load({ params }) {
 	) {
 		throw returnError(404, 'Room does not exist');
 	}
+	// Surely not a N+1
 	const { data, error } = await supabase.from('schedules').select('*').eq('room', params.room);
 
 	if (error !== null) {
 		throw error;
 	}
-
 	return {
 		data
 	};
