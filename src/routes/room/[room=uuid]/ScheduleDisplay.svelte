@@ -1,14 +1,7 @@
 <script lang="ts">
 	import { titlecase } from '$lib/utils';
-	import type { Schedule } from '$lib/InfoInput.d';
-	export let them: Schedule,
-		you: Schedule,
-		getClass: (id: string) => Promise<{
-			id: string;
-			name: string;
-			teacher_first: string;
-			teacher_last: string;
-		}>;
+	import type { VirtualSchedule, Class } from '$lib/InfoInput.d';
+	export let them: VirtualSchedule, you: VirtualSchedule, getClass: (id: string) => Promise<Class>;
 	const periods = [0, 1, 2, 3] as const;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;
