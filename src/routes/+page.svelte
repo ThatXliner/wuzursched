@@ -8,7 +8,6 @@
 </script>
 
 <section class="h-screen">
-	<!-- <section class="h-[50vh]"> -->
 	<div class="hero h-full bg-gray-200 dark:bg-zinc-900">
 		<div class="hero-content text-center">
 			<div class="max-w-md">
@@ -21,15 +20,15 @@
 				<i class="py-6 dark:text-gray-300 font-mono block">What's your schedule?</i>
 				<div class="flex justify-evenly space-x-5">
 					<div class="form-control inline-block">
-						<label class="input-group">
+						<label class="join">
 							<input
 								type="text"
 								bind:value={roomId}
 								placeholder="Join a room"
-								class="input input-bordered"
+								class="input input-bordered join-item"
 							/>
 							<button
-								class="btn btn-primary"
+								class="btn btn-primary join-item"
 								disabled={!isValid(roomId)}
 								on:click={() => {
 									window.location.href = `/room/${roomId.trim()}`;

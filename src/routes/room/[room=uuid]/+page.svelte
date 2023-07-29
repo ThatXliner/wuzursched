@@ -141,13 +141,13 @@
 </script>
 
 {#if you === null}
-	<div class="modal modal-bottom modal-open sm:modal-middle">
+	<dialog class="modal modal-bottom modal-open sm:modal-middle">
 		<div class="modal-box max-h-screen h-3/4 max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
 			<InfoInput on:submit={onInfoSubmitted} classes={$classes} {addClass} />
 		</div>
-	</div>
+	</dialog>
 {/if}
 <main class="hero min-h-[30vh]">
 	<div class="hero-content flex-col">
