@@ -4,11 +4,11 @@
 
 	import { page } from '$app/stores';
 	import { supabase } from '$lib/db';
-	import { sqlEscape } from '$lib/utils';
+	import { sqlEscape, normalize } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
-	import type { VirtualSchedule } from '$lib/InfoInput.d';
+	import type { VirtualSchedule, Classes } from '$lib/InfoInput.d';
 	import type { Database } from '$lib/supabase';
 	import type { Writable } from 'svelte/store';
 
@@ -26,14 +26,27 @@
 		}
 		return data![0];
 	}
+	async function getClasses(room: string) {
+		return await supabase.from('classes').select('*').eq('room', room);
+	}
 	let you: null | {
 		name: string;
 		schedule: Schedule;
 	} = null;
+	let classes: Classes = [];
 	onMount(async () => {
+		{
+			const { data, error } = await getClasses($page.params['room']);
+			if (error !== null) {
+				throw error;
+			}
+			classes = data;
+		}
+		// Load it from localStorage
 		you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
 		if (
 			you !== null &&
+			// the database remembers your name
 			(
 				await supabase
 					.from('schedules')
@@ -42,7 +55,8 @@
 					.eq('student', you['name'])
 			).data?.length == 0
 		) {
-			let toInsert: Schedule & { room: string; student: string } = {
+			// let toInsert: Schedule = you.schedule
+			let toInsert: Schedule = {
 				...you['schedule'],
 				room: $page.params['room'],
 				student: you.name
@@ -68,11 +82,69 @@
 					// if (payload.eventType === 'INSERT') {
 					// 	schedules.update(($schedules) => [...$schedules, payload.new]);
 					// }
-					console.log(payload);
+					console.log('1', payload);
+				}
+			)
+			.on<Database>(
+				'postgres_changes',
+				{
+					event: '*',
+					schema: 'public',
+					table: 'classes',
+					// please don't let this be an SQL injection
+					// (theoretically, this should never be an
+					// sql injection because $page.params
+					// is being validated)
+					filter: `room=eq.${sqlEscape($page.params['room'])}`
+				},
+				async (payload) => {
+					console.log('2', payload);
+					// XXX: Don't fetch new, update old based on
+					// payload.eventType: 'INSERT', 'DELETE', or 'UPDATE'
+					const { data, error } = await getClasses($page.params['room']);
+					if (error !== null) {
+						throw error;
+					}
+					classes = data;
 				}
 			)
 			.subscribe(console.log);
 	});
+	function onInfoSubmitted(event: { detail: { name: string; schedule: VirtualSchedule } }) {
+		const got = event.detail;
+		let toInsert = { ...got.schedule, room: $page.params['room'], student: got.name };
+		supabase
+			.from('schedules')
+			.insert([toInsert])
+			.then(() => {
+				you = { name: event.detail.name, schedule: toInsert };
+				schedules.update(($schedules) => [...$schedules, toInsert]);
+				window.localStorage.setItem($page.params['room'], JSON.stringify(you));
+			});
+	}
+	async function addClass({
+		className,
+		firstName,
+		lastName
+	}: {
+		className: string;
+		firstName: string;
+		lastName: string;
+	}) {
+		const payload = {
+			name: normalize(className),
+			teacher_first: firstName.trim().toLowerCase(),
+			teacher_last: lastName.trim().toLowerCase(),
+			room: $page.params['room']
+		};
+		// XXX: Uh am I actually able to read this
+		const { data, error } = await supabase.from('classes').insert([payload]).select();
+		className = firstName = lastName = '';
+		if (error !== null) {
+			throw error;
+		}
+		return data![0].id;
+	}
 </script>
 
 {#if you === null}
@@ -80,20 +152,7 @@
 		<div class="modal-box max-h-screen h-3/4 max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
-			<InfoInput
-				on:submit={(event) => {
-					const got = event.detail;
-					let toInsert = { ...got['schedule'], room: $page.params['room'], student: got.name };
-					supabase
-						.from('schedules')
-						.insert([toInsert])
-						.then(() => {
-							you = got;
-							schedules.update(($schedules) => [...$schedules, toInsert]);
-							window.localStorage.setItem($page.params['room'], JSON.stringify(you));
-						});
-				}}
-			/>
+			<InfoInput on:submit={onInfoSubmitted} {classes} {addClass} />
 		</div>
 	</div>
 {/if}

@@ -1,18 +1,6 @@
-<script lang="ts" context="module">
-	import { supabase } from './db';
-	import { writable, type Writable } from 'svelte/store';
-	import type { ArrElement } from '$lib/utils';
-	async function getClasses(room: string) {
-		return await supabase.from('classes').select('*').eq('room', room);
-	}
-
-	type Classes = NonNullable<Awaited<ReturnType<typeof getClasses>>['data']>;
-	type Class = ArrElement<Classes>;
-	let classes: Writable<Classes> = writable([]);
-</script>
-
 <script lang="ts">
 	import Fuse from 'fuse.js';
+	import type { Class, Classes } from './InfoInput';
 	import { titlecase, sqlEscape, normalize } from '$lib/utils';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -20,72 +8,29 @@
 	let className = '',
 		firstName = '',
 		lastName = '';
-	async function addClass() {
-		const payload = {
-			name: normalize(className),
-			teacher_first: firstName.trim().toLowerCase(),
-			teacher_last: lastName.trim().toLowerCase(),
-			room: $page.params['room']
-		};
-		// XXX: Uh am I actually able to read this
-		const { data, error } = await supabase.from('classes').insert([payload]).select();
-		className = firstName = lastName = '';
-		if (error !== null) {
-			throw error;
-		}
-		return data;
-	}
-
+	export let addClass: ({
+		className,
+		firstName,
+		lastName
+	}: {
+		className: string;
+		firstName: string;
+		lastName: string;
+	}) => Promise<string>;
+	export let classes: Classes;
 	export let selected: null | string = null;
-	export let alreadySelected: string[];
 	let searcher: Fuse<Class> = new Fuse([], {
 		keys: ['name', 'teacher_first', 'teacher_last']
 	});
-	$: searcher.setCollection($classes);
-	// classes.subscribe((value: Classes) => {
-	// 	searcher.setCollection(value);
-	// });
-	onMount(async () => {
-		const { data, error } = await getClasses($page.params['room']);
-		if (error !== null) {
-			throw error;
-		}
-		$classes = data;
-		supabase
-			.channel('any')
-			.on<Database>(
-				'postgres_changes',
-				{
-					event: '*',
-					schema: 'public',
-					table: 'classes',
-					// please don't let this be an SQL injection
-					// (theoretically, this should never be an
-					// sql injection because $page.params
-					// is being validated)
-					filter: `room=eq.${sqlEscape($page.params['room'])}`
-				},
-				async (payload) => {
-					// XXX: Don't fetch new, update old based on
-					// payload.eventType: 'INSERT', 'DELETE', or 'UPDATE'
-					const { data, error } = await getClasses($page.params['room']);
-					if (error !== null) {
-						throw error;
-					}
-					$classes = data;
-				}
-			)
-			.subscribe();
-	});
-	// TODO: remove alreadySelected
+	$: searcher.setCollection(classes);
 	$: filtered =
 		className == ''
-			? $classes.map((x) => {
+			? classes.map((x) => {
 					return { item: x };
 			  })
 			: searcher.search(className);
 
-	$: isValid =
+	$: isValidClassInfo =
 		className.length > 0 && /^\w+$/.test(firstName.trim()) && /^\w+$/.test(lastName.trim());
 </script>
 
@@ -114,9 +59,9 @@
 				/>
 				<button
 					class="btn btn-primary"
-					disabled={!isValid}
+					disabled={!isValidClassInfo}
 					on:click={async () => {
-						selected = (await addClass())[0].id;
+						selected = await addClass({ className, firstName, lastName });
 					}}
 					><svg
 						xmlns="http://www.w3.org/2000/svg"

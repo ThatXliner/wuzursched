@@ -2,6 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import ClassPicker from './ClassPicker.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
+	import type { Classes } from './InfoInput';
 	let name = '';
 	let periods: UnfinishedSchedule = {
 		'1a': undefined,
@@ -24,6 +25,16 @@
 	function submit() {
 		dispatch('submit', { name, schedule: periods as VirtualSchedule });
 	}
+	export let classes: Classes;
+	export let addClass: ({
+		className,
+		firstName,
+		lastName
+	}: {
+		className: string;
+		firstName: string;
+		lastName: string;
+	}) => Promise<string>;
 </script>
 
 <div class="form-control">
@@ -41,7 +52,7 @@
 					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content">
-					<ClassPicker bind:selected={periods[period]} alreadySelected={values} />
+					<ClassPicker bind:selected={periods[period]} {addClass} {classes} />
 				</div>
 			</div>
 		{/each}
@@ -53,7 +64,7 @@
 					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content">
-					<ClassPicker bind:selected={periods[period]} alreadySelected={values} />
+					<ClassPicker bind:selected={periods[period]} {addClass} {classes} />
 				</div>
 			</div>
 		{/each}

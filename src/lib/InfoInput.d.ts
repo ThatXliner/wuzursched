@@ -18,3 +18,11 @@ export type UnfinishedSchedule = {
 	'4a'?: string;
 	'4b'?: string;
 };
+import { supabase } from './db';
+import type { ArrElement } from '$lib/utils';
+async function getClasses(room: string) {
+	return await supabase.from('classes').select('*').eq('room', room);
+}
+
+export type Classes = NonNullable<Awaited<ReturnType<typeof getClasses>>['data']>;
+export type Class = ArrElement<Classes>;
