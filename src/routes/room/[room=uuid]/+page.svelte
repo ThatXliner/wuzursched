@@ -33,6 +33,7 @@
 		schedule: Schedule;
 	} = null;
 	let classes: Writable<Classes> = writable([]);
+	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = 'CLOSED';
 	onMount(async () => {
 		{
 			const { data, error } = await getClasses($page.params['room']);
@@ -101,7 +102,9 @@
 					$classes = [...$classes, payload.new];
 				}
 			)
-			.subscribe(console.log);
+			.subscribe((status) => {
+				realtimeStatus = status;
+			});
 	});
 	function onInfoSubmitted(event: { detail: { name: string; schedule: VirtualSchedule } }) {
 		const got = event.detail;
@@ -189,51 +192,57 @@
 						d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
 					/>
 				</svg></a
-			><button class="btn btn-primary mx-auto" disabled>Find common classes</button>
+			>
+			<button class="btn btn-primary mx-auto" disabled>Find common classes</button>
 		</div>
 	</div>
 </main>
-<div>
-	<div class="flex flex-wrap space-x-4 justify-evenly">
-		{#each $schedules as schedule}
-			<div
-				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
-			>
-				<input type="checkbox" />
-				<div class="collapse-title text-xl font-medium">
-					{schedule.student}'s schedule
-					<!-- TODO: Show if in common -->
-				</div>
-				<div class="collapse-content hidden">
-					<div class="overflow-x-auto">
-						<!-- If statement to appease type checker -->
-						{#if you !== null}
-							<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
-						{/if}
-					</div>
+
+<div class="flex flex-wrap space-x-4 justify-evenly">
+	{#each $schedules as schedule}
+		<div
+			class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
+		>
+			<input type="checkbox" />
+			<div class="collapse-title text-xl font-medium">
+				{schedule.student}'s schedule
+				<!-- TODO: Show if in common -->
+			</div>
+			<div class="collapse-content hidden">
+				<div class="overflow-x-auto">
+					<!-- If statement to appease type checker -->
+					{#if you !== null}
+						<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
+					{/if}
 				</div>
 			</div>
-		{:else}
-			<div class="alert alert-warning shadow-lg mx-auto w-fit">
-				<div>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						class="stroke-current flex-shrink-0 h-6 w-6"
-						fill="none"
-						viewBox="0 0 24 24"
-						><path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-						/></svg
-					>
-					<span>No schedules found. Invite people!</span>
-				</div>
+		</div>
+	{:else}
+		<div class="alert alert-warning shadow-lg mx-auto w-fit">
+			<div>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="stroke-current flex-shrink-0 h-6 w-6"
+					fill="none"
+					viewBox="0 0 24 24"
+					><path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="2"
+						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+					/></svg
+				>
+				<span>No schedules found. Invite people!</span>
 			</div>
-		{/each}
-	</div>
+		</div>
+	{/each}
 </div>
+<!-- It doesn't seem to be centered
+when left is set to 50% -->
+<span class="fixed left-[43%] bottom-10 pointer-events-none btn btn-outline rounded-box">
+	Realtime: {#if realtimeStatus === 'SUBSCRIBED'}<span class="badge badge-success">connected</span
+		>{:else}<span class="badge badge-error">disconnected</span>{/if}
+</span>
 
 <style>
 	input[type='checkbox']:checked ~ .collapse-content {
