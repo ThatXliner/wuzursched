@@ -35,27 +35,27 @@
 	<div class="card-body">
 		<div class="form-control">
 			<span>Search/Create a class</span>
-			<label class="input-group">
+			<label class="join">
 				<input
 					type="text"
 					placeholder="Class name"
-					class="input input-bordered w-32"
+					class="input input-bordered w-32 join-item"
 					bind:value={className}
 				/>
 				<input
 					type="text"
 					placeholder="John"
-					class="input input-bordered w-20"
+					class="input input-bordered w-20 join-item"
 					bind:value={firstName}
 				/>
 				<input
 					type="text"
 					placeholder="Doe"
-					class="input input-bordered w-20"
+					class="input input-bordered w-20 join-item"
 					bind:value={lastName}
 				/>
 				<button
-					class="btn btn-primary"
+					class="btn btn-primary join-item"
 					disabled={!isValidClassInfo}
 					on:click={async () => {
 						selected = await addClass({ className, firstName, lastName });

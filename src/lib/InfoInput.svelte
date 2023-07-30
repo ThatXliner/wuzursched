@@ -19,7 +19,7 @@
 	$: isValid =
 		name.length > 0 &&
 		Object.values(periods).every((x) => x !== undefined) &&
-		[...new Set(values)].length == values.length;
+		[...new Set(values)].filter((x) => x !== null).length == values.length;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;
 	function submit() {
@@ -38,12 +38,14 @@
 </script>
 
 <div class="form-control">
-	<label class="label">
-		<span class="label-text">Name</span>
+	<label class="label justify-center">
+		<span class="label-text px-3">Name</span>
 		<input bind:value={name} type="text" placeholder="Bryan Hu" class="input input-bordered" />
 	</label>
 </div>
 <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+<!-- We don't use details + summary tags because those will
+	stay open when we click on other buttons -->
 <div class="flex flex-row justify-evenly">
 	<div class="w-36">
 		{#each aDay as period}
@@ -51,7 +53,7 @@
 				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] != undefined}
 					>{period.toUpperCase()}</span
 				>
-				<div tabindex="0" class="dropdown-content">
+				<div tabindex="0" class="dropdown-content z-[1]">
 					<ClassPicker bind:selected={periods[period]} {addClass} {classes} />
 				</div>
 			</div>
@@ -63,7 +65,7 @@
 				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] != undefined}
 					>{period.toUpperCase()}</span
 				>
-				<div tabindex="0" class="dropdown-content">
+				<div tabindex="0" class="dropdown-content z-[1]">
 					<ClassPicker bind:selected={periods[period]} {addClass} {classes} />
 				</div>
 			</div>
