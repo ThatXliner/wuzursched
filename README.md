@@ -1,5 +1,7 @@
 # Wuzursched
 
+![](./logo.svg)
+
 Wuzursched (pronounced [`/wʌzjɜskɛd/`](http://ipa-reader.xyz/?text=wʌzjɜskɛd), "wuzz-your-sked") is a website for sharing your schedules and viewing others, making comparing schedules a breeze.
 
 ## Development
