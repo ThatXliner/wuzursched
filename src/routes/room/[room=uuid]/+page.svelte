@@ -239,7 +239,7 @@
 </div>
 <!-- It doesn't seem to be centered
 when left is set to 50% -->
-<span class="fixed left-[43%] bottom-10 pointer-events-none btn btn-outline rounded-box">
+<span class="fixed center-horizontal bottom-5 pointer-events-none btn btn-outline rounded-box">
 	Realtime: {#if realtimeStatus === 'SUBSCRIBED'}<span class="badge badge-success">connected</span
 		>{:else}<span class="badge badge-error">disconnected</span>{/if}
 </span>
@@ -247,5 +247,11 @@ when left is set to 50% -->
 <style>
 	input[type='checkbox']:checked ~ .collapse-content {
 		display: block;
+	}
+	.center-horizontal {
+		/*shift 50% of the page*/
+		left: 50%;
+		/* Move 50% of itself backwards */
+		transform: translate(-50%, 0);
 	}
 </style>
