@@ -237,8 +237,6 @@
 		</div>
 	{/each}
 </div>
-<!-- It doesn't seem to be centered
-when left is set to 50% -->
 <span class="fixed center-horizontal bottom-5 pointer-events-none btn btn-outline rounded-box">
 	Realtime: {#if realtimeStatus === 'SUBSCRIBED'}<span class="badge badge-success">connected</span
 		>{:else}<span class="badge badge-error">disconnected</span>{/if}
