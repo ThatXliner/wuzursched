@@ -30,7 +30,7 @@
 	$: isValidClassInfo =
 		className.length > 0 &&
 		/^\w+$/.test(firstName.trim()) &&
-		/^\w+$/.test(lastName.trim().replaceAll(/\s+/, ''));
+		/^\w+$/.test(lastName.trim().replaceAll(/\s+/g, ''));
 </script>
 
 <div class="card w-96 bg-base-100 shadow-xl">
@@ -63,7 +63,7 @@
 						selected = await addClass({
 							className,
 							firstName: firstName.trim(),
-							lastName: lastName.trim().replaceAll(/\s+/, '')
+							lastName: lastName.trim().replaceAll(/\s+/g, '')
 						});
 						// Reset the search
 						className = '';
