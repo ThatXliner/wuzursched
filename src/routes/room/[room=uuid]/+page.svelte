@@ -30,6 +30,7 @@
 	async function _getClass(id: string) {
 		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		console.assert(error !== null);
+		console.assert(data !== null);
 		return data![0];
 	}
 	const getClass = memoize(_getClass);
@@ -45,7 +46,11 @@
 	onMount(async () => {
 		{
 			const { data, error } = await getClasses($page.params['room']);
-			console.assert(error !== null);
+			// did not convert to console.assert
+			// to appease TypeScript
+			if (error !== null) {
+				throw error;
+			}
 			$classes = data;
 		}
 		// Load it from localStorage
