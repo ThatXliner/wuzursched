@@ -5,13 +5,14 @@ export type Message = { contents: string; type: MessageType; id: number; useRawH
 
 export const messages: Writable<Message[]> = writable([]);
 type Options = { duration: number; useRawHTML: boolean };
-export function addToast(message: string, type: MessageType = 'info', options: Options) {
+export function addToast(
+	message: string,
+	type: MessageType = 'info',
+	options: Options = { duration: 5000, useRawHTML: false }
+) {
 	const id = Math.random();
-	messages.update((x) => [
-		...x,
-		{ contents: message, type, id, useRawHTML: options?.useRawHTML ?? false }
-	]);
+	messages.update((x) => [...x, { contents: message, type, id, useRawHTML: options.useRawHTML }]);
 	setTimeout(() => {
 		messages.update((x) => x.filter((e) => e.id != id));
-	}, options?.duration ?? 5000);
+	}, options.duration);
 }
