@@ -12,8 +12,9 @@
 	import type { Writable } from 'svelte/store';
 
 	let onlyMatching: boolean;
+	const PERIODS = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
 	function matches(a: VirtualSchedule, b: VirtualSchedule) {
-		return Object.keys(a).some((x) => a[x] == b[x]);
+		return PERIODS.some((x) => a[x] == b[x]);
 	}
 	type Schedule = VirtualSchedule & {
 		room: string;
