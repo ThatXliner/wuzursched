@@ -13,7 +13,6 @@
 
 	let onlyMatching: boolean;
 	function matches(a: VirtualSchedule, b: VirtualSchedule) {
-		console.log(Object.keys(a), a, b);
 		return Object.keys(a).some((x) => a[x] == b[x]);
 	}
 	type Schedule = VirtualSchedule & {
