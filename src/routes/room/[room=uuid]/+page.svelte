@@ -10,13 +10,13 @@
 
 	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
-	import { memoize } from 'lodash-es';
+	import memoize from 'lodash-es/memoize';
 	import { fade } from 'svelte/transition';
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
 
 	let onlyMatching: boolean;
-	const PERIODS = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
+	const PERIODS: (keyof VirtualSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
 	function matches(a: VirtualSchedule, b: VirtualSchedule) {
 		return PERIODS.some((x) => a[x] == b[x]);
 	}
@@ -29,7 +29,9 @@
 	let schedules: Writable<Schedule[]> = writable(data.data);
 	async function _getClass(id: string) {
 		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
-		console.assert(error !== null);
+		if (error !== null) {
+			throw error;
+		}
 		console.assert(data !== null);
 		return data![0];
 	}
