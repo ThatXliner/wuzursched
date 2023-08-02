@@ -10,6 +10,7 @@
 
 	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
+	import { memoize } from 'lodash-es';
 
 	let onlyMatching: boolean;
 	const PERIODS = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
@@ -23,13 +24,14 @@
 	/** @type {import('./$types').PageData */
 	export let data;
 	let schedules: Writable<Schedule[]> = writable(data.data);
-	async function getClass(id: string) {
+	async function _getClass(id: string) {
 		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		if (error !== null) {
 			throw error;
 		}
 		return data![0];
 	}
+	const getClass = memoize(_getClass);
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
@@ -142,6 +144,7 @@
 		// XXX: Uh am I actually able to read this
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
 		if (error !== null) {
+			// error.code == 23505 is duplicate class
 			throw error;
 		}
 		return data![0].id;
