@@ -182,7 +182,9 @@
 			<button
 				class="btn btn-accent"
 				on:click={() => {
-					navigator.clipboard.writeText(window.location.href);
+					navigator.clipboard.writeText(window.location.href).then(() => {
+						addToast('Link copied to clipboard', 'success');
+					});
 				}}
 				><svg
 					xmlns="http://www.w3.org/2000/svg"
