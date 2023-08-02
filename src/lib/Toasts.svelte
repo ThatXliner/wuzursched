@@ -67,7 +67,11 @@
 					/>
 				</svg>
 			{/if}
-			<span>{@html message.contents}</span>
+			{#if message.unsafe}
+				<span>{@html message.contents}</span>
+			{:else}
+				<span>{message.contents}</span>
+			{/if}
 		</div>
 	{/each}
 </div>
