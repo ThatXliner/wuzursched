@@ -28,7 +28,9 @@
 			: searcher.search(className);
 
 	$: isValidClassInfo =
-		className.length > 0 && /^\w+$/.test(firstName.trim()) && /^\w+$/.test(lastName.trim());
+		className.length > 0 &&
+		/^\w+$/.test(firstName.trim()) &&
+		/^\w+$/.test(lastName.trim().replaceAll(/\s+/, ''));
 </script>
 
 <div class="card w-96 bg-base-100 shadow-xl">
@@ -58,7 +60,11 @@
 					class="btn btn-primary join-item"
 					disabled={!isValidClassInfo}
 					on:click={async () => {
-						selected = await addClass({ className, firstName, lastName });
+						selected = await addClass({
+							className,
+							firstName: firstName.trim(),
+							lastName: lastName.trim().replaceAll(/\s+/, '')
+						});
 						// Reset the search
 						className = '';
 						firstName = '';
