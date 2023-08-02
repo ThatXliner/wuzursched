@@ -2,6 +2,7 @@
 	import Fuse from 'fuse.js';
 	import type { Class, Classes } from './InfoInput';
 	import { titlecase } from '$lib/utils';
+	import { addToast } from './toasts';
 	let className = '',
 		firstName = '',
 		lastName = '';
@@ -26,11 +27,10 @@
 					return { item: x };
 			  })
 			: searcher.search(className);
-
-	$: isValidClassInfo =
-		className.length > 0 &&
-		/^\w+$/.test(firstName.trim()) &&
-		/^\w+$/.test(lastName.trim().replaceAll(/\s+/g, ''));
+	$: classNameValid = className.length > 0;
+	$: firstNameValid = /^\w+$/.test(firstName.trim());
+	$: lastNameValid = /^\w+$/.test(lastName.trim().replaceAll(/\s+/g, ''));
+	$: isValidClassInfo = classNameValid && firstNameValid && lastNameValid;
 </script>
 
 <div class="card w-96 bg-base-100 shadow-xl">
@@ -58,8 +58,19 @@
 				/>
 				<button
 					class="btn btn-primary join-item"
-					disabled={!isValidClassInfo}
 					on:click={async () => {
+						if (!isValidClassInfo) {
+							if (!classNameValid) {
+								addToast('Class name must not be empty', 'error');
+							}
+							if (!firstNameValid) {
+								addToast("The teacher's first name must be a single word", 'error');
+							}
+							if (!lastNameValid) {
+								addToast("The teacher's last name must not be empty", 'error');
+							}
+							return;
+						}
 						selected = await addClass({
 							className,
 							firstName: firstName.trim(),

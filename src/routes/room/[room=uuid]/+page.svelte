@@ -11,6 +11,9 @@
 	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
 	import { memoize } from 'lodash-es';
+	import { fade } from 'svelte/transition';
+	import Toasts from '$lib/Toasts.svelte';
+	import { addToast } from '$lib/toasts';
 
 	let onlyMatching: boolean;
 	const PERIODS = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
@@ -26,9 +29,7 @@
 	let schedules: Writable<Schedule[]> = writable(data.data);
 	async function _getClass(id: string) {
 		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
-		if (error !== null) {
-			throw error;
-		}
+		console.assert(error !== null);
 		return data![0];
 	}
 	const getClass = memoize(_getClass);
@@ -44,9 +45,7 @@
 	onMount(async () => {
 		{
 			const { data, error } = await getClasses($page.params['room']);
-			if (error !== null) {
-				throw error;
-			}
+			console.assert(error !== null);
 			$classes = data;
 		}
 		// Load it from localStorage
@@ -141,18 +140,22 @@
 			teacher_last: lastName.trim().toLowerCase(),
 			room: $page.params['room']
 		};
-		// XXX: Uh am I actually able to read this
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
 		if (error !== null) {
-			// error.code == 23505 is duplicate class
+			// error.code == 23505 is duplicate entry
+			if (error.code == '23505') {
+				addToast('Attempted to add duplicate class', 'error');
+			}
 			throw error;
 		}
 		return data![0].id;
 	}
 </script>
 
+<Toasts />
 {#if you === null}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
+		<Toasts />
 		<div class="modal-box max-h-screen h-3/4 max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
