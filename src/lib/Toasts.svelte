@@ -67,7 +67,7 @@
 					/>
 				</svg>
 			{/if}
-			{#if message.unsafe}
+			{#if message.useRawHTML}
 				<span>{@html message.contents}</span>
 			{:else}
 				<span>{message.contents}</span>

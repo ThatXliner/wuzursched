@@ -11,7 +11,6 @@
 	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
 	import memoize from 'lodash-es/memoize';
-	import { fade } from 'svelte/transition';
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
 
