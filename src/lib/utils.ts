@@ -30,12 +30,17 @@ export function sqlEscape(str: string) {
 	});
 }
 export function normalize(className: string) {
-	return className
-		.trim()
-		.replace(' II', ' 2')
-		.replace(/ I$/, ' 1')
-		.replace(/\s+/, ' ')
-		.toLowerCase();
+	return (
+		className
+			.toLowerCase()
+			.trim()
+			// Space & Electricity -> SE
+			.replace(/(\w+)\s*&\s*(\w+)$/, (_, p1: string, p2: string) => p1[0] + p2[0])
+			.replace(/ iii$/, ' 3')
+			.replace(/ ii$/, ' 2')
+			.replace(/ i$/, ' 1')
+			.replace(/\s+/, ' ')
+	);
 }
 export type ArrElement<ArrType> = ArrType extends readonly (infer ElementType)[]
 	? ElementType
