@@ -4,6 +4,10 @@
 
 Wuzursched (pronounced [`/wʌzjɜskɛd/`](http://ipa-reader.xyz/?text=wʌzjɜskɛd), "wuzz-your-sked") is a website for sharing your schedules and viewing others, making comparing schedules a breeze.
 
+## Current limitations
+
+- Good/strict class normalization is a long-term goal.
+
 ## Development
 
 Once you've `git clone`d and installed dependencies with `pnpm install`, start a development server:
@@ -16,8 +20,6 @@ pnpm run dev -- --open
 ```
 
 ## Building
-
-To create a production version of your app:
 
 ```bash
 pnpm run build

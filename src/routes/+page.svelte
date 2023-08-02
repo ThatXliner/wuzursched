@@ -1,9 +1,9 @@
 <script lang="ts">
 	let roomId: string;
+	const UUID_REGEX =
+		/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/;
 	function isValid(id: string): boolean {
-		return /[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/.test(
-			id
-		);
+		return UUID_REGEX.test(id);
 	}
 </script>
 
@@ -31,7 +31,7 @@
 								class="btn btn-primary join-item"
 								disabled={!isValid(roomId)}
 								on:click={() => {
-									window.location.href = `/room/${roomId.trim()}`;
+									window.location.href = `/room/${roomId.match(UUID_REGEX)?.[0]}`;
 								}}>Join</button
 							>
 						</label>
@@ -42,17 +42,3 @@
 		</div>
 	</div>
 </section>
-<!-- <section class="h-screen">
-	<div class="hero h-full bg-base-100">
-		<div class="hero-content flex-col lg:flex-row">
-			<img src="https://placeimg.com/260/400/arch" class="max-w-[50%] rounded-lg shadow-2xl" />
-			<div>
-				<h1 class="text-4xl">Never stress about first day</h1>
-				<p class="py-6">
-					Figure who you share classes with, fast. Invite your friends to participate
-				</p>
-				<a href="/powerschool" class="m-auto btn btn-primary">Get Started</a>
-			</div>
-		</div>
-	</div>
-</section> -->

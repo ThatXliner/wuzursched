@@ -228,7 +228,7 @@
 	</div>
 </main>
 
-<div class="flex flex-wrap space-x-4 justify-evenly">
+<div class="flex flex-wrap justify-evenly">
 	{#each $schedules as schedule}
 		<!-- You is guaranteed to !== null -->
 		<!-- I'm not sure how to express TypeScript -->

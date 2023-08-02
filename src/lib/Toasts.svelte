@@ -4,7 +4,7 @@
 </script>
 
 <div class="toast toast-top toast-end z-[99]">
-	{#each $messages as message}
+	{#each $messages as message (message.id)}
 		<div class="alert alert-{message.type}" out:fade>
 			{#if message.type === 'info'}
 				<svg
