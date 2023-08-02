@@ -86,7 +86,7 @@
 			>
 		</div>
 		<ul class="menu h-60 overflow-hidden overflow-y-scroll flex-nowrap">
-			<li class="menu-title"><span>Classes</span></li>
+			<li class="menu-title">Classes</li>
 			{#each filtered as entry (entry.item.id)}
 				{@const klass = entry.item}
 				{@const isSelected = selected === klass.id}
