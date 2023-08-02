@@ -6,7 +6,7 @@
 	<div>
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
-			class="stroke-current flex-shrink-0 h-6 w-6"
+			class="stroke-current flex-shrink-0 h-6 w-6 inline"
 			fill="none"
 			viewBox="0 0 24 24"
 			><path
