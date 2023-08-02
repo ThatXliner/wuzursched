@@ -11,6 +11,11 @@
 	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
 
+	let onlyMatching: boolean;
+	function matches(a: VirtualSchedule, b: VirtualSchedule) {
+		console.log(Object.keys(a), a, b);
+		return Object.keys(a).some((x) => a[x] == b[x]);
+	}
 	type Schedule = VirtualSchedule & {
 		room: string;
 		student: string;
@@ -152,10 +157,13 @@
 		</div>
 	</dialog>
 {/if}
+
 <main class="hero min-h-[30vh]">
 	<div class="hero-content flex-col">
 		<h1 class="text-5xl text-center font-bold">
-			Schedules for room <code>{$page.params['room'].slice(0, 8)}</code>
+			Schedules for room <code class="bg-base-200 p-1 rounded-lg"
+				>{$page.params['room'].slice(0, 8)}</code
+			>
 		</h1>
 		<div class="flex justify-evenly flex-row space-x-4">
 			<button
@@ -193,30 +201,42 @@
 					/>
 				</svg></a
 			>
-			<button class="btn btn-primary mx-auto" disabled>Find common classes</button>
+			<div class="tooltip" data-tip="Only show schedules with matching classes">
+				<div class="form-control bg-base-200 rounded-box p-1">
+					<label class="label cursor-pointer space-x-3">
+						<span class="label-text">Only show matching</span>
+						<input type="checkbox" class="toggle toggle-primary" bind:checked={onlyMatching} />
+					</label>
+				</div>
+			</div>
 		</div>
 	</div>
 </main>
 
 <div class="flex flex-wrap space-x-4 justify-evenly">
 	{#each $schedules as schedule}
-		<div
-			class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
-		>
-			<input type="checkbox" />
-			<div class="collapse-title text-xl font-medium">
-				{schedule.student}'s schedule
-				<!-- TODO: Show if in common -->
-			</div>
-			<div class="collapse-content hidden">
-				<div class="overflow-x-auto">
-					<!-- If statement to appease type checker -->
-					{#if you !== null}
-						<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
-					{/if}
+		<!-- You is guaranteed to !== null -->
+		<!-- I'm not sure how to express TypeScript -->
+		<!-- Within Svelte code -->
+		{#if (onlyMatching && matches(you.schedule, schedule)) || !onlyMatching}
+			<div
+				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
+			>
+				<input type="checkbox" />
+				<div class="collapse-title text-xl font-medium">
+					{schedule.student}'s schedule
+					<!-- TODO: Show if in common -->
+				</div>
+				<div class="collapse-content hidden">
+					<div class="overflow-x-auto">
+						<!-- If statement to appease type checker -->
+						{#if you !== null}
+							<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
+						{/if}
+					</div>
 				</div>
 			</div>
-		</div>
+		{/if}
 	{:else}
 		<div class="alert alert-warning shadow-lg mx-auto w-fit">
 			<div>
