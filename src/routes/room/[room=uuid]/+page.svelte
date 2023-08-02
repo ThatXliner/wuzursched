@@ -92,6 +92,7 @@
 				(payload) => {
 					if (payload.eventType === 'INSERT') {
 						schedules.update(($schedules) => [...$schedules, payload.new]);
+						addToast(`${payload.new.student} just added their schedule to this room`);
 					}
 					console.log('1', payload);
 				}
