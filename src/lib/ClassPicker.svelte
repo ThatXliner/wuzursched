@@ -27,14 +27,14 @@
 			? classes.map((x) => {
 					return { item: x };
 			  })
-			: searcher.search(className);
+			: searcher.search(className + firstName + lastName);
 	$: classNameValid = className.length > 0;
 	$: firstNameValid = /^\w+$/.test(firstName.trim());
 	$: lastNameValid = /^\w+$/.test(lastName.trim().replaceAll(/\s+/g, ''));
 	$: isValidClassInfo = classNameValid && firstNameValid && lastNameValid;
 </script>
 
-<div class="card w-96 bg-base-100 shadow-xl">
+<div class="card bg-base-100 shadow-xl">
 	<div class="card-body">
 		<div class="form-control">
 			<span>Search/Create a class</span>
@@ -61,6 +61,7 @@
 					class="btn btn-primary join-item"
 					on:click={async () => {
 						if (!isValidClassInfo) {
+							console.log(className, firstName, lastName);
 							if (!classNameValid) {
 								addToast('Class name must not be empty', 'error');
 							}

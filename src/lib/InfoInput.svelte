@@ -49,6 +49,7 @@
 <!-- We don't use details + summary tags because those will
 	stay open when we click on other buttons -->
 <div class="flex flex-row justify-evenly">
+	<!-- TODO: no w-36 but instead a more responsive solution -->
 	<div class="w-36">
 		{#each aDay as period}
 			<div class="dropdown">
