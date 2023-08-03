@@ -18,6 +18,8 @@
 	type MenuItem = Class & { used?: string };
 	export let classes: MenuItem[];
 	export let selected: null | string = null;
+	let selectedClassName: null | string = null;
+	export let period = '';
 	let searcher: Fuse<MenuItem> = new Fuse([], {
 		keys: ['name', 'teacher_first', 'teacher_last']
 	});
@@ -32,12 +34,24 @@
 	$: firstNameValid = /^\w+$/.test(firstName.trim());
 	$: lastNameValid = /^\w+$/.test(lastName.trim().replaceAll(/\s+/g, ''));
 	$: isValidClassInfo = classNameValid && firstNameValid && lastNameValid;
+	let dialog: HTMLDialogElement;
 </script>
 
-<div class="card bg-base-100 shadow-xl">
-	<div class="card-body">
+<div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
+	<button
+		class="btn m-1"
+		class:btn-success={selected !== null}
+		on:click={() => {
+			dialog.showModal();
+		}}>{period}</button
+	>
+</div>
+
+<dialog bind:this={dialog} class="modal">
+	<form method="dialog" class="modal-box">
+		<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 		<div class="form-control">
-			<span>Search/Create a class</span>
+			<span>Search/Create a class for {period}</span>
 			<label class="join">
 				<input
 					type="text"
@@ -73,6 +87,7 @@
 							}
 							return;
 						}
+						selectedClassName = className;
 						selected = await addClass({
 							className,
 							firstName: firstName.trim(),
@@ -107,9 +122,16 @@
 					<li
 						on:click={() => {
 							selected = isSelected ? null : klass.id;
+							selectedClassName = isSelected ? null : klass.name;
+							dialog.close();
 						}}
 						on:keydown={() => {
+							// For accessibility, we also implement keydown
+							// (this accessibility manuever should be
+							// isolated into a use: directive)
 							selected = isSelected ? null : klass.id;
+							selectedClassName = isSelected ? null : klass.name;
+							dialog.close();
 						}}
 					>
 						<span class:active={isSelected}
@@ -133,5 +155,9 @@
 			{:else}<p>No class found. Make one!</p>
 			{/each}
 		</ul>
-	</div>
-</div>
+	</form>
+	<!-- So that clicking outside would also close the modal -->
+	<form method="dialog" class="modal-backdrop">
+		<button>close</button>
+	</form>
+</dialog>

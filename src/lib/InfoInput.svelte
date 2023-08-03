@@ -49,45 +49,34 @@
 <!-- We don't use details + summary tags because those will
 	stay open when we click on other buttons -->
 <div class="flex flex-row justify-evenly">
-	<!-- TODO: no w-36 but instead a more responsive solution -->
+	<!-- TODO: no w-36 but instead a more responsive solution with
+	flexbox -->
 	<div class="w-36">
 		{#each aDay as period}
-			<div class="dropdown">
-				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] != undefined}
-					>{period.toUpperCase()}</span
-				>
-				<div tabindex="0" class="dropdown-content z-[1]">
-					<ClassPicker
-						bind:selected={periods[period]}
-						{addClass}
-						classes={classes.map((x) =>
-							Object.assign({}, x, {
-								used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
-							})
-						)}
-					/>
-				</div>
-			</div>
+			<ClassPicker
+				bind:selected={periods[period]}
+				{addClass}
+				period={period.toUpperCase()}
+				classes={classes.map((x) =>
+					Object.assign({}, x, {
+						used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
+					})
+				)}
+			/>
 		{/each}
 	</div>
 	<div class="w-36">
 		{#each bDay as period}
-			<div class="dropdown dropdown-end">
-				<span tabindex="0" class="btn m-1" class:btn-success={periods[period] != undefined}
-					>{period.toUpperCase()}</span
-				>
-				<div tabindex="0" class="dropdown-content z-[1]">
-					<ClassPicker
-						bind:selected={periods[period]}
-						{addClass}
-						classes={classes.map((x) =>
-							Object.assign({}, x, {
-								used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
-							})
-						)}
-					/>
-				</div>
-			</div>
+			<ClassPicker
+				bind:selected={periods[period]}
+				{addClass}
+				period={period.toUpperCase()}
+				classes={classes.map((x) =>
+					Object.assign({}, x, {
+						used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
+					})
+				)}
+			/>
 		{/each}
 	</div>
 </div>
