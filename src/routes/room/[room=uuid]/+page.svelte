@@ -272,9 +272,15 @@
 		</div>
 	{/each}
 </div>
-<span class="fixed center-horizontal bottom-5 pointer-events-none btn btn-outline rounded-box">
-	Realtime: {#if realtimeStatus === 'SUBSCRIBED'}<span class="badge badge-success">connected</span
-		>{:else}<span class="badge badge-error">disconnected</span>{/if}
+
+<span
+	class="fixed center-horizontal bottom-5 drop-shadow-lg tooltip"
+	data-tip="You are {realtimeStatus === 'SUBSCRIBED'
+		? 'connected'
+		: 'disconnected'} to the realtime server"
+>
+	{#if realtimeStatus === 'SUBSCRIBED'}<span class="badge badge-success p-3">connected</span
+		>{:else}<span class="badge badge-error p-3">disconnected</span>{/if}
 </span>
 
 <style>
