@@ -18,8 +18,8 @@
 				</h1>
 
 				<i class="py-6 dark:text-gray-300 font-mono block">What's your schedule?</i>
-				<div class="flex justify-evenly space-x-5">
-					<div class="form-control inline-block">
+				<div class="flex justify-evenly md:space-x-3 space-y-3 md:space-y-0 flex-col md:flex-row">
+					<div class="form-control inline">
 						<label class="join">
 							<input
 								type="text"
