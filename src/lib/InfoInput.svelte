@@ -3,6 +3,7 @@
 	import ClassPicker from './ClassPicker.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
 	import type { Classes } from './InfoInput';
+	import { includes } from 'lodash-es';
 	let name = '';
 	let periods: UnfinishedSchedule = {
 		'1a': undefined,
@@ -15,7 +16,8 @@
 		'4b': undefined
 	};
 	const dispatch = createEventDispatcher();
-	$: values = [...Object.values(periods)];
+	const PERIODS: (keyof UnfinishedSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
+	$: values = PERIODS.map((period) => periods[period]);
 	$: isValid =
 		name.length > 0 &&
 		Object.values(periods).every((x) => x !== undefined) &&
@@ -54,7 +56,15 @@
 					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content z-[1]">
-					<ClassPicker bind:selected={periods[period]} {addClass} {classes} />
+					<ClassPicker
+						bind:selected={periods[period]}
+						{addClass}
+						classes={classes.map((x) =>
+							Object.assign({}, x, {
+								used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
+							})
+						)}
+					/>
 				</div>
 			</div>
 		{/each}
@@ -66,7 +76,15 @@
 					>{period.toUpperCase()}</span
 				>
 				<div tabindex="0" class="dropdown-content z-[1]">
-					<ClassPicker bind:selected={periods[period]} {addClass} {classes} />
+					<ClassPicker
+						bind:selected={periods[period]}
+						{addClass}
+						classes={classes.map((x) =>
+							Object.assign({}, x, {
+								used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
+							})
+						)}
+					/>
 				</div>
 			</div>
 		{/each}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
-	import type { Class, Classes } from './InfoInput';
+	import type { Class } from './InfoInput';
 	import { titlecase } from '$lib/utils';
 	import { addToast } from './toasts';
 	let className = '',
@@ -15,9 +15,10 @@
 		firstName: string;
 		lastName: string;
 	}) => Promise<string>;
-	export let classes: Classes;
+	type MenuItem = Class & { used?: string };
+	export let classes: MenuItem[];
 	export let selected: null | string = null;
-	let searcher: Fuse<Class> = new Fuse([], {
+	let searcher: Fuse<MenuItem> = new Fuse([], {
 		keys: ['name', 'teacher_first', 'teacher_last']
 	});
 	$: searcher.setCollection(classes);
@@ -101,21 +102,33 @@
 			{#each filtered as entry (entry.item.id)}
 				{@const klass = entry.item}
 				{@const isSelected = selected === klass.id}
-				<li
-					on:click={() => {
-						selected = isSelected ? null : klass.id;
-					}}
-					on:keydown={() => {
-						selected = isSelected ? null : klass.id;
-					}}
-				>
-					<span class:active={isSelected}
-						>{titlecase(klass['name'])}
-						<span class="text-sm text-gray-500" class:text-white={isSelected}
-							>{titlecase(klass.teacher_first)} {titlecase(klass.teacher_last)}</span
-						></span
+				{#if entry.item?.used === undefined || selected === klass.id}
+					<li
+						on:click={() => {
+							selected = isSelected ? null : klass.id;
+						}}
+						on:keydown={() => {
+							selected = isSelected ? null : klass.id;
+						}}
 					>
-				</li>
+						<span class:active={isSelected}
+							>{titlecase(klass['name'])}
+							<span class="text-sm text-gray-500" class:text-white={isSelected}
+								>{titlecase(klass.teacher_first)} {titlecase(klass.teacher_last)}</span
+							></span
+						>
+					</li>
+				{:else}
+					<li class="disabled">
+						<span
+							>{titlecase(klass['name'])}
+							<span class="text-sm text-gray-500"
+								>{titlecase(klass.teacher_first)}
+								{titlecase(klass.teacher_last)} (already used in {klass.used})</span
+							></span
+						>
+					</li>
+				{/if}
 			{:else}<p>No class found. Make one!</p>
 			{/each}
 		</ul>
