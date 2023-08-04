@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import ClassPicker from './ClassPicker.svelte';
-	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
-	import type { Classes } from './InfoInput';
-	import { PERIODS } from './InfoInput';
+	import type { UnfinishedSchedule, VirtualSchedule, Classes } from './InfoInput.d';
+	import { PERIODS } from './InfoInput.d';
 	import type { AddClassParams } from './db';
 	let name = '';
 	let periods: UnfinishedSchedule = {

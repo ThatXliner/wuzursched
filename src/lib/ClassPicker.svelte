@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
-	import type { Class } from './InfoInput';
+	import type { Class } from './InfoInput.d';
 	import { titlecase } from '$lib/utils';
 	import { addToast } from './toasts';
 	import { page } from '$app/stores';
