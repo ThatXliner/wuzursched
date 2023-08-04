@@ -3,20 +3,30 @@
 	import InfoInput from '$lib/InfoInput.svelte';
 
 	import { page } from '$app/stores';
-	import { supabase } from '$lib/db';
+	import { supabase, getClasses, getClass, addClass as _addClass } from '$lib/db';
+	import type { AddClassParams } from '$lib/db';
 	import { sqlEscape, normalize } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
 	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
+	import { PERIODS } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
-	import memoize from 'lodash-es/memoize';
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
+	import type { PostgrestError } from '@supabase/supabase-js';
 
 	let onlyMatching: boolean;
-	const PERIODS: (keyof VirtualSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
-	function matches(a: VirtualSchedule, b: VirtualSchedule) {
+	const addClass = (args: AddClassParams): Promise<string> =>
+		addClass(args).catch((error: PostgrestError) => {
+			// error.code == 23505 is duplicate entry
+			if (error.code == '23505') {
+				addToast('Attempted to add duplicate class', 'error');
+			}
+			throw error;
+		});
+
+	function areSchedulesEqual(a: VirtualSchedule, b: VirtualSchedule) {
 		return PERIODS.some((x) => a[x] == b[x]);
 	}
 	type Schedule = VirtualSchedule & {
@@ -26,18 +36,6 @@
 	/** @type {import('./$types').PageData */
 	export let data;
 	let schedules: Writable<Schedule[]> = writable(data.data);
-	async function _getClass(id: string) {
-		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
-		if (error !== null) {
-			throw error;
-		}
-		console.assert(data !== null);
-		return data![0];
-	}
-	const getClass = memoize(_getClass);
-	async function getClasses(room: string) {
-		return await supabase.from('classes').select('*').eq('room', room);
-	}
 	let you: null | {
 		name: string;
 		schedule: Schedule;
@@ -132,31 +130,6 @@
 				window.localStorage.setItem($page.params['room'], JSON.stringify(you));
 			});
 	}
-	async function addClass({
-		className,
-		firstName,
-		lastName
-	}: {
-		className: string;
-		firstName: string;
-		lastName: string;
-	}) {
-		const payload = {
-			name: normalize(className),
-			teacher_first: firstName.trim().toLowerCase(),
-			teacher_last: lastName.trim().toLowerCase(),
-			room: $page.params['room']
-		};
-		const { data, error } = await supabase.from('classes').insert([payload]).select();
-		if (error !== null) {
-			// error.code == 23505 is duplicate entry
-			if (error.code == '23505') {
-				addToast('Attempted to add duplicate class', 'error');
-			}
-			throw error;
-		}
-		return data![0].id;
-	}
 </script>
 
 <Toasts />
@@ -230,12 +203,12 @@
 	</div>
 </main>
 
-<div class="flex flex-wrap justify-evenly">
+<div class="flex flex-wrap justify-evenly pb-5">
 	{#each $schedules as schedule}
 		<!-- You is guaranteed to !== null -->
 		<!-- I'm not sure how to express TypeScript -->
 		<!-- Within Svelte code -->
-		{#if (onlyMatching && matches(you.schedule, schedule)) || !onlyMatching}
+		{#if (onlyMatching && areSchedulesEqual(you.schedule, schedule)) || !onlyMatching}
 			<div
 				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
 			>

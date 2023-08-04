@@ -3,7 +3,8 @@
 	import ClassPicker from './ClassPicker.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
 	import type { Classes } from './InfoInput';
-	import { includes } from 'lodash-es';
+	import { PERIODS } from './InfoInput';
+	import type { AddClassParams } from './db';
 	let name = '';
 	let periods: UnfinishedSchedule = {
 		'1a': undefined,
@@ -16,7 +17,6 @@
 		'4b': undefined
 	};
 	const dispatch = createEventDispatcher();
-	const PERIODS: (keyof UnfinishedSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
 	$: values = PERIODS.map((period) => periods[period]);
 	$: isValid =
 		name.length > 0 &&
@@ -28,15 +28,7 @@
 		dispatch('submit', { name, schedule: periods as VirtualSchedule });
 	}
 	export let classes: Classes;
-	export let addClass: ({
-		className,
-		firstName,
-		lastName
-	}: {
-		className: string;
-		firstName: string;
-		lastName: string;
-	}) => Promise<string>;
+	export let addClass: ({ className, firstName, lastName }: AddClassParams) => Promise<string>;
 </script>
 
 <div class="form-control">
