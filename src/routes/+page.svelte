@@ -9,7 +9,7 @@
 
 <section class="h-screen">
 	<div class="hero h-full bg-gray-200 dark:bg-zinc-900">
-		<div class="hero-content text-center">
+		<div class="hero-content text-center flex-col">
 			<div class="max-w-md">
 				<h1
 					class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-fuchsia-500"
@@ -39,6 +39,7 @@
 					<a href="/create" class="btn btn-primary">Create a room</a>
 				</div>
 			</div>
+			<a href="/credits" class="link">Credits to our beta testers</a>
 		</div>
 	</div>
 </section>
