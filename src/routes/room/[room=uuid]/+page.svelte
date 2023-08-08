@@ -287,7 +287,7 @@
 </div>
 
 <span
-	class="fixed center-horizontal bottom-5 drop-shadow-lg tooltip"
+	class="sticky center-horizontal bottom-5 drop-shadow-lg tooltip"
 	data-tip="You are {realtimeStatus === 'SUBSCRIBED'
 		? 'connected'
 		: 'disconnected'} to the realtime server"
