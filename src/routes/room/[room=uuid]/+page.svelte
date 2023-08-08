@@ -184,9 +184,20 @@
 				<button
 					class="btn btn-accent"
 					on:click={() => {
-						navigator.clipboard.writeText(window.location.href).then(() => {
-							addToast('Room URL copied to clipboard', 'success');
-						});
+						if (window.location.href.includes('devMode')) {
+							let value = window.localStorage.getItem($page.params['room']);
+							if (value !== null) {
+								navigator.clipboard.writeText(value).then(() => {
+									addToast('Room session value copied to clipboard', 'success');
+								});
+							} else {
+								addToast('Room session value not found', 'error');
+							}
+						} else {
+							navigator.clipboard.writeText(window.location.href).then(() => {
+								addToast('Room URL copied to clipboard', 'success');
+							});
+						}
 					}}
 					><svg
 						xmlns="http://www.w3.org/2000/svg"
