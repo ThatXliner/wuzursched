@@ -25,7 +25,7 @@
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;
 	function submit() {
-		dispatch('submit', { name, schedule: periods as VirtualSchedule });
+		dispatch('submit', { name: name.trim(), schedule: periods as VirtualSchedule });
 	}
 	export let classes: Classes;
 	export let addClass: ({
