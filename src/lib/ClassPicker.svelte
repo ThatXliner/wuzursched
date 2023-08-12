@@ -73,7 +73,7 @@
 				/>
 				<button
 					class="btn btn-primary join-item"
-					on:click={async () => {
+					on:click={async (event) => {
 						if (!isValidClassInfo) {
 							console.log(className, firstName, lastName);
 							if (!classNameValid) {
@@ -85,6 +85,7 @@
 							if (!lastNameValid) {
 								addToast("The teacher's last name must not be empty", 'error');
 							}
+							event.preventDefault();
 							return;
 						}
 						selectedClassName = className;
