@@ -43,8 +43,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 19
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
       - run: pnpm install
       - run: supabase db start
       - run: supabase db reset
