@@ -35,16 +35,16 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 1.83.7
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: 8.x.x
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 19
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v2.2.4
-        with:
-          version: 8.x.x
       - run: pnpm install
       - run: supabase db start
       - run: supabase db reset
