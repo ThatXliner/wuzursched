@@ -31,7 +31,8 @@ jobs:
         run: |
           supabase status | node parse_status.js | while read line
           do
-            echo $line >> "$GITHUB_ENV"
+            echo $line >> $GITHUB_ENV
+            echo $line
           done
       - run: pnpm test
   check-types:
