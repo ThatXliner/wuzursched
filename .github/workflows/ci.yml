@@ -28,7 +28,7 @@ jobs:
       - run: supabase db start
       - run: supabase db reset
       - name: Set environment variables
-        run: supabase status | node parse_status.js > .env
+        run: supabase status | node parse_status.js | cat > .env
       - run: pnpm test
   check-types:
     runs-on: ubuntu-latest
