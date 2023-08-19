@@ -28,8 +28,6 @@ jobs:
       - run: supabase start
       - run: supabase db start
       - run: supabase db reset
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
       - name: Set environment variables
         run: supabase status --env > .env
       - run: pnpm test
