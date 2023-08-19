@@ -28,7 +28,7 @@ jobs:
       - run: supabase start
       - run: supabase db reset
       - name: Set environment variables
-        run: supabase status --env > .env
+        run: supabase status --output env >> $GITHUB_ENV
       - run: pnpm test
   check-types:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
       - run: pnpm install
-      - run: supabase start
+      - run: supabase db start
       - run: supabase db reset
       - name: Verify generated types match Postgres schema
         run: |
