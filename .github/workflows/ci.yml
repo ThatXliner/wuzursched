@@ -27,13 +27,13 @@ jobs:
       - run: pnpm install
       - run: supabase db start
       - run: supabase db reset
-      - run: |
+      - name: Set environment variables
+        run: |
           supabase status | node parse_status.js | while read line
           do
             echo $line >> "$GITHUB_ENV"
           done
-          echo $VITE_SUPABASE_URL
-          pnpm test
+      - run: pnpm test
   check-types:
     runs-on: ubuntu-latest
     steps:
