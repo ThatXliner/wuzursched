@@ -25,6 +25,7 @@ jobs:
         with:
           version: 1.83.7
       - run: pnpm install
+      - run: supabase start
       - run: supabase db start
       - run: supabase db reset
       - name: Setup upterm session
