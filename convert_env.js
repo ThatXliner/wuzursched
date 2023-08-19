@@ -17,12 +17,12 @@ const REMAP = {
 	ANON_KEY: 'VITE_SUPABASE_ANON_KEY',
 	SERVICE_ROLE_KEY: 'VITE_SUPABASE_SERVICE_ROLE_KEY'
 };
-for (let keyValue of stdin.matchAll(/(\w+)=(.+)/gm)) {
+for (let keyValue of stdin.matchAll(/(\w+)="(.+)"/gm)) {
 	const key = keyValue[1];
 	const value = keyValue[2];
 	if (Object.prototype.hasOwnProperty.call(REMAP, key)) {
 		console.log(`${REMAP[key]}=${value}`);
 	} else {
-		console.log(keyValue[0]);
+		console.log(`${key}=${value}`);
 	}
 }
