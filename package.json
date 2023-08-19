@@ -14,8 +14,7 @@
 		"update-types": "supabase gen types typescript --project-id \"$PROJECT_ID\" > src/lib/supabase.ts"
 	},
 	"devDependencies": {
-		"@actions/core": "^1.10.0",
-		"@playwright/test": "^1.36.2",
+		"@playwright/test": "^1.37.1",
 		"@sveltejs/adapter-auto": "^2.1.0",
 		"@sveltejs/kit": "^1.22.4",
 		"@types/lodash-es": "^4.17.8",
@@ -23,6 +22,7 @@
 		"@typescript-eslint/parser": "^5.62.0",
 		"autoprefixer": "^10.4.14",
 		"daisyui": "^3.5.0",
+		"dotenv": "^16.3.1",
 		"eslint": "^8.46.0",
 		"eslint-config-prettier": "^8.9.0",
 		"eslint-plugin-svelte3": "^4.0.0",

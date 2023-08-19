@@ -10,12 +10,9 @@ dependencies:
     version: 2.31.0
 
 devDependencies:
-  '@actions/core':
-    specifier: ^1.10.0
-    version: 1.10.0
   '@playwright/test':
-    specifier: ^1.36.2
-    version: 1.36.2
+    specifier: ^1.37.1
+    version: 1.37.1
   '@sveltejs/adapter-auto':
     specifier: ^2.1.0
     version: 2.1.0(@sveltejs/kit@1.22.4)
@@ -37,6 +34,9 @@ devDependencies:
   daisyui:
     specifier: ^3.5.0
     version: 3.5.0
+  dotenv:
+    specifier: ^16.3.1
+    version: 16.3.1
   eslint:
     specifier: ^8.46.0
     version: 8.46.0
@@ -88,19 +88,6 @@ packages:
   /@aashutoshrathi/word-wrap@1.2.6:
     resolution: {integrity: sha512-1Yjs2SvM8TflER/OD3cOjhWWOZb58A2t7wpE2S9XfBYTiIl+XFhQG2bjy4Pu1I+EAlCNUzRDYDdFwFYUKvXcIA==}
     engines: {node: '>=0.10.0'}
-    dev: true
-
-  /@actions/core@1.10.0:
-    resolution: {integrity: sha512-2aZDDa3zrrZbP5ZYg159sNoLRb61nQ7awl5pSvIq5Qpj81vwDzdMRKzkWJGJuwVvWpvZKx7vspJALyvaaIQyug==}
-    dependencies:
-      '@actions/http-client': 2.1.1
-      uuid: 8.3.2
-    dev: true
-
-  /@actions/http-client@2.1.1:
-    resolution: {integrity: sha512-qhrkRMB40bbbLo7gF+0vu+X+UawOvQQqNAA/5Unx774RS8poaOhThDOG6BGmxvAnxhQnDp2BG/ZUm65xZILTpw==}
-    dependencies:
-      tunnel: 0.0.6
     dev: true
 
   /@alloc/quick-lru@5.2.0:
@@ -418,13 +405,13 @@ packages:
       fastq: 1.15.0
     dev: true
 
-  /@playwright/test@1.36.2:
-    resolution: {integrity: sha512-2rVZeyPRjxfPH6J0oGJqE8YxiM1IBRyM8hyrXYK7eSiAqmbNhxwcLa7dZ7fy9Kj26V7FYia5fh9XJRq4Dqme+g==}
+  /@playwright/test@1.37.1:
+    resolution: {integrity: sha512-bq9zTli3vWJo8S3LwB91U0qDNQDpEXnw7knhxLM0nwDvexQAwx9tO8iKDZSqqneVq+URd/WIoz+BALMqUTgdSg==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
       '@types/node': 20.4.5
-      playwright-core: 1.36.2
+      playwright-core: 1.37.1
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
@@ -1036,6 +1023,11 @@ packages:
     engines: {node: '>=6.0.0'}
     dependencies:
       esutils: 2.0.3
+    dev: true
+
+  /dotenv@16.3.1:
+    resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==}
+    engines: {node: '>=12'}
     dev: true
 
   /electron-to-chromium@1.4.480:
@@ -1774,8 +1766,8 @@ packages:
     engines: {node: '>= 6'}
     dev: true
 
-  /playwright-core@1.36.2:
-    resolution: {integrity: sha512-sQYZt31dwkqxOrP7xy2ggDfEzUxM1lodjhsQ3NMMv5uGTRDsLxU0e4xf4wwMkF2gplIxf17QMBCodSFgm6bFVQ==}
+  /playwright-core@1.37.1:
+    resolution: {integrity: sha512-17EuQxlSIYCmEMwzMqusJ2ztDgJePjrbttaefgdsiqeLWidjYz9BxXaTaZWxH1J95SHGk6tjE+dwgWILJoUZfA==}
     engines: {node: '>=16'}
     hasBin: true
     dev: true
@@ -2234,11 +2226,6 @@ packages:
       typescript: 5.1.6
     dev: true
 
-  /tunnel@0.0.6:
-    resolution: {integrity: sha512-1h/Lnq9yajKY2PEbBadPXj3VxsDDu844OnaAo52UVmIzIvwwtBPIuNvkjuzBlTWpfJyUbG3ez0KSBibQkj4ojg==}
-    engines: {node: '>=0.6.11 <=0.7.0 || >=0.7.3'}
-    dev: true
-
   /type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -2305,11 +2292,6 @@ packages:
 
   /util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
-    dev: true
-
-  /uuid@8.3.2:
-    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
-    hasBin: true
     dev: true
 
   /vite@4.4.8:

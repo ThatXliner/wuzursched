@@ -8,7 +8,6 @@
 //         anon key: <key>
 // service_role key: <key>
 import { readFile } from 'fs';
-import * as core from '@actions/core';
 
 const readFilePromise = (...args) =>
 	new Promise((resolve, reject) => {
@@ -32,6 +31,6 @@ for (let keyValue of stdin.matchAll(/^\s*(.+?):\s+(.+)$/gm)) {
 	const key = keyValue[1];
 	const value = keyValue[2];
 	if (Object.prototype.hasOwnProperty.call(REMAP, key)) {
-		core.exportVariable(REMAP[key], value);
+		console.log(`${REMAP[key]}=${value}`);
 	}
 }
