@@ -28,12 +28,7 @@ jobs:
       - run: supabase db start
       - run: supabase db reset
       - name: Set environment variables
-        run: |
-          supabase status | node parse_status.js | while read line
-          do
-            echo $line >> $GITHUB_ENV
-            echo $line
-          done
+        run: supabase status | node parse_status.js
       - run: pnpm test
   check-types:
     runs-on: ubuntu-latest
