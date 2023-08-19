@@ -24,7 +24,9 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 1.83.7
-      - run: pnpm install
+      - run: |
+          pnpm install
+          pnpx playwright install
       - run: supabase db start
       - run: supabase db reset
       - name: Set environment variables
