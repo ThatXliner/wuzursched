@@ -19,6 +19,6 @@ for (let keyValue of stdin.matchAll(/^\s*(.+?):\s+(.+)$/gm)) {
 	const key = keyValue[1];
 	const value = keyValue[2];
 	if (Object.prototype.hasOwnProperty.call(REMAP, key)) {
-		console.log(`${REMAP[key]}="${value}"`);
+		console.log(`${REMAP[key]}=${value}`);
 	}
 }
