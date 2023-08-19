@@ -27,8 +27,9 @@ jobs:
       - run: pnpm install
       - run: supabase db start
       - run: supabase db reset
-      - run: supabase status | node parse_status.js >> "$GITHUB_ENV"
-      - run: pnpm test
+      - run: |
+          supabase status | node parse_status.js >> "$GITHUB_ENV"
+          pnpm test
   check-types:
     runs-on: ubuntu-latest
     steps:
