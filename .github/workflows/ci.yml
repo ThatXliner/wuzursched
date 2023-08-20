@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup PNPM v8
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: 8.x.x
+      - name: Setup Node v19
+        uses: actions/setup-node@v3
+        with:
+          node-version: 19
+          cache: 'pnpm'
+          cache-dependency-path: 'pnpm-lock.yaml'
+      - name: Setup Supabase v1.86.2
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.86.2
+      - name: Install dependencies
+        run: |
+          pnpm install
+          pnpx playwright install --with-deps
+      - name: Start database
+        run: |
+          supabase start
+          supabase db reset
+      - name: Set environment variables
+        uses: nick-fields/retry@v2
+        with:
+          max_attempts: 3
+          timeout_minutes: 1
+          command: |
+            supabase status --output env | node convert_env.js > .env
+            test -s .env
+      - run: pnpm test
+  check-types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup PNPM v8
+        uses: pnpm/action-setup@v2.2.4
+        with:
+          version: 8.x.x
+      - name: Setup Node v19
+        uses: actions/setup-node@v3
+        with:
+          node-version: 19
+          cache: 'pnpm'
+          cache-dependency-path: 'pnpm-lock.yaml'
+      - name: Setup Supabase v1.86.2
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.86.2
+      - name: Install dependencies
+        run: pnpm install
+      - name: Start database
+        run: |
+          supabase db start
+          supabase db reset
+      - name: Verify generated types match Postgres schema
+        run: |
+          supabase gen types typescript --local > src/lib/supabase.ts
+          if ! git diff --ignore-space-at-eol --exit-code --quiet src/lib/supabase.ts; then
+              echo "Detected uncommitted changes after build. See status below:" >> $GITHUB_STEP_SUMMARY
+              echo "```diff" >> >> $GITHUB_STEP_SUMMARY
+              echo $(git diff) >> $GITHUB_STEP_SUMMARY
+              echo "```" >> $GITHUB_STEP_SUMMARY
+              exit 1
+          fi
