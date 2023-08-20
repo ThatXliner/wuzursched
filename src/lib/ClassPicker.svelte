@@ -1,20 +1,14 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
-	import type { Class } from './InfoInput';
+	import type { Class } from './InfoInput.d';
 	import { titlecase } from '$lib/utils';
 	import { addToast } from './toasts';
+	import { page } from '$app/stores';
+	import type { AddClassParams } from './db';
 	let className = '',
 		firstName = '',
 		lastName = '';
-	export let addClass: ({
-		className,
-		firstName,
-		lastName
-	}: {
-		className: string;
-		firstName: string;
-		lastName: string;
-	}) => Promise<string>;
+	export let addClass: ({ className, firstName, lastName }: AddClassParams) => Promise<string>;
 	type MenuItem = Class & { used?: string };
 	export let classes: MenuItem[];
 	export let selected: null | string = null;
@@ -92,7 +86,8 @@
 						selected = await addClass({
 							className,
 							firstName: firstName.trim(),
-							lastName: lastName.trim().replaceAll(/\s+/g, '')
+							lastName: lastName.trim().replaceAll(/\s+/g, ''),
+							room: $page.params['room']
 						});
 						// Reset the search
 						className = '';
