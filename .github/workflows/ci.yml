@@ -37,6 +37,7 @@ jobs:
         uses: nick-fields/retry@v2
         with:
           max_attempts: 3
+          timeout_minutes: 1
           command: |
             supabase status --output env | node convert_env.js > .env
             test -s .env
