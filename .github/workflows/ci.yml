@@ -25,6 +25,7 @@ jobs:
         with:
           version: 1.83.7
       - run: pnpm install
+      - run: pnpx playwright install --with-deps
       - run: supabase start
       - run: supabase db reset
       - name: Set environment variables
