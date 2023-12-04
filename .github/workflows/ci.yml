@@ -21,10 +21,10 @@ jobs:
           node-version: 19
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
-      - name: Setup Supabase v1.86.2
+      - name: Setup Supabase v1.115.4
         uses: supabase/setup-cli@v1
         with:
-          version: 1.86.2
+          version: 1.115.4
       - name: Install dependencies
         run: |
           pnpm install
@@ -56,10 +56,10 @@ jobs:
           node-version: 19
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
-      - name: Setup Supabase v1.86.2
+      - name: Setup Supabase v1.115.4
         uses: supabase/setup-cli@v1
         with:
-          version: 1.86.2
+          version: 1.115.4
       - name: Install dependencies
         run: pnpm install
       - name: Start database
