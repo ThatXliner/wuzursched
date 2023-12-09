@@ -41,6 +41,8 @@ jobs:
           command: |
             supabase status --output env | node convert_env.js > .env
             test -s .env
+      - name: Install again, just in case
+        run: npx playwright install 
       - run: pnpm test
   check-types:
     runs-on: ubuntu-latest
