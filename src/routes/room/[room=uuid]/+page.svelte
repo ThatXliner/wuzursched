@@ -10,6 +10,7 @@
 	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
 	import memoize from 'lodash-es/memoize';
+	import isEqual from 'lodash-es/isEqual';
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
 	import type { PageServerData } from './$types';
@@ -57,8 +58,9 @@
 		// Load it from localStorage
 		you = JSON.parse(window.localStorage.getItem($page.params.room) ?? 'null');
 		if (
+			// If your log-in exists
+			// But the database forgot about you
 			you !== null &&
-			// the database remembers your name
 			(
 				await supabase
 					.from('schedules')
@@ -67,14 +69,17 @@
 					.eq('student', you.name)
 			).data?.length === 0
 		) {
-			// let toInsert: Schedule = you.schedule
-			const toInsert: Schedule = {
-				...you.schedule,
-				room: $page.params.room,
-				student: you.name
-			};
-
-			await supabase.from('schedules').insert([toInsert]);
+			// you'll have to do the whole process again
+			you = null;
+			window.localStorage.removeItem($page.params['room']);
+			// old code:
+			// let toInsert: Schedule = {
+			// 	...you['schedule'],
+			// 	room: $page.params['room'],
+			// 	student: you.name
+			// };
+			// // they should be equivalent
+			// console.assert(isEqual(toInsert, you.schedule));
 		}
 		supabase
 			.channel('schema-db-changes')
