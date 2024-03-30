@@ -10,14 +10,12 @@ Wuzursched (pronounced [`/wʌzjɜskɛd/`](http://ipa-reader.xyz/?text=wʌzjɜsk�
 
 ## Development
 
-Once you've `git clone`d and installed dependencies with `pnpm install`, start a development server:
-
-```bash
-pnpm run dev
-
-# or start the server and open the app in a new browser tab
-pnpm run dev -- --open
-```
+1. `git clone`
+2. Install supabase CLI and run `supabase start`
+3. Run `supabase db reset`
+4. `supabase status --output env | node convert_env.js > .env`
+5. Load that `.env` somehow
+6. `pnpm run dev`
 
 ## Building
 

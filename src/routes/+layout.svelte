@@ -1,8 +1,9 @@
 <script>
 	import '../app.css';
+	import Downtime from '$lib/Downtime.svelte';
 </script>
 
-<slot />
+<Downtime />
 <footer class="footer items-center p-4 bg-neutral text-neutral-content">
 	<div class="items-center grid-flow-col">
 		<p>
