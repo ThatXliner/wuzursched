@@ -3,7 +3,6 @@
 	import ClassPicker from './ClassPicker.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
 	import type { Classes } from './InfoInput';
-	import { includes } from 'lodash-es';
 	let name = '';
 	let periods: UnfinishedSchedule = {
 		'1a': undefined,

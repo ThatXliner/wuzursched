@@ -3,7 +3,6 @@
 	import InfoInput from '$lib/InfoInput.svelte';
 
 	import { page } from '$app/stores';
-	import { supabase } from '$lib/db';
 	import { sqlEscape, normalize } from '$lib/utils';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
@@ -13,21 +12,22 @@
 	import memoize from 'lodash-es/memoize';
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
+	import type { PageServerData } from './$types';
 
 	let onlyMatching: boolean;
 	const PERIODS: (keyof VirtualSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
 	function matches(a: VirtualSchedule, b: VirtualSchedule) {
-		return PERIODS.some((x) => a[x] == b[x]);
+		return PERIODS.some((x) => a[x] === b[x]);
 	}
 	type Schedule = VirtualSchedule & {
 		room: string;
 		student: string;
 	};
-	/** @type {import('./$types').PageData */
-	export let data;
-	let schedules: Writable<Schedule[]> = writable(data.data);
+	export let data: PageServerData;
+	const { supabase } = data;
+	const schedules: Writable<Schedule[]> = writable(data.data);
 	async function _getClass(id: string) {
-		let { data, error } = await supabase.from('classes').select('*').eq('id', id);
+		const { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		if (error !== null) {
 			throw error;
 		}
@@ -38,15 +38,15 @@
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	let you: null | {
+	let you: {
 		name: string;
 		schedule: Schedule;
-	} = null;
+	};
 	let classes: Writable<Classes> = writable([]);
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = 'CLOSED';
 	onMount(async () => {
 		{
-			const { data, error } = await getClasses($page.params['room']);
+			const { data, error } = await getClasses($page.params.room);
 			// did not convert to console.assert
 			// to appease TypeScript
 			if (error !== null) {
@@ -55,7 +55,7 @@
 			$classes = data;
 		}
 		// Load it from localStorage
-		you = JSON.parse(window.localStorage.getItem($page.params['room']) ?? 'null');
+		you = JSON.parse(window.localStorage.getItem($page.params.room) ?? 'null');
 		if (
 			you !== null &&
 			// the database remembers your name
@@ -63,14 +63,14 @@
 				await supabase
 					.from('schedules')
 					.select('*')
-					.eq('room', $page.params['room'])
-					.eq('student', you['name'])
-			).data?.length == 0
+					.eq('room', $page.params.room)
+					.eq('student', you.name)
+			).data?.length === 0
 		) {
 			// let toInsert: Schedule = you.schedule
-			let toInsert: Schedule = {
-				...you['schedule'],
-				room: $page.params['room'],
+			const toInsert: Schedule = {
+				...you.schedule,
+				room: $page.params.room,
 				student: you.name
 			};
 
@@ -88,7 +88,7 @@
 					// (theoretically, this should never be an
 					// sql injection because $page.params
 					// is being validated)
-					filter: `room=eq.${sqlEscape($page.params['room'])}`
+					filter: `room=eq.${sqlEscape($page.params.room)}`
 				},
 				(payload) => {
 					if (payload.eventType === 'INSERT') {
@@ -109,7 +109,7 @@
 					// (theoretically, this should never be an
 					// sql injection because $page.params
 					// is being validated)
-					filter: `room=eq.${sqlEscape($page.params['room'])}`
+					filter: `room=eq.${sqlEscape($page.params.room)}`
 				},
 				async (payload) => {
 					$classes = [...$classes, payload.new];
@@ -121,7 +121,7 @@
 	});
 	function onInfoSubmitted(event: { detail: { name: string; schedule: VirtualSchedule } }) {
 		const got = event.detail;
-		let toInsert = { ...got.schedule, room: $page.params['room'], student: got.name };
+		const toInsert = { ...got.schedule, room: $page.params.room, student: got.name };
 		supabase
 			.from('schedules')
 			.insert([toInsert])
@@ -129,7 +129,7 @@
 				you = { name: event.detail.name, schedule: toInsert };
 				// no need to update the local db variable
 				// since that will be updated via the realtime subscription
-				window.localStorage.setItem($page.params['room'], JSON.stringify(you));
+				window.localStorage.setItem($page.params.room, JSON.stringify(you));
 			});
 	}
 	async function addClass({
@@ -145,7 +145,7 @@
 			name: normalize(className),
 			teacher_first: firstName.trim().toLowerCase(),
 			teacher_last: lastName.trim().toLowerCase(),
-			room: $page.params['room']
+			room: $page.params.room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
 		if (error !== null) {
@@ -175,7 +175,7 @@
 	<div class="hero-content flex-col">
 		<h1 class="text-5xl text-center font-bold">
 			Schedules for room <code class="bg-base-200 p-1 rounded-lg"
-				>{$page.params['room'].slice(0, 8)}</code
+				>{$page.params.room.slice(0, 8)}</code
 			>
 		</h1>
 		<div class="flex justify-evenly flex-row space-x-4 mt-3">
@@ -185,7 +185,7 @@
 					class="btn btn-accent"
 					on:click={() => {
 						if (window.location.href.includes('devMode')) {
-							let value = window.localStorage.getItem($page.params['room']);
+							let value = window.localStorage.getItem($page.params.room);
 							if (value !== null) {
 								navigator.clipboard.writeText(value).then(() => {
 									addToast('Room session value copied to clipboard', 'success');
@@ -246,7 +246,7 @@
 		<!-- You is guaranteed to !== null -->
 		<!-- I'm not sure how to express TypeScript -->
 		<!-- Within Svelte code -->
-		{#if (onlyMatching && matches(you.schedule, schedule)) || !onlyMatching}
+		{#if (onlyMatching && matches(you?.schedule, schedule)) || !onlyMatching}
 			<div
 				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
 			>

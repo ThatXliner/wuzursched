@@ -13,9 +13,9 @@ const readFilePromise = (...args) =>
 
 const stdin = await readFilePromise(process.stdin.fd, 'utf-8');
 const REMAP = {
-	API_URL: 'VITE_SUPABASE_URL',
-	ANON_KEY: 'VITE_SUPABASE_ANON_KEY',
-	SERVICE_ROLE_KEY: 'VITE_SUPABASE_SERVICE_ROLE_KEY'
+	API_URL: 'PUBLIC_SUPABASE_URL',
+	ANON_KEY: 'PUBLIC_SUPABASE_ANON_KEY',
+	SERVICE_ROLE_KEY: 'PUBLIC_SUPABASE_SERVICE_ROLE_KEY'
 };
 for (let keyValue of stdin.matchAll(/(\w+)="(.+)"/gm)) {
 	const key = keyValue[1];
