@@ -13,7 +13,7 @@
 	import isEqual from 'lodash-es/isEqual';
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
-	import type { PageServerData } from './$types';
+	// import type { PageServerData } from './$types';
 
 	let onlyMatching: boolean;
 	const PERIODS: (keyof VirtualSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
@@ -24,7 +24,7 @@
 		room: string;
 		student: string;
 	};
-	export let data: PageServerData;
+	export let data;
 	const { supabase } = data;
 	const schedules: Writable<Schedule[]> = writable(data.data);
 	async function _getClass(id: string) {

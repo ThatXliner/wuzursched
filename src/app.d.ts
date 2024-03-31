@@ -1,8 +1,8 @@
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
-import type { Database } from "$lib/supabase.d";
-import type { createServerClient } from "@supabase/ssr";
-import type { Session } from "@supabase/supabase-js";
+import type { Database } from '$lib/supabase.d';
+import type { createServerClient } from '@supabase/ssr';
+import type { Session } from '@supabase/supabase-js';
 
 declare global {
 	namespace App {
