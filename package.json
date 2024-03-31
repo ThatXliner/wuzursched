@@ -44,6 +44,9 @@
 	"type": "module",
 	"dependencies": {
 		"@supabase/ssr": "^0.1.0",
-		"@supabase/supabase-js": "^2.41.1"
+		"@supabase/supabase-js": "^2.41.1",
+		"clsx": "^2.1.0",
+		"tailwind-merge": "^2.2.2",
+		"tailwind-variants": "^0.2.1"
 	}
 }
