@@ -3,7 +3,8 @@ import { error as returnError, type ServerLoad } from '@sveltejs/kit';
 export const load: ServerLoad = async ({ params, locals: { supabase } }) => {
 	if (
 		// Because reading rooms is not a all-public thing
-		((await supabase.from('rooms').select('*').eq('id', params.room!)).data ?? []).length === 0
+		(await supabase.from('rooms').select('*').eq('id', params.room!).single()).error?.code ===
+		'PGRST116'
 	) {
 		throw returnError(404, 'Room does not exist');
 	}
@@ -14,7 +15,6 @@ export const load: ServerLoad = async ({ params, locals: { supabase } }) => {
 		throw error;
 	}
 	return {
-		data,
-		supabase
+		data
 	};
 };
