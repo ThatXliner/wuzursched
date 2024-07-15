@@ -11,7 +11,8 @@
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
-		"update-types": "supabase gen types typescript --project-id \"$PROJECT_ID\" > src/lib/supabase.d.ts",
+		"update-types": "supabase gen types --lang=typescript --project-id \"$PROJECT_ID\" > src/lib/supabase.d.ts",
+		"update-types:local": "supabase gen types --lang=typescript --local > src/lib/supabase.d.ts",
 		"prepare": "svelte-kit sync"
 	},
 	"devDependencies": {
