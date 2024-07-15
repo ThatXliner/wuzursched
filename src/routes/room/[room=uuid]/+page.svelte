@@ -263,7 +263,7 @@
 				<div class="collapse-content hidden">
 					<div class="overflow-x-auto">
 						<!-- If statement to appease type checker -->
-						{#if you !== null}
+						{#if you != null}
 							<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
 						{/if}
 					</div>
