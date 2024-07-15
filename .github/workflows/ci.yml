@@ -12,11 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup PNPM v8
-        uses: pnpm/action-setup@v2.2.4
+        uses: pnpm/action-setup@v4
         with:
-          version: 8.x.x
+          version: 9.x.x
       - name: Setup Node v21
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 21
           cache: 'pnpm'
@@ -48,10 +48,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup PNPM v8
-        uses: pnpm/action-setup@v2.2.4
+      - name: Setup PNPM v9
+        uses: pnpm/action-setup@v4
         with:
-          version: 8.x.x
+          version: 9.x.x
       - name: Setup Node v21
         uses: actions/setup-node@v3
         with:
