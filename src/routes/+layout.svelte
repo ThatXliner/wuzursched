@@ -3,11 +3,13 @@
 	import Downtime from '$lib/Downtime.svelte';
 </script>
 
-<div class="w-screen py-5 px-7 text-center text-2xl font-bold bg-black">
+<div class="w-full text-center py-5 px-7 text-2xl font-bold bg-black">
 	<a href="https://vcsdclub.org" class="gradient link">
-		From the Valley Christian Software Development Club (click to learn more)
+		From the Valley Christian Software Development Club <br class="inline md:hidden" />(click to
+		learn more)
 	</a>
 </div>
+
 <slot />
 <footer class="footer items-center p-4 bg-neutral text-neutral-content">
 	<div class="items-center grid-flow-col">
