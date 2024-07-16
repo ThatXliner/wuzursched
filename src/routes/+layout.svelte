@@ -3,6 +3,11 @@
 	import Downtime from '$lib/Downtime.svelte';
 </script>
 
+<div class="w-screen py-5 px-7 text-center text-2xl font-bold bg-black">
+	<a href="https://vcsdclub.org" class="gradient link">
+		From the Valley Christian Software Development Club (click to learn more)
+	</a>
+</div>
 <slot />
 <footer class="footer items-center p-4 bg-neutral text-neutral-content">
 	<div class="items-center grid-flow-col">
@@ -24,3 +29,52 @@
 		>
 	</div>
 </footer>
+
+<style>
+	.gradient {
+		background: linear-gradient(232deg, #15e3ae, #872df0);
+		background-size: 400% 400%;
+
+		-webkit-animation: AnimationName 5s ease infinite;
+		-moz-animation: AnimationName 5s ease infinite;
+		animation: AnimationName 5s ease infinite;
+
+		background-clip: text;
+		-webkit-background-clip: text;
+		color: transparent;
+	}
+
+	@-webkit-keyframes AnimationName {
+		0% {
+			background-position: 0% 51%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+		100% {
+			background-position: 0% 51%;
+		}
+	}
+	@-moz-keyframes AnimationName {
+		0% {
+			background-position: 0% 51%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+		100% {
+			background-position: 0% 51%;
+		}
+	}
+	@keyframes AnimationName {
+		0% {
+			background-position: 0% 51%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+		100% {
+			background-position: 0% 51%;
+		}
+	}
+</style>
