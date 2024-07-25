@@ -21,7 +21,8 @@ export type UnfinishedSchedule = {
 
 import type { ArrElement } from '$lib/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
-async function getClasses(supabase: SupabaseClient, room: string) {
+import type { Database } from './supabase';
+async function getClasses(supabase: SupabaseClient<Database>, room: string) {
 	return await supabase.from('classes').select('*').eq('room', room);
 }
 
