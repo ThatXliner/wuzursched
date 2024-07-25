@@ -1,4 +1,5 @@
 <script lang="ts">
+	import * as Tabs from '$lib/components/ui/tabs';
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import InfoInput from '$lib/InfoInput.svelte';
 
@@ -176,7 +177,7 @@
 	</dialog>
 {/if}
 
-<main class="hero min-h-[30vh]">
+<div class="hero min-h-[30vh]">
 	<div class="hero-content flex-col">
 		<h1 class="text-5xl text-center font-bold">
 			Schedules for room <code class="bg-base-200 p-1 rounded-lg"
@@ -244,52 +245,62 @@
 			</div>
 		</div>
 	</div>
-</main>
-
-<div class="flex flex-wrap justify-evenly">
-	{#each $schedules as schedule}
-		<!-- You is guaranteed to !== null -->
-		<!-- I'm not sure how to express TypeScript -->
-		<!-- Within Svelte code -->
-		{#if (onlyMatching && matches(you?.schedule, schedule)) || !onlyMatching}
-			<div
-				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
-			>
-				<input type="checkbox" />
-				<div class="collapse-title text-xl font-medium">
-					{schedule.student}'s schedule
-					<!-- TODO: Show if in common -->
-				</div>
-				<div class="collapse-content hidden">
-					<div class="overflow-x-auto">
-						<!-- If statement to appease type checker -->
-						{#if you != null}
-							<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
-						{/if}
+</div>
+<Tabs.Root value="schedules">
+	<!-- <Tabs.List> -->
+	<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
+		<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
+		<Tabs.Trigger value="search">Search</Tabs.Trigger>
+		<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
+	</Tabs.List>
+	<Tabs.Content value="schedules">
+		<div class="flex flex-wrap justify-evenly">
+			{#each $schedules as schedule}
+				<!-- You is guaranteed to !== null -->
+				<!-- I'm not sure how to express TypeScript -->
+				<!-- Within Svelte code -->
+				{#if (onlyMatching && matches(you?.schedule, schedule)) || !onlyMatching}
+					<div
+						class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
+					>
+						<input type="checkbox" />
+						<div class="collapse-title text-xl font-medium">
+							{schedule.student}'s schedule
+							<!-- TODO: Show if in common -->
+						</div>
+						<div class="collapse-content hidden">
+							<div class="overflow-x-auto">
+								<!-- If statement to appease type checker -->
+								{#if you != null}
+									<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
+								{/if}
+							</div>
+						</div>
+					</div>
+				{/if}
+			{:else}
+				<div class="alert alert-warning shadow-lg mx-auto w-fit">
+					<div>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="stroke-current flex-shrink-0 h-6 w-6"
+							fill="none"
+							viewBox="0 0 24 24"
+							><path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+							/></svg
+						>
+						<span>No schedules found. Invite people!</span>
 					</div>
 				</div>
-			</div>
-		{/if}
-	{:else}
-		<div class="alert alert-warning shadow-lg mx-auto w-fit">
-			<div>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="stroke-current flex-shrink-0 h-6 w-6"
-					fill="none"
-					viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-					/></svg
-				>
-				<span>No schedules found. Invite people!</span>
-			</div>
+			{/each}
 		</div>
-	{/each}
-</div>
+	</Tabs.Content>
+	<Tabs.Content value="password">Change your password here.</Tabs.Content>
+</Tabs.Root>
 
 <span
 	class="sticky center-horizontal bottom-5 drop-shadow-lg tooltip"
