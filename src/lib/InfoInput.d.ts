@@ -8,6 +8,10 @@ export type VirtualSchedule = {
 	'4a': string;
 	'4b': string;
 };
+export type Schedule = VirtualSchedule & {
+	room: string;
+	student: string;
+};
 export type UnfinishedSchedule = {
 	'1a'?: string;
 	'1b'?: string;
