@@ -283,6 +283,10 @@
 				{#if you === 'tentative'}
 					<button
 						class="btn my-3 h-fit w-fit border border-base-300 bg-base-100 shadow-xl rounded-box p-4 text-xl font-medium"
+						on:click={() => {
+							you = { name: schedule.student, schedule };
+							window.localStorage.setItem($page.params.room, JSON.stringify(you));
+						}}
 					>
 						{schedule.student}
 					</button>
