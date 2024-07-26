@@ -14,6 +14,7 @@
 	import memoize from 'lodash-es/memoize';
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
+	import { copyToClipboard } from '$lib/actions';
 
 	let onlyMatching: boolean;
 
@@ -57,13 +58,15 @@
 			// If your log-in exists
 			// But the database forgot about you
 			you !== null &&
+			you !== 'tentative' &&
 			(
 				await supabase
 					.from('schedules')
 					.select('*')
 					.eq('room', $page.params.room)
 					.eq('student', you.name)
-			).data?.length === 0
+					.single()
+			).data === null
 		) {
 			// you'll have to do the whole process again
 			you = null;
@@ -77,6 +80,7 @@
 			// // they should be equivalent
 			// console.assert(isEqual(toInsert, you.schedule));
 		}
+		// Supabase Realtime
 		supabase
 			.channel('schema-db-changes')
 			.on<Schedule>(
@@ -185,15 +189,16 @@
 				>{$page.params.room.slice(0, 8)}</code
 			>
 		</h1>
+		<!-- 
+			Button row
+		 -->
 		<div class="flex justify-evenly flex-row space-x-4 mt-3">
-			<!-- <div class="flex justify-evenly flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0"> -->
 			<div class="tooltip tooltip-right md:tooltip-top" data-tip="Copy room link to clipboard">
 				<button
 					class="btn btn-accent"
-					on:click={() => {
-						navigator.clipboard.writeText(window.location.href).then(() => {
-							addToast('Room URL copied to clipboard', 'success');
-						});
+					use:copyToClipboard={{
+						message: 'Room URL copied to clipboard',
+						value: window.location.href
 					}}
 					><svg
 						xmlns="http://www.w3.org/2000/svg"

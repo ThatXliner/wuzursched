@@ -2,8 +2,8 @@
 	import { isEqual } from 'lodash-es';
 	import type { Writable } from 'svelte/store';
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
-	import { addToast } from '$lib/toasts';
 	import type { Schedule, VirtualSchedule, Class } from '$lib/InfoInput';
+	import { copyToClipboard } from '$lib/actions';
 
 	export let schedules: Writable<Schedule[]>;
 	export let you:
@@ -78,10 +78,9 @@
 				<span
 					>No schedules found. <button
 						class="link link-primary"
-						on:click={() => {
-							navigator.clipboard.writeText(window.location.href).then(() => {
-								addToast('Room URL copied to clipboard', 'success');
-							});
+						use:copyToClipboard={{
+							message: 'Room URL copied to clipboard',
+							value: window.location.href
 						}}>Invite people!</button
 					></span
 				>
