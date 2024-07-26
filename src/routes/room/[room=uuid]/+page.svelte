@@ -298,7 +298,9 @@
 					>
 						<input type="checkbox" />
 						<div class="collapse-title text-xl font-medium">
-							{schedule.student}'s schedule
+							{schedule.student}'s schedule {isEqual({ name: schedule.student, schedule }, you)
+								? '(you)'
+								: ''}
 							<!-- TODO: Show if in common -->
 						</div>
 						<div class="collapse-content hidden">
