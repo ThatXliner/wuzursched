@@ -40,10 +40,13 @@
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	let you: {
-		name: string;
-		schedule: Schedule;
-	};
+	let you:
+		| {
+				name: string;
+				schedule: Schedule;
+		  }
+		| null
+		| 'tentative';
 	let classes: Writable<Classes> = writable([]);
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = 'CLOSED';
 	onMount(async () => {
@@ -169,10 +172,16 @@
 {#if you === null}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
 		<Toasts />
-		<div class="modal-box max-h-screen h-3/4 max-w-screen overflow-visible">
+		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
 			<InfoInput on:submit={onInfoSubmitted} classes={$classes} {addClass} />
+			<button
+				class="btn btn-accent w-full my-4"
+				on:click={() => {
+					you = 'tentative';
+				}}>"But I already have a schedule in here!"</button
+			>
 		</div>
 	</dialog>
 {/if}
@@ -248,18 +257,38 @@
 </div>
 <Tabs.Root value="schedules">
 	<!-- <Tabs.List> -->
-	<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
-		<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
-		<Tabs.Trigger value="search">Search</Tabs.Trigger>
-		<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
-	</Tabs.List>
+	{#if you === 'tentative'}
+		<div class="flex w-full justify-center space-x-4">
+			<h3 class="text-3xl font-bold">Select who you are</h3>
+			<button
+				class="btn btn-error"
+				on:click={() => {
+					you = null;
+				}}>Cancel</button
+			>
+		</div>
+	{:else}
+		<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
+			<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
+			<Tabs.Trigger value="search">Search</Tabs.Trigger>
+			<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
+		</Tabs.List>
+	{/if}
 	<Tabs.Content value="schedules">
 		<div class="flex flex-wrap justify-evenly">
 			{#each $schedules as schedule}
 				<!-- You is guaranteed to !== null -->
 				<!-- I'm not sure how to express TypeScript -->
 				<!-- Within Svelte code -->
-				{#if (onlyMatching && matches(you?.schedule, schedule)) || !onlyMatching}
+				{#if you === 'tentative'}
+					<button
+						class="btn my-3 h-fit w-fit border border-base-300 bg-base-100 shadow-xl rounded-box p-4 text-xl font-medium"
+					>
+						{schedule.student}
+					</button>
+				{:else if you === null}
+					<p>Please input who you are first</p>
+				{:else if (onlyMatching && matches(you.schedule, schedule)) || !onlyMatching}
 					<div
 						class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
 					>
