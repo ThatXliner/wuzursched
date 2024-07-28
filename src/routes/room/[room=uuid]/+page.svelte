@@ -261,7 +261,7 @@
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
-		<ViewSchedules {schedules} {you} room={$page.params.room} {getClass} {onlyMatching} />
+		<ViewSchedules {schedules} bind:you room={$page.params.room} {getClass} {onlyMatching} />
 	</Tabs.Content>
 	<Tabs.Content value="password">Change your password here.</Tabs.Content>
 </Tabs.Root>
