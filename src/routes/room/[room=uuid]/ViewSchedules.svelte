@@ -4,15 +4,10 @@
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import type { Schedule, VirtualSchedule, Class } from '$lib/InfoInput';
 	import { copyToClipboard } from '$lib/actions';
+	import type { You } from './ViewSchedules';
 
 	export let schedules: Writable<Schedule[]>;
-	export let you:
-		| {
-				name: string;
-				schedule: Schedule;
-		  }
-		| null
-		| 'tentative';
+	export let you: You;
 	export let room: string;
 	export let onlyMatching: boolean;
 	export let getClass: (id: string) => Promise<Class>;

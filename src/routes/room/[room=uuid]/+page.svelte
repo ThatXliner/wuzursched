@@ -17,6 +17,7 @@
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
 	import { copyToClipboard } from '$lib/actions';
+	import type { You } from './ViewSchedules';
 
 	let onlyMatching: boolean;
 
@@ -35,13 +36,7 @@
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	let you:
-		| {
-				name: string;
-				schedule: Schedule;
-		  }
-		| null
-		| 'tentative';
+	let you: You;
 	let classes: Writable<Classes> = writable([]);
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = 'CLOSED';
 	onMount(async () => {
