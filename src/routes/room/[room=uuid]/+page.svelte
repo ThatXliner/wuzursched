@@ -256,14 +256,14 @@
 	{:else}
 		<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
 			<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
-			<Tabs.Trigger value="search">Search</Tabs.Trigger>
+			<Tabs.Trigger value="filter">Filter</Tabs.Trigger>
 			<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
 		<ViewSchedules {schedules} bind:you room={$page.params.room} {getClass} {onlyMatching} />
 	</Tabs.Content>
-	<Tabs.Content value="search">
+	<Tabs.Content value="filter">
 		{#if you != null && you !== 'tentative'}
 			<Search {you} {getClass} schedules={$schedules}></Search>
 		{/if}
