@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { isEqual } from 'lodash-es';
+	import ViewSchedule from './ViewSchedule.svelte';
+
 	import type { Writable } from 'svelte/store';
-	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import type { Schedule, VirtualSchedule, Class } from '$lib/InfoInput';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
@@ -35,25 +35,7 @@
 		{:else if you === null}
 			<p>Please input who you are first</p>
 		{:else if (onlyMatching && matches(you.schedule, schedule)) || !onlyMatching}
-			<div
-				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
-			>
-				<input type="checkbox" />
-				<div class="collapse-title text-xl font-medium">
-					{schedule.student}'s schedule {isEqual({ name: schedule.student, schedule }, you)
-						? '(you)'
-						: ''}
-					<!-- TODO: Show if in common -->
-				</div>
-				<div class="collapse-content hidden">
-					<div class="overflow-x-auto">
-						<!-- If statement to appease type checker -->
-						{#if you != null}
-							<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
-						{/if}
-					</div>
-				</div>
-			</div>
+			<ViewSchedule {schedule} {you} {getClass} />
 		{/if}
 	{:else}
 		<div class="alert alert-warning shadow-lg mx-auto w-fit">
