@@ -12,17 +12,7 @@ export type Schedule = VirtualSchedule & {
 	room: string;
 	student: string;
 };
-export type UnfinishedSchedule = {
-	'1a'?: string;
-	'1b'?: string;
-	'2a'?: string;
-	'2b'?: string;
-	'3a'?: string;
-	'3b'?: string;
-	'4a'?: string;
-	'4b'?: string;
-};
-
+export type UnfinishedSchedule = Partial<VirtualSchedule>;
 import type { ArrElement } from '$lib/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './supabase';

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Search from './Search.svelte';
+
 	import Realtime from '$lib/Realtime.svelte';
 
 	import ViewSchedules from './ViewSchedules.svelte';
@@ -18,6 +20,7 @@
 	import { addToast } from '$lib/toasts';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
+	import ScheduleDisplay from './ScheduleDisplay.svelte';
 
 	let onlyMatching: boolean;
 
@@ -259,6 +262,11 @@
 	{/if}
 	<Tabs.Content value="schedules">
 		<ViewSchedules {schedules} bind:you room={$page.params.room} {getClass} {onlyMatching} />
+	</Tabs.Content>
+	<Tabs.Content value="search">
+		{#if you != null && you !== 'tentative'}
+			<Search {you} {getClass} schedules={$schedules}></Search>
+		{/if}
 	</Tabs.Content>
 	<Tabs.Content value="password">Change your password here.</Tabs.Content>
 </Tabs.Root>
