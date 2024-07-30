@@ -21,6 +21,7 @@
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
+	import Engineer from './Engineer.svelte';
 
 	let onlyMatching: boolean;
 
@@ -241,7 +242,7 @@
 		</div>
 	</div>
 </div>
-<Tabs.Root value="schedules">
+<Tabs.Root value="engineer">
 	<!-- <Tabs.List> -->
 	{#if you === 'tentative'}
 		<div class="flex w-full justify-center space-x-4">
@@ -268,7 +269,7 @@
 			<Search {you} {getClass} schedules={$schedules}></Search>
 		{/if}
 	</Tabs.Content>
-	<Tabs.Content value="password">Change your password here.</Tabs.Content>
+	<Tabs.Content value="engineer"><Engineer /></Tabs.Content>
 </Tabs.Root>
 
 <Realtime {realtimeStatus} />
