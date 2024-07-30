@@ -13,6 +13,7 @@ export type Schedule = VirtualSchedule & {
 	student: string;
 };
 export type UnfinishedSchedule = Partial<VirtualSchedule>;
+export const PERIODS = ['1a', '1b', '2a', '2b', '3a', '3b', '4a', '4b'] as const;
 import type { ArrElement } from '$lib/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './supabase';

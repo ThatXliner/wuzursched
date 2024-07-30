@@ -102,3 +102,20 @@ export function normalize(className: string) {
 export type ArrElement<ArrType> = ArrType extends readonly (infer ElementType)[]
 	? ElementType
 	: never;
+function* setMinus<T>(A: Iterable<T>, B: Iterable<T>) {
+	const setA = new Set(A);
+	const setB = new Set(B);
+
+	for (const v of setB.values()) {
+		if (!setA.delete(v)) {
+			yield v;
+		}
+	}
+
+	for (const v of setA.values()) {
+		yield v;
+	}
+}
+export function setDifference<T>(A: Iterable<T>, B: Iterable<T>): Set<T> {
+	return new Set([...setMinus(A, B)]);
+}
