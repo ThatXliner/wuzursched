@@ -2,9 +2,9 @@
 	import { isEqual } from 'lodash-es';
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import type { Schedule, Class } from '$lib/InfoInput';
-	import type { You } from './ViewSchedules';
+	import type { ResolvedYou } from './ViewSchedules';
 	export let schedule: Schedule;
-	export let you: You;
+	export let you: ResolvedYou;
 	export let getClass: (id: string) => Promise<Class>;
 </script>
 
@@ -21,9 +21,7 @@
 	<div class="collapse-content hidden">
 		<div class="overflow-x-auto">
 			<!-- If statement to appease type checker -->
-			{#if you != null && you !== 'tentative'}
-				<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
-			{/if}
+			<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
 		</div>
 	</div>
 </div>
