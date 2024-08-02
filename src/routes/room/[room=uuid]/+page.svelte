@@ -1,5 +1,11 @@
 <script lang="ts">
-	import ScheduleDisplay from './ScheduleDisplay.svelte';
+	import Search from './Search.svelte';
+
+	import Realtime from '$lib/Realtime.svelte';
+
+	import ViewSchedules from './ViewSchedules.svelte';
+
+	import * as Tabs from '$lib/components/ui/tabs';
 	import InfoInput from '$lib/InfoInput.svelte';
 
 	import { page } from '$app/stores';
@@ -7,23 +13,18 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
-	import type { VirtualSchedule, Classes, Class } from '$lib/InfoInput.d';
+	import type { VirtualSchedule, Classes, Class, Schedule } from '$lib/InfoInput.d';
 	import type { Writable } from 'svelte/store';
 	import memoize from 'lodash-es/memoize';
-	import isEqual from 'lodash-es/isEqual';
 	import Toasts from '$lib/Toasts.svelte';
 	import { addToast } from '$lib/toasts';
-	// import type { PageServerData } from './$types';
+	import { copyToClipboard } from '$lib/actions';
+	import type { You } from './ViewSchedules';
+	import ScheduleDisplay from './ScheduleDisplay.svelte';
+	import Engineer from './Engineer.svelte';
 
 	let onlyMatching: boolean;
-	const PERIODS: (keyof VirtualSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
-	function matches(a: VirtualSchedule, b: VirtualSchedule) {
-		return PERIODS.some((x) => a[x] === b[x]);
-	}
-	type Schedule = VirtualSchedule & {
-		room: string;
-		student: string;
-	};
+
 	export let data;
 	const { supabase } = data;
 	const schedules: Writable<Schedule[]> = writable(data.data);
@@ -39,10 +40,7 @@
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	let you: {
-		name: string;
-		schedule: Schedule;
-	};
+	let you: You;
 	let classes: Writable<Classes> = writable([]);
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = 'CLOSED';
 	onMount(async () => {
@@ -61,13 +59,15 @@
 			// If your log-in exists
 			// But the database forgot about you
 			you !== null &&
+			you !== 'tentative' &&
 			(
 				await supabase
 					.from('schedules')
 					.select('*')
 					.eq('room', $page.params.room)
 					.eq('student', you.name)
-			).data?.length === 0
+					.single()
+			).data === null
 		) {
 			// you'll have to do the whole process again
 			you = null;
@@ -81,6 +81,7 @@
 			// // they should be equivalent
 			// console.assert(isEqual(toInsert, you.schedule));
 		}
+		// Supabase Realtime
 		supabase
 			.channel('schema-db-changes')
 			.on<Schedule>(
@@ -168,41 +169,37 @@
 {#if you === null}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
 		<Toasts />
-		<div class="modal-box max-h-screen h-3/4 max-w-screen overflow-visible">
+		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
 			<InfoInput on:submit={onInfoSubmitted} classes={$classes} {addClass} />
+			<button
+				class="btn btn-accent w-full my-4"
+				on:click={() => {
+					you = 'tentative';
+				}}>"But I already have a schedule in here!"</button
+			>
 		</div>
 	</dialog>
 {/if}
 
-<main class="hero min-h-[30vh]">
+<div class="hero min-h-[30vh]">
 	<div class="hero-content flex-col">
 		<h1 class="text-5xl text-center font-bold">
 			Schedules for room <code class="bg-base-200 p-1 rounded-lg"
 				>{$page.params.room.slice(0, 8)}</code
 			>
 		</h1>
+		<!-- 
+			Button row
+		 -->
 		<div class="flex justify-evenly flex-row space-x-4 mt-3">
-			<!-- <div class="flex justify-evenly flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0"> -->
 			<div class="tooltip tooltip-right md:tooltip-top" data-tip="Copy room link to clipboard">
 				<button
 					class="btn btn-accent"
-					on:click={() => {
-						if (window.location.href.includes('devMode')) {
-							let value = window.localStorage.getItem($page.params.room);
-							if (value !== null) {
-								navigator.clipboard.writeText(value).then(() => {
-									addToast('Room session value copied to clipboard', 'success');
-								});
-							} else {
-								addToast('Room session value not found', 'error');
-							}
-						} else {
-							navigator.clipboard.writeText(window.location.href).then(() => {
-								addToast('Room URL copied to clipboard', 'success');
-							});
-						}
+					use:copyToClipboard={{
+						message: 'Room URL copied to clipboard',
+						value: window.location.href
 					}}
 					><svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -244,71 +241,37 @@
 			</div>
 		</div>
 	</div>
-</main>
-
-<div class="flex flex-wrap justify-evenly">
-	{#each $schedules as schedule}
-		<!-- You is guaranteed to !== null -->
-		<!-- I'm not sure how to express TypeScript -->
-		<!-- Within Svelte code -->
-		{#if (onlyMatching && matches(you?.schedule, schedule)) || !onlyMatching}
-			<div
-				class="my-3 collapse h-fit w-fit collapse-plus border border-base-300 bg-base-100 shadow-xl rounded-box"
-			>
-				<input type="checkbox" />
-				<div class="collapse-title text-xl font-medium">
-					{schedule.student}'s schedule
-					<!-- TODO: Show if in common -->
-				</div>
-				<div class="collapse-content hidden">
-					<div class="overflow-x-auto">
-						<!-- If statement to appease type checker -->
-						{#if you != null}
-							<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
-						{/if}
-					</div>
-				</div>
-			</div>
-		{/if}
-	{:else}
-		<div class="alert alert-warning shadow-lg mx-auto w-fit">
-			<div>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="stroke-current flex-shrink-0 h-6 w-6"
-					fill="none"
-					viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-					/></svg
-				>
-				<span>No schedules found. Invite people!</span>
-			</div>
-		</div>
-	{/each}
 </div>
+<Tabs.Root value="schedules" class="min-h-[60vh]">
+	<!-- <Tabs.List> -->
+	{#if you === 'tentative'}
+		<div class="flex w-full justify-center space-x-4">
+			<h3 class="text-3xl font-bold">Select who you are</h3>
+			<button
+				class="btn btn-error"
+				on:click={() => {
+					you = null;
+				}}>Cancel</button
+			>
+		</div>
+	{:else}
+		<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
+			<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
+			<Tabs.Trigger value="filter">Filter</Tabs.Trigger>
+			<Tabs.Trigger value="engineer" disabled>Schedule Engineer</Tabs.Trigger>
+		</Tabs.List>
+	{/if}
+	<Tabs.Content value="schedules">
+		<ViewSchedules {schedules} bind:you room={$page.params.room} {getClass} {onlyMatching} />
+	</Tabs.Content>
+	<Tabs.Content value="filter">
+		{#if you != null && you !== 'tentative'}
+			<Search {you} {getClass} schedules={$schedules}></Search>
+		{/if}
+	</Tabs.Content>
+	<Tabs.Content value="engineer">
+		<Engineer {schedules} {getClass} />
+	</Tabs.Content>
+</Tabs.Root>
 
-<span
-	class="sticky center-horizontal bottom-5 drop-shadow-lg tooltip"
-	data-tip="You are {realtimeStatus === 'SUBSCRIBED'
-		? 'connected'
-		: 'disconnected'} to the realtime server"
->
-	{#if realtimeStatus === 'SUBSCRIBED'}<span class="badge badge-success p-3">connected</span
-		>{:else}<span class="badge badge-error p-3">disconnected</span>{/if}
-</span>
-
-<style>
-	input[type='checkbox']:checked ~ .collapse-content {
-		display: block;
-	}
-	.center-horizontal {
-		/*shift 50% of the page*/
-		left: 50%;
-		/* Move 50% of itself backwards */
-		transform: translate(-50%, 0);
-	}
-</style>
+<Realtime {realtimeStatus} />
