@@ -1,6 +1,17 @@
 <script>
 	import '../app.css';
 	import Downtime from '$lib/Downtime.svelte';
+	import { onMount } from 'svelte';
+	import { ModeWatcher } from 'mode-watcher';
+
+	let theme = 'light';
+	onMount(() => {
+		const mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
+		theme = mediaQueryList.matches ? 'dark' : 'light';
+		mediaQueryList.addEventListener('change', (e) => {
+			theme = e.matches ? 'dark' : 'light';
+		});
+	});
 </script>
 
 <div class="w-full text-center py-5 px-7 text-2xl font-bold bg-black">
@@ -9,8 +20,11 @@
 		learn more)
 	</a>
 </div>
+<main data-theme={theme}>
+	<ModeWatcher />
+	<slot />
+</main>
 
-<slot />
 <footer class="footer items-center p-4 bg-neutral text-neutral-content">
 	<div class="items-center grid-flow-col">
 		<p>

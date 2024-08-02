@@ -242,7 +242,7 @@
 		</div>
 	</div>
 </div>
-<Tabs.Root value="engineer">
+<Tabs.Root value="schedules" class="min-h-[60vh]">
 	<!-- <Tabs.List> -->
 	{#if you === 'tentative'}
 		<div class="flex w-full justify-center space-x-4">
@@ -258,7 +258,7 @@
 		<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
 			<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
 			<Tabs.Trigger value="filter">Filter</Tabs.Trigger>
-			<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
+			<Tabs.Trigger value="engineer" disabled>Schedule Engineer</Tabs.Trigger>
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
@@ -269,7 +269,9 @@
 			<Search {you} {getClass} schedules={$schedules}></Search>
 		{/if}
 	</Tabs.Content>
-	<Tabs.Content value="engineer"><Engineer /></Tabs.Content>
+	<Tabs.Content value="engineer">
+		<Engineer {schedules} {getClass} />
+	</Tabs.Content>
 </Tabs.Root>
 
 <Realtime {realtimeStatus} />

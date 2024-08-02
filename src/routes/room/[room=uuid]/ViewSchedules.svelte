@@ -51,7 +51,7 @@
 			>
 				{schedule.student}
 			</button>
-		{:else if you === null}
+		{:else if you == null}
 			<p>Please input who you are first</p>
 		{:else if (onlyMatching && matches(you.schedule, schedule)) || !onlyMatching}
 			<ViewSchedule {schedule} {you} {getClass} />

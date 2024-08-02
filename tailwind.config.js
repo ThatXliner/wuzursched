@@ -2,7 +2,7 @@ import { fontFamily } from 'tailwindcss/defaultTheme';
 import daisyui from 'daisyui';
 /** @type {import('tailwindcss').Config} */
 const config = {
-	darkMode: ['class'],
+	// darkMode: 'media',
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 	safelist: ['dark'],
 	theme: {
