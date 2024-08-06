@@ -244,6 +244,7 @@
 					class="btn btn-error"
 					on:click={() => {
 						you = null;
+						window.localStorage.delete($page.params.room);
 					}}>Reset who you are</button
 				>
 			{/if}
