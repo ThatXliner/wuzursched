@@ -239,6 +239,14 @@
 					</label>
 				</div>
 			</div>
+			{#if you !== 'tentative'}
+				<button
+					class="btn btn-error"
+					on:click={() => {
+						you = null;
+					}}>Reset who you are</button
+				>
+			{/if}
 		</div>
 	</div>
 </div>
@@ -258,7 +266,7 @@
 		<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
 			<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
 			<Tabs.Trigger value="filter">Filter</Tabs.Trigger>
-			<Tabs.Trigger value="engineer" disabled>Schedule Engineer</Tabs.Trigger>
+			<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
