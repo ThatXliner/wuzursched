@@ -190,7 +190,7 @@
 				>{$page.params.room.slice(0, 8)}</code
 			>
 		</h1>
-		<!-- 
+		<!--
 			Button row
 		 -->
 		<div class="flex justify-evenly flex-row space-x-4 mt-3">
@@ -267,7 +267,7 @@
 		<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
 			<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
 			<Tabs.Trigger value="filter">Filter</Tabs.Trigger>
-			<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
+			<Tabs.Trigger value="engineer" disabled>Schedule Engineer (coming soon!)</Tabs.Trigger>
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
