@@ -250,11 +250,11 @@
 			{/if}
 		</div>
 		{#if $page.params.room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
-			<div class="w-sm mx-auto">
-				Public Service Announcement: "Newsela schedules" are completely unofficial and subject to
-				change. If you are to upload your schedule from Newsela, please incldue "(Newsela)" in your
-				name. If you have any questions, direct message @thatxliner on Instagram (or email
-				thatxliner@gmail.com). I can help you delete your previous submissions, etc.
+			<div class="flex flex-col justify-center mx-auto">
+				<div class="w-sm mx-auto">
+					If you have any questions, direct message @thatxliner on Instagram (or email
+					thatxliner@gmail.com). I can help you delete your previous submissions, etc.
+				</div>
 			</div>
 		{/if}
 	</div>
