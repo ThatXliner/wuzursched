@@ -1,5 +1,7 @@
 <script lang="ts">
-	export let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = 'CLOSED';
+	let {
+		realtimeStatus = 'CLOSED'
+	}: { realtimeStatus?: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' } = $props();
 </script>
 
 <span

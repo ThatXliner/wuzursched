@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	// We're in the error page, of course there's an error
-	console.error($page.error?.message);
+	console.error(page.error?.message);
 </script>
 
 <main class="hero h-screen">
 	<div class="hero-content flex-col">
-		{#if $page.status === 404}
+		{#if page.status === 404}
 			<div class="alert alert-error shadow-lg">
 				<div>
 					<svg
@@ -24,7 +25,7 @@
 					<span>Non-existent room lmao L</span>
 				</div>
 			</div>
-			<a href="/" class="btn btn-primary">Ok I got bozo'd, bring me back home</a>
+			<a href={resolve('/')} class="btn btn-primary">Ok I got bozo'd, bring me back home</a>
 		{:else}
 			<div class="alert alert-error shadow-lg">
 				<div>
@@ -43,7 +44,7 @@
 					<span>I got L'd, it's not your fault</span>
 				</div>
 			</div>
-			<a href="/" class="btn btn-primary">Ok, bozo</a>
+			<a href={resolve('/')} class="btn btn-primary">Ok, bozo</a>
 		{/if}
 	</div>
 </main>

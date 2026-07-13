@@ -1,24 +1,31 @@
 <script lang="ts">
 	import ViewSchedule from './ViewSchedule.svelte';
 
-	import type { Writable } from 'svelte/store';
 	import type { Schedule, VirtualSchedule, Class } from '$lib/InfoInput';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import Fuse from 'fuse.js';
 
-	export let schedules: Writable<Schedule[]>;
-	export let you: You;
-	export let room: string;
-	export let onlyMatching: boolean;
-	export let getClass: (id: string) => Promise<Class>;
+	let {
+		schedules,
+		you = $bindable(),
+		room,
+		onlyMatching,
+		getClass
+	}: {
+		schedules: Schedule[];
+		you: You;
+		room: string;
+		onlyMatching: boolean;
+		getClass: (id: string) => Promise<Class>;
+	} = $props();
 	const PERIODS: (keyof VirtualSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
 	function matches(a: VirtualSchedule, b: VirtualSchedule) {
 		return PERIODS.some((x) => a[x] === b[x]);
 	}
-	let searchQuery = '';
-	$: fuse = new Fuse($schedules, { keys: ['student'] });
-	$: filtered = searchQuery ? fuse.search(searchQuery).map((x) => x.item) : $schedules;
+	let searchQuery = $state('');
+	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
+	let filtered = $derived(searchQuery ? fuse.search(searchQuery).map((x) => x.item) : schedules);
 </script>
 
 <label class="input input-bordered flex items-center gap-2 w-96 mx-auto my-5">
@@ -37,14 +44,14 @@
 	</svg>
 </label>
 <div class="flex flex-wrap justify-evenly">
-	{#each filtered as schedule}
+	{#each filtered as schedule (schedule.student)}
 		<!-- You is guaranteed to !== null -->
 		<!-- I'm not sure how to express TypeScript -->
 		<!-- Within Svelte code -->
 		{#if you === 'tentative'}
 			<button
 				class="btn my-3 h-fit w-fit border border-base-300 bg-base-100 shadow-xl rounded-box p-4 text-xl font-medium"
-				on:click={() => {
+				onclick={() => {
 					you = { name: schedule.student, schedule };
 					window.localStorage.setItem(room, JSON.stringify(you));
 				}}
@@ -84,9 +91,3 @@
 		</div>
 	{/each}
 </div>
-
-<style>
-	input[type='checkbox']:checked ~ .collapse-content {
-		display: block;
-	}
-</style>

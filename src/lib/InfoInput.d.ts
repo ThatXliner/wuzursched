@@ -17,6 +17,7 @@ export const PERIODS = ['1a', '1b', '2a', '2b', '3a', '3b', '4a', '4b'] as const
 import type { ArrElement } from '$lib/utils';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './supabase';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- only used for its return type below
 async function getClasses(supabase: SupabaseClient<Database>, room: string) {
 	return await supabase.from('classes').select('*').eq('room', room);
 }

@@ -1,4 +1,4 @@
-import { addToast } from './toasts';
+import { addToast } from './toasts.svelte';
 
 export function copyToClipboard(
 	node: HTMLButtonElement,
@@ -7,7 +7,7 @@ export function copyToClipboard(
 	if (value) {
 		const listener = () => {
 			navigator.clipboard.writeText(value).then(() => {
-				addToast('Room URL copied to clipboard', 'success');
+				addToast(message, 'success');
 			});
 		};
 

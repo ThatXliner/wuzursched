@@ -8,26 +8,23 @@
 	import * as Tabs from '$lib/components/ui/tabs';
 	import InfoInput from '$lib/InfoInput.svelte';
 
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { sqlEscape, normalize } from '$lib/utils';
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
 
 	import type { VirtualSchedule, Classes, Class, Schedule } from '$lib/InfoInput.d';
-	import type { Writable } from 'svelte/store';
+	import type { PageData } from './$types';
 	import memoize from 'lodash-es/memoize';
-	import Toasts from '$lib/Toasts.svelte';
-	import { addToast } from '$lib/toasts';
+	import ToastList from '$lib/ToastList.svelte';
+	import { addToast } from '$lib/toasts.svelte';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
-	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import Engineer from './Engineer.svelte';
 
-	let onlyMatching: boolean;
-
-	export let data;
-	const { supabase } = data;
-	const schedules: Writable<Schedule[]> = writable(data.data);
+	let { data }: { data: PageData } = $props();
+	let supabase = $derived(data.supabase);
+	let schedules: Schedule[] = $derived(data.data);
 	async function _getClass(id: string) {
 		const { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		if (error !== null) {
@@ -40,21 +37,23 @@
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	let you: You;
-	let classes: Writable<Classes> = writable([]);
-	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = 'CLOSED';
+	let you: You = $state()!;
+	let classes: Classes = $state([]);
+	let onlyMatching: boolean = $state(false);
+	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
+	let room = $derived(page.params.room!);
 	onMount(async () => {
 		{
-			const { data, error } = await getClasses($page.params.room);
+			const { data, error } = await getClasses(room);
 			// did not convert to console.assert
 			// to appease TypeScript
 			if (error !== null) {
 				throw error;
 			}
-			$classes = data;
+			classes = data;
 		}
 		// Load it from localStorage
-		you = JSON.parse(window.localStorage.getItem($page.params.room) ?? 'null');
+		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
 		if (
 			// If your log-in exists
 			// But the database forgot about you
@@ -64,18 +63,18 @@
 				await supabase
 					.from('schedules')
 					.select('*')
-					.eq('room', $page.params.room)
+					.eq('room', room)
 					.eq('student', you.name)
 					.single()
 			).data === null
 		) {
 			// you'll have to do the whole process again
 			you = null;
-			window.localStorage.removeItem($page.params['room']);
+			window.localStorage.removeItem(room);
 			// old code:
 			// let toInsert: Schedule = {
 			// 	...you['schedule'],
-			// 	room: $page.params['room'],
+			// 	room,
 			// 	student: you.name
 			// };
 			// // they should be equivalent
@@ -92,13 +91,13 @@
 					table: 'schedules',
 					// please don't let this be an SQL injection
 					// (theoretically, this should never be an
-					// sql injection because $page.params
+					// sql injection because page.params
 					// is being validated)
-					filter: `room=eq.${sqlEscape($page.params.room)}`
+					filter: `room=eq.${sqlEscape(room)}`
 				},
 				(payload) => {
 					if (payload.eventType === 'INSERT') {
-						schedules.update(($schedules) => [...$schedules, payload.new]);
+						schedules = [...schedules, payload.new];
 						addToast(`${payload.new.student} just added their schedule to this room`);
 					}
 					console.log('1', payload);
@@ -113,29 +112,28 @@
 					table: 'classes',
 					// please don't let this be an SQL injection
 					// (theoretically, this should never be an
-					// sql injection because $page.params
+					// sql injection because page.params
 					// is being validated)
-					filter: `room=eq.${sqlEscape($page.params.room)}`
+					filter: `room=eq.${sqlEscape(room)}`
 				},
 				async (payload) => {
-					$classes = [...$classes, payload.new];
+					classes = [...classes, payload.new];
 				}
 			)
 			.subscribe((status) => {
 				realtimeStatus = status;
 			});
 	});
-	function onInfoSubmitted(event: { detail: { name: string; schedule: VirtualSchedule } }) {
-		const got = event.detail;
-		const toInsert = { ...got.schedule, room: $page.params.room, student: got.name };
+	function onInfoSubmitted(detail: { name: string; schedule: VirtualSchedule }) {
+		const toInsert = { ...detail.schedule, room, student: detail.name };
 		supabase
 			.from('schedules')
 			.insert([toInsert])
 			.then(() => {
-				you = { name: event.detail.name, schedule: toInsert };
+				you = { name: detail.name, schedule: toInsert };
 				// no need to update the local db variable
 				// since that will be updated via the realtime subscription
-				window.localStorage.setItem($page.params.room, JSON.stringify(you));
+				window.localStorage.setItem(room, JSON.stringify(you));
 			});
 	}
 	async function addClass({
@@ -151,7 +149,7 @@
 			name: normalize(className),
 			teacher_first: firstName.trim().toLowerCase(),
 			teacher_last: lastName.trim().toLowerCase(),
-			room: $page.params.room
+			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
 		if (error !== null) {
@@ -165,17 +163,17 @@
 	}
 </script>
 
-<Toasts />
+<ToastList />
 {#if you === null}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
-		<Toasts />
+		<ToastList />
 		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
-			<InfoInput on:submit={onInfoSubmitted} classes={$classes} {addClass} />
+			<InfoInput onsubmit={onInfoSubmitted} {classes} {addClass} />
 			<button
 				class="btn btn-accent w-full my-4"
-				on:click={() => {
+				onclick={() => {
 					you = 'tentative';
 				}}>"But I already have a schedule in here!"</button
 			>
@@ -187,7 +185,7 @@
 	<div class="hero-content flex-col">
 		<h1 class="text-5xl text-center font-bold">
 			Schedules for room <code class="bg-base-200 p-1 rounded-lg"
-				>{$page.params.room.slice(0, 8)}</code
+				>{room.slice(0, 8)}</code
 			>
 		</h1>
 		<!--
@@ -215,7 +213,7 @@
 					</svg>
 				</button>
 			</div>
-			<a href="/" class="btn" title="Go home"
+			<a href={resolve('/')} class="btn" title="Go home"
 				><svg
 					xmlns="http://www.w3.org/2000/svg"
 					class="h-6 w-6"
@@ -242,14 +240,14 @@
 			{#if you !== 'tentative'}
 				<button
 					class="btn btn-error"
-					on:click={() => {
+					onclick={() => {
 						you = null;
-						window.localStorage.delete($page.params.room);
+						window.localStorage.removeItem(room);
 					}}>Reset who you are</button
 				>
 			{/if}
 		</div>
-		{#if $page.params.room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
+		{#if room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
 			<div class="flex flex-col justify-center mx-auto">
 				<div class="w-sm mx-auto">
 					If you have any questions, direct message @thatxliner on Instagram (or email
@@ -266,7 +264,7 @@
 			<h3 class="text-3xl font-bold">Select who you are</h3>
 			<button
 				class="btn btn-error"
-				on:click={() => {
+				onclick={() => {
 					you = null;
 				}}>Cancel</button
 			>
@@ -279,15 +277,15 @@
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
-		<ViewSchedules {schedules} bind:you room={$page.params.room} {getClass} {onlyMatching} />
+		<ViewSchedules {schedules} bind:you {room} {getClass} {onlyMatching} />
 	</Tabs.Content>
 	<Tabs.Content value="filter">
 		{#if you != null && you !== 'tentative'}
-			<Search {you} {getClass} schedules={$schedules}></Search>
+			<Search {you} {getClass} {schedules}></Search>
 		{/if}
 	</Tabs.Content>
 	<Tabs.Content value="engineer">
-		<Engineer {schedules} {getClass} />
+		<Engineer {schedules} />
 	</Tabs.Content>
 </Tabs.Root>
 

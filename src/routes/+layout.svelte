@@ -1,10 +1,11 @@
 <script>
 	import '../app.css';
-	import Downtime from '$lib/Downtime.svelte';
 	import { onMount } from 'svelte';
 	import { ModeWatcher } from 'mode-watcher';
 
-	let theme = 'light';
+	let { children } = $props();
+
+	let theme = $state('light');
 	onMount(() => {
 		const mediaQueryList = window.matchMedia('(prefers-color-scheme: dark)');
 		theme = mediaQueryList.matches ? 'dark' : 'light';
@@ -22,7 +23,7 @@
 </div>
 <main data-theme={theme}>
 	<ModeWatcher />
-	<slot />
+	{@render children()}
 </main>
 
 <footer class="footer items-center p-4 bg-neutral text-neutral-content">

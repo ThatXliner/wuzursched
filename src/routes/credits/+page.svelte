@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+
 	const names = ['Amaar Chughtai', 'Justin Shi'];
 </script>
 
@@ -10,10 +12,10 @@
 				<p>was beta tested by:</p>
 			</div>
 			<div class="flex flex-wrap space-x-3 text-lg py-6">
-				{#each names as name}<span class="shadow-lg rounded-box p-3 bg-base-100">{name}</span
+				{#each names as name (name)}<span class="shadow-lg rounded-box p-3 bg-base-100">{name}</span
 					>{/each}
 			</div>
-			<a href="/" class="link">Go back home</a>
+			<a href={resolve('/')} class="link">Go back home</a>
 		</div>
 	</div>
 </section>

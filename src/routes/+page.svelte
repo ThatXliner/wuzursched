@@ -1,5 +1,7 @@
 <script lang="ts">
-	let roomId: string;
+	import { resolve } from '$app/paths';
+
+	let roomId: string = $state('');
 	const UUID_REGEX =
 		/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/;
 	function isValid(id: string): boolean {
@@ -30,16 +32,16 @@
 							<button
 								class="btn btn-primary join-item"
 								disabled={!isValid(roomId)}
-								on:click={() => {
+								onclick={() => {
 									window.location.href = `/room/${roomId.match(UUID_REGEX)?.[0]}`;
 								}}>Join</button
 							>
 						</label>
 					</div>
-					<a href="/create" class="btn btn-primary">Create a room</a>
+					<a href={resolve('/create')} class="btn btn-primary">Create a room</a>
 				</div>
 			</div>
-			<a href="/credits" class="link">Credits to our beta testers</a>
+			<a href={resolve('/credits')} class="link">Credits to our beta testers</a>
 		</div>
 	</div>
 </section>

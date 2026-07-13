@@ -3,9 +3,11 @@
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import type { Schedule, Class } from '$lib/InfoInput';
 	import type { ResolvedYou } from './ViewSchedules';
-	export let schedule: Schedule;
-	export let you: ResolvedYou;
-	export let getClass: (id: string) => Promise<Class>;
+	let {
+		schedule,
+		you,
+		getClass
+	}: { schedule: Schedule; you: ResolvedYou; getClass: (id: string) => Promise<Class> } = $props();
 </script>
 
 <div

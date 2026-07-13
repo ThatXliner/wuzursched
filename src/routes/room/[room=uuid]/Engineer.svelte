@@ -1,19 +1,17 @@
 <script lang="ts">
 	import type { Schedule } from '$lib/InfoInput';
 	import Fuse from 'fuse.js';
-	import type { Writable } from 'svelte/store';
-	import ViewSchedule from './ViewSchedule.svelte';
-	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import { findOptimumSchedules } from '$lib/engineer';
 
-	export let schedules: Writable<Schedule[]>;
-	export let getClass: (klass: string) => Promise<Class>;
-	let searchQuery = '';
-	let students: Schedule[] = [];
-	$: fuse = new Fuse($schedules, { keys: ['student'] });
-	$: filtered = searchQuery ? fuse.search(searchQuery).map((x) => x.item) : $schedules;
-	$: found = filtered.length === 1;
-	$: console.log(findOptimumSchedules(students));
+	let { schedules }: { schedules: Schedule[] } = $props();
+	let searchQuery = $state('');
+	let students: Schedule[] = $state([]);
+	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
+	let filtered = $derived(searchQuery ? fuse.search(searchQuery).map((x) => x.item) : schedules);
+	let found = $derived(filtered.length === 1);
+	$effect(() => {
+		console.log(findOptimumSchedules(students));
+	});
 </script>
 
 <div class="flex justify-center">
@@ -33,7 +31,7 @@
 </div>
 <div class="w-3/4 mx-auto bg-base-200 rounded-box p-5 shadow-lg">
 	<div class="dropdown">
-		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div class="join" tabindex="0">
 			<label class="input input-bordered flex items-center gap-2 join-item">
 				<input type="text" class="grow" placeholder="Search" bind:value={searchQuery} />
@@ -53,18 +51,18 @@
 			<button
 				class="btn btn-primary join-item"
 				disabled={!found}
-				on:click={() => {
+				onclick={() => {
 					students = [...students, filtered[0]];
 					searchQuery = '';
 				}}>Add Student</button
 			>
 		</div>
-		<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
 			{#each filtered as schedule (schedule.student)}
 				<li>
 					<span
-						on:click={() => {
+						onclick={() => {
 							searchQuery = schedule.student;
 						}}>{schedule.student}</span
 					>

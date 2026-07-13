@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { titlecase } from '$lib/utils';
 	import type { VirtualSchedule, Class } from '$lib/InfoInput.d';
-	export let them: VirtualSchedule, you: VirtualSchedule, getClass: (id: string) => Promise<Class>;
+	let {
+		them,
+		you,
+		getClass
+	}: { them: VirtualSchedule; you: VirtualSchedule; getClass: (id: string) => Promise<Class> } =
+		$props();
 	const periods = [0, 1, 2, 3] as const;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;
@@ -10,13 +15,13 @@
 <table class="table w-full">
 	<thead>
 		<tr class="text-center">
-			<th />
+			<th></th>
 			<th>A day</th>
 			<th>B day</th>
 		</tr>
 	</thead>
 	<tbody>
-		{#each periods as period}
+		{#each periods as period (period)}
 			{@const scheduleA = them[aDay[period]]}
 			{@const scheduleB = them[bDay[period]]}
 			{@const classA = getClass(scheduleA)}

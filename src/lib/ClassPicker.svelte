@@ -2,46 +2,51 @@
 	import Fuse from 'fuse.js';
 	import type { Class } from './InfoInput';
 	import { titlecase } from '$lib/utils';
-	import { addToast } from './toasts';
-	let className = '',
-		firstName = '',
-		lastName = '';
-	export let addClass: ({
-		className,
-		firstName,
-		lastName
-	}: {
-		className: string;
-		firstName: string;
-		lastName: string;
-	}) => Promise<string>;
+	import { addToast } from './toasts.svelte';
+
 	type MenuItem = Class & { used?: string };
-	export let classes: MenuItem[];
-	export let selected: null | string = null;
-	let selectedClassName: null | string = null;
-	export let period = '';
-	let searcher: Fuse<MenuItem> = new Fuse([], {
-		keys: ['name', 'teacher_first', 'teacher_last']
-	});
-	$: searcher.setCollection(classes);
-	$: filtered =
+
+	let {
+		addClass,
+		classes,
+		selected = $bindable(null),
+		period = ''
+	}: {
+		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
+		classes: MenuItem[];
+		selected?: string | null;
+		period?: string;
+	} = $props();
+
+	let className = $state(''),
+		firstName = $state(''),
+		lastName = $state('');
+	let selectedClassName: null | string = $state(null);
+	let dialog: HTMLDialogElement;
+
+	let searcher = $derived(
+		new Fuse(classes, {
+			keys: ['name', 'teacher_first', 'teacher_last']
+		})
+	);
+	let filtered = $derived(
 		className == ''
 			? classes.map((x) => {
 					return { item: x };
-			  })
-			: searcher.search(className + firstName + lastName);
-	$: classNameValid = className.length > 0;
-	$: firstNameValid = /^\w+$/.test(firstName.trim());
-	$: lastNameValid = /^\w+$/.test(lastName.trim().replaceAll(/\s+/g, ''));
-	$: isValidClassInfo = classNameValid && firstNameValid && lastNameValid;
-	let dialog: HTMLDialogElement;
+				})
+			: searcher.search(className + firstName + lastName)
+	);
+	let classNameValid = $derived(className.length > 0);
+	let firstNameValid = $derived(/^\w+$/.test(firstName.trim()));
+	let lastNameValid = $derived(/^\w+$/.test(lastName.trim().replaceAll(/\s+/g, '')));
+	let isValidClassInfo = $derived(classNameValid && firstNameValid && lastNameValid);
 </script>
 
 <div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
 	<button
 		class="btn m-1"
 		class:btn-success={selected !== null}
-		on:click={() => {
+		onclick={() => {
 			dialog.showModal();
 		}}>{period}</button
 	>
@@ -73,7 +78,7 @@
 				/>
 				<button
 					class="btn btn-primary join-item"
-					on:click={async (event) => {
+					onclick={async (event) => {
 						if (!isValidClassInfo) {
 							console.log(className, firstName, lastName);
 							if (!classNameValid) {
@@ -121,12 +126,12 @@
 				{@const isSelected = selected === klass.id}
 				{#if entry.item?.used === undefined || selected === klass.id}
 					<li
-						on:click={() => {
+						onclick={() => {
 							selected = isSelected ? null : klass.id;
 							selectedClassName = isSelected ? null : klass.name;
 							dialog.close();
 						}}
-						on:keydown={() => {
+						onkeydown={() => {
 							// For accessibility, we also implement keydown
 							// (this accessibility manuever should be
 							// isolated into a use: directive)

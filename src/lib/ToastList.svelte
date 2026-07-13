@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { messages } from './toasts';
+	import { messages } from './toasts.svelte';
 	import { fade } from 'svelte/transition';
 </script>
 
 <div class="toast toast-top toast-end z-[99]">
-	{#each $messages as message (message.id)}
+	{#each messages as message (message.id)}
 		<div class="alert alert-{message.type}" out:fade>
 			{#if message.type === 'info'}
 				<svg
@@ -68,6 +68,7 @@
 				</svg>
 			{/if}
 			{#if message.useRawHTML}
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -- opt-in via useRawHTML, no caller currently sets it true -->
 				<span>{@html message.contents}</span>
 			{:else}
 				<span>{message.contents}</span>
