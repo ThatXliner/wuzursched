@@ -9,12 +9,12 @@
 	let {
 		addClass,
 		classes,
-		selected = $bindable(null),
+		selected = $bindable(),
 		period = ''
 	}: {
 		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
 		classes: MenuItem[];
-		selected?: string | null;
+		selected?: string | null | undefined;
 		period?: string;
 	} = $props();
 
@@ -45,7 +45,7 @@
 <div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
 	<button
 		class="btn m-1"
-		class:btn-success={selected !== null}
+		class:btn-success={selected != null}
 		onclick={() => {
 			dialog.showModal();
 		}}>{period}</button
