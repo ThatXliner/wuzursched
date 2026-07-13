@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup PNPM v8
+      - name: Setup PNPM
         uses: pnpm/action-setup@v4
         with:
-          version: 9.x.x
-      - name: Setup Node v21
+          version: 11.x.x
+      - name: Setup Node v22
         uses: actions/setup-node@v4
         with:
-          node-version: 21
+          node-version: 22
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
       - name: Setup Supabase v2.33.5
@@ -48,14 +48,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup PNPM v9
+      - name: Setup PNPM
         uses: pnpm/action-setup@v4
         with:
-          version: 9.x.x
-      - name: Setup Node v21
+          version: 11.x.x
+      - name: Setup Node v22
         uses: actions/setup-node@v4
         with:
-          node-version: 21
+          node-version: 22
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
       - name: Setup Supabase v2.33.5
