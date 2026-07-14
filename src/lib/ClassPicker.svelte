@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
 	import type { Class } from './InfoInput';
-	import { titlecase } from '$lib/utils';
+	import { formatClassName, formatTeacherName } from '$lib/utils';
 	import { addToast } from './toasts.svelte';
 
 	type MenuItem = Class & { used?: string };
@@ -42,7 +42,7 @@
 	let isValidClassInfo = $derived(classNameValid && firstNameValid && lastNameValid);
 </script>
 
-<div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
+<div class="tooltip" data-tip={selectedClassName ? formatClassName(selectedClassName) : undefined}>
 	<button
 		class="btn m-1"
 		class:btn-success={selected != null}
@@ -141,19 +141,19 @@
 						}}
 					>
 						<span class:active={isSelected}
-							>{titlecase(klass['name'])}
+							>{formatClassName(klass['name'])}
 							<span class="text-sm text-gray-500" class:text-white={isSelected}
-								>{titlecase(klass.teacher_first)} {titlecase(klass.teacher_last)}</span
+								>{formatTeacherName(`${klass.teacher_first} ${klass.teacher_last}`)}</span
 							></span
 						>
 					</li>
 				{:else}
 					<li class="disabled">
 						<span
-							>{titlecase(klass['name'])}
+							>{formatClassName(klass['name'])}
 							<span class="text-sm text-gray-500"
-								>{titlecase(klass.teacher_first)}
-								{titlecase(klass.teacher_last)} (already used in {klass.used})</span
+								>{formatTeacherName(`${klass.teacher_first} ${klass.teacher_last}`)} (already used in
+								{klass.used})</span
 							></span
 						>
 					</li>

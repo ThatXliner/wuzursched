@@ -9,7 +9,7 @@
 	import InfoInput from '$lib/InfoInput.svelte';
 
 	import { page } from '$app/state';
-	import { sqlEscape, normalize } from '$lib/utils';
+	import { sqlEscape, normalizeClassName, normalizeTeacherName } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	import type { VirtualSchedule, Classes, Class, Schedule } from '$lib/InfoInput.d';
@@ -145,9 +145,9 @@
 		lastName: string;
 	}) {
 		const payload = {
-			name: normalize(className),
-			teacher_first: firstName.trim().toLowerCase(),
-			teacher_last: lastName.trim().toLowerCase(),
+			name: normalizeClassName(className),
+			teacher_first: normalizeTeacherName(firstName),
+			teacher_last: normalizeTeacherName(lastName),
 			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
