@@ -1,10 +1,11 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
-	import type { Class } from './InfoInput';
+	import type { ClassWithUsage } from './InfoInput';
 	import { titlecase } from '$lib/utils';
 	import { addToast } from './toasts.svelte';
+	import { formatClassUsage } from './classUsage';
 
-	type MenuItem = Class & { used?: string };
+	type MenuItem = ClassWithUsage & { used?: string };
 
 	let {
 		addClass,
@@ -141,19 +142,22 @@
 						}}
 					>
 						<span class:active={isSelected}
-							>{titlecase(klass['name'])}
+							>{titlecase(klass.name)}
 							<span class="text-sm text-gray-500" class:text-white={isSelected}
-								>{titlecase(klass.teacher_first)} {titlecase(klass.teacher_last)}</span
+								>{titlecase(klass.teacher_first)}
+								{titlecase(klass.teacher_last)} ·
+								{formatClassUsage(klass.schedule_count)}</span
 							></span
 						>
 					</li>
 				{:else}
 					<li class="disabled">
 						<span
-							>{titlecase(klass['name'])}
+							>{titlecase(klass.name)}
 							<span class="text-sm text-gray-500"
 								>{titlecase(klass.teacher_first)}
-								{titlecase(klass.teacher_last)} (already used in {klass.used})</span
+								{titlecase(klass.teacher_last)} · {formatClassUsage(klass.schedule_count)}
+								(already used in {klass.used})</span
 							></span
 						>
 					</li>

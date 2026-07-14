@@ -34,23 +34,22 @@
 	}
 	const getClass = memoize(_getClass);
 	async function getClasses(room: string) {
-		return await supabase.from('classes').select('*').eq('room', room);
+		return await supabase.rpc('get_classes_with_usage', { room_id: room });
 	}
 	let you: You = $state()!;
 	let classes: Classes = $state([]);
 	let onlyMatching: boolean = $state(false);
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
-	onMount(async () => {
-		{
-			const { data, error } = await getClasses(room);
-			// did not convert to console.assert
-			// to appease TypeScript
-			if (error !== null) {
-				throw error;
-			}
-			classes = data;
+	async function refreshClasses() {
+		const { data, error } = await getClasses(room);
+		if (error !== null) {
+			throw error;
 		}
+		classes = data;
+	}
+	onMount(async () => {
+		await refreshClasses();
 		// Load it from localStorage
 		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
 		if (
@@ -94,11 +93,12 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape(room)}`
 				},
-				(payload) => {
+				async (payload) => {
 					if (payload.eventType === 'INSERT') {
 						schedules = [...schedules, payload.new];
 						addToast(`${payload.new.student} just added their schedule to this room`);
 					}
+					await refreshClasses();
 					console.log('1', payload);
 				}
 			)
@@ -115,8 +115,8 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape(room)}`
 				},
-				async (payload) => {
-					classes = [...classes, payload.new];
+				async () => {
+					await refreshClasses();
 				}
 			)
 			.subscribe((status) => {
