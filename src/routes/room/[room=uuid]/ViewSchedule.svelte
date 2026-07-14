@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { isEqual } from 'lodash-es';
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
-	import type { Schedule, Class } from '$lib/InfoInput';
+	import type { Schedule } from '$lib/schedule';
+	import type { Class } from './types';
 	import type { ResolvedYou } from './ViewSchedules';
 	let {
 		schedule,

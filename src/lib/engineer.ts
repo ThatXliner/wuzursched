@@ -1,7 +1,7 @@
 // Implements the schedule engineering algorithm
 
 import { sum } from 'lodash-es';
-import { type VirtualSchedule, PERIODS, type UnfinishedSchedule } from './InfoInput.d';
+import { type VirtualSchedule, PERIODS, type UnfinishedSchedule } from './schedule';
 import { setDifference, type ArrElement } from './utils';
 function scheduleToClassSet(schedule: VirtualSchedule) {
 	const classSet = new Set<string>();

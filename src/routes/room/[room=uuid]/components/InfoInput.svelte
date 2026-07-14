@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ClassPicker from './ClassPicker.svelte';
-	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
-	import type { Classes } from './InfoInput';
+	import type { UnfinishedSchedule, VirtualSchedule } from '$lib/schedule';
+	import type { Classes } from '../types';
 
 	let {
 		classes,

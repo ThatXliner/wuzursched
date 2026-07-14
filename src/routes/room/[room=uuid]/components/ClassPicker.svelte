@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Fuse from 'fuse.js';
-	import type { Class } from './InfoInput';
+	import type { Class } from '../types';
 	import { titlecase } from '$lib/utils';
-	import { addToast } from './toasts.svelte';
+	import { addToast } from '$lib/toasts.svelte';
 
 	type MenuItem = Class & { used?: string };
 

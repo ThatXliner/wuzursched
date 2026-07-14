@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Schedule } from '$lib/InfoInput';
+	import type { Schedule } from '$lib/schedule';
 	import Fuse from 'fuse.js';
 	import { findOptimumSchedules } from '$lib/engineer';
 

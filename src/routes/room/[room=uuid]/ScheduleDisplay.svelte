@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { titlecase } from '$lib/utils';
-	import type { VirtualSchedule, Class } from '$lib/InfoInput.d';
+	import type { VirtualSchedule } from '$lib/schedule';
+	import type { Class } from './types';
 	let {
 		them,
 		you,

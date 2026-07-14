@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { Class, Schedule, UnfinishedSchedule } from '$lib/InfoInput';
+	import type { Schedule, UnfinishedSchedule } from '$lib/schedule';
+	import type { Class } from './types';
 	import { titlecase } from '$lib/utils';
 	import { isEqual } from 'lodash-es';
 	import ViewSchedule from './ViewSchedule.svelte';
