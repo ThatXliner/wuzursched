@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { titlecase } from '$lib/utils';
+	import { teacherDisplayName } from '$lib/teacher';
 	import type { VirtualSchedule, Class } from '$lib/InfoInput.d';
 	let {
 		them,
@@ -41,10 +42,7 @@
 						>
 							<span
 								>{titlecase(classA['name'])}
-								<span class="text-xs text-gray-500"
-									>{titlecase(classA['teacher_first'])}
-									{titlecase(classA['teacher_last'])}</span
-								></span
+								<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span></span
 							>
 						</div></td
 					>
@@ -56,10 +54,7 @@
 						>
 							<span
 								>{titlecase(classB['name'])}
-								<span class="text-xs text-gray-500"
-									>{titlecase(classB['teacher_first'])}
-									{titlecase(classB['teacher_last'])}</span
-								></span
+								<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span></span
 							>
 						</div></td
 					>

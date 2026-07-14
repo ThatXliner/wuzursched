@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Class, Schedule, UnfinishedSchedule } from '$lib/InfoInput';
 	import { titlecase } from '$lib/utils';
+	import { teacherDisplayName } from '$lib/teacher';
 	import { isEqual } from 'lodash-es';
 	import ViewSchedule from './ViewSchedule.svelte';
 	import type { ResolvedYou } from './ViewSchedules';
@@ -12,8 +13,11 @@
 		schedules = [],
 		you,
 		getClass
-	}: { schedules?: Schedule[]; you: ResolvedYou; getClass: (id: string) => Promise<Class> } =
-		$props();
+	}: {
+		schedules?: Schedule[];
+		you: ResolvedYou;
+		getClass: (id: string) => Promise<Class>;
+	} = $props();
 	let sharedClass: UnfinishedSchedule = $state({});
 	let filtered = $derived(
 		schedules
@@ -21,7 +25,9 @@
 			.filter((schedule) =>
 				allPeriods
 					.map((period) => {
-						return sharedClass[period] !== undefined ? schedule[period] == sharedClass[period] : true;
+						return sharedClass[period] !== undefined
+							? schedule[period] == sharedClass[period]
+							: true;
 					})
 					.every((x) => x)
 			)
@@ -66,10 +72,7 @@
 								>
 									<span
 										>{titlecase(classA['name'])}
-										<span class="text-xs text-gray-500"
-											>{titlecase(classA['teacher_first'])}
-											{titlecase(classA['teacher_last'])}</span
-										></span
+										<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span></span
 									>
 								</button></td
 							>
@@ -87,10 +90,7 @@
 								>
 									<span
 										>{titlecase(classB['name'])}
-										<span class="text-xs text-gray-500"
-											>{titlecase(classB['teacher_first'])}
-											{titlecase(classB['teacher_last'])}</span
-										></span
+										<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span></span
 									>
 								</button></td
 							>

@@ -19,22 +19,25 @@ export type Database = {
           id: string
           name: string
           room: string
-          teacher_first: string
+          teacher_first: string | null
           teacher_last: string
+          teacher_title: string | null
         }
         Insert: {
           id?: string
           name: string
           room: string
-          teacher_first: string
+          teacher_first?: string | null
           teacher_last: string
+          teacher_title?: string | null
         }
         Update: {
           id?: string
           name?: string
           room?: string
-          teacher_first?: string
+          teacher_first?: string | null
           teacher_last?: string
+          teacher_title?: string | null
         }
         Relationships: [
           {

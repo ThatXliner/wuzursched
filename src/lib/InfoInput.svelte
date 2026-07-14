@@ -2,6 +2,7 @@
 	import ClassPicker from './ClassPicker.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
 	import type { Classes } from './InfoInput';
+	import type { TeacherIdentityInput } from './teacher';
 
 	let {
 		classes,
@@ -9,7 +10,11 @@
 		onsubmit
 	}: {
 		classes: Classes;
-		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
+		addClass: (info: {
+			className: string;
+			identity: TeacherIdentityInput;
+			lastName: string;
+		}) => Promise<string>;
 		onsubmit: (detail: { name: string; schedule: VirtualSchedule }) => void;
 	} = $props();
 

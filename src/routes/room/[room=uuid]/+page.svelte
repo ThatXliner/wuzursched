@@ -20,6 +20,7 @@
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import Engineer from './Engineer.svelte';
+	import { normalizeTeacherIdentity, type TeacherIdentityInput } from '$lib/teacher';
 
 	let { data }: { data: PageData } = $props();
 	let supabase = $derived(data.supabase);
@@ -137,17 +138,16 @@
 	}
 	async function addClass({
 		className,
-		firstName,
+		identity,
 		lastName
 	}: {
 		className: string;
-		firstName: string;
+		identity: TeacherIdentityInput;
 		lastName: string;
 	}) {
 		const payload = {
 			name: normalize(className),
-			teacher_first: firstName.trim().toLowerCase(),
-			teacher_last: lastName.trim().toLowerCase(),
+			...normalizeTeacherIdentity(identity, lastName),
 			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();

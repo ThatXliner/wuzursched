@@ -3,6 +3,16 @@
 	import type { Class } from './InfoInput';
 	import { titlecase } from '$lib/utils';
 	import { addToast } from './toasts.svelte';
+	import {
+		isValidTeacherFirstName,
+		isValidTeacherLastName,
+		isTeacherTitle,
+		teacherDisplayName,
+		teacherSearchText,
+		TEACHER_TITLES,
+		type TeacherIdentityInput,
+		type TeacherTitle
+	} from './teacher';
 
 	type MenuItem = Class & { used?: string };
 
@@ -12,7 +22,11 @@
 		selected = $bindable(),
 		period = ''
 	}: {
-		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
+		addClass: (info: {
+			className: string;
+			identity: TeacherIdentityInput;
+			lastName: string;
+		}) => Promise<string>;
 		classes: MenuItem[];
 		selected?: string | null | undefined;
 		period?: string;
@@ -21,25 +35,35 @@
 	let className = $state(''),
 		firstName = $state(''),
 		lastName = $state('');
+	let identityKind = $state<TeacherIdentityInput['kind']>('first-name');
+	let selectedTitle = $state<TeacherTitle>('Mr');
 	let selectedClassName: null | string = $state(null);
 	let dialog: HTMLDialogElement;
 
+	let searchableClasses = $derived(
+		classes.map((klass) => ({
+			...klass,
+			search_text: `${klass.name} ${teacherSearchText(klass)}`
+		}))
+	);
 	let searcher = $derived(
-		new Fuse(classes, {
-			keys: ['name', 'teacher_first', 'teacher_last']
+		new Fuse(searchableClasses, {
+			keys: ['search_text']
 		})
 	);
 	let filtered = $derived(
-		className == ''
-			? classes.map((x) => {
+		className === '' && firstName === '' && lastName === ''
+			? searchableClasses.map((x) => {
 					return { item: x };
 				})
-			: searcher.search(className + firstName + lastName)
+			: searcher.search(
+					[className, identityKind === 'first-name' ? firstName : selectedTitle, lastName].join(' ')
+				)
 	);
-	let classNameValid = $derived(className.length > 0);
-	let firstNameValid = $derived(/^\w+$/.test(firstName.trim()));
-	let lastNameValid = $derived(/^\w+$/.test(lastName.trim().replaceAll(/\s+/g, '')));
-	let isValidClassInfo = $derived(classNameValid && firstNameValid && lastNameValid);
+	let classNameValid = $derived(className.trim().length > 0);
+	let identityValid = $derived(identityKind === 'title' || isValidTeacherFirstName(firstName));
+	let lastNameValid = $derived(isValidTeacherLastName(lastName));
+	let isValidClassInfo = $derived(classNameValid && identityValid && lastNameValid);
 </script>
 
 <div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
@@ -57,35 +81,62 @@
 		<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 		<div class="form-control">
 			<span>Search/Create a class for {period}</span>
-			<label class="join">
+			<label class="join flex-wrap">
 				<input
 					type="text"
 					placeholder="Class name"
 					class="input input-bordered w-32 join-item"
 					bind:value={className}
 				/>
+				<select
+					aria-label="Teacher name type"
+					class="select select-bordered join-item"
+					bind:value={identityKind}
+				>
+					<option value="first-name">First name</option>
+					<option value="title">Title</option>
+				</select>
+				{#if identityKind === 'first-name'}
+					<input
+						type="text"
+						aria-label="Teacher first name"
+						placeholder="Jane"
+						class="input input-bordered w-24 join-item"
+						bind:value={firstName}
+					/>
+				{:else}
+					<select
+						aria-label="Teacher title"
+						class="select select-bordered join-item"
+						bind:value={selectedTitle}
+					>
+						{#each TEACHER_TITLES as title (title)}
+							<option value={title}>{title}</option>
+						{/each}
+					</select>
+				{/if}
 				<input
 					type="text"
-					placeholder="John"
-					class="input input-bordered w-20 join-item"
-					bind:value={firstName}
-				/>
-				<input
-					type="text"
-					placeholder="Doe"
-					class="input input-bordered w-20 join-item"
+					aria-label="Teacher last name"
+					placeholder="Arild"
+					class="input input-bordered w-24 join-item"
 					bind:value={lastName}
 				/>
 				<button
+					aria-label="Create class"
 					class="btn btn-primary join-item"
 					onclick={async (event) => {
 						if (!isValidClassInfo) {
-							console.log(className, firstName, lastName);
 							if (!classNameValid) {
 								addToast('Class name must not be empty', 'error');
 							}
-							if (!firstNameValid) {
-								addToast("The teacher's first name must be a single word", 'error');
+							if (!identityValid) {
+								addToast(
+									isTeacherTitle(firstName)
+										? 'Choose “Title” to enter a teacher title'
+										: "The teacher's first name must be a single word",
+									'error'
+								);
 							}
 							if (!lastNameValid) {
 								addToast("The teacher's last name must not be empty", 'error');
@@ -96,8 +147,11 @@
 						selectedClassName = className;
 						selected = await addClass({
 							className,
-							firstName: firstName.trim(),
-							lastName: lastName.trim().replaceAll(/\s+/g, '')
+							identity:
+								identityKind === 'first-name'
+									? { kind: 'first-name', value: firstName }
+									: { kind: 'title', value: selectedTitle },
+							lastName
 						});
 						// Reset the search
 						className = '';
@@ -125,26 +179,19 @@
 				{@const klass = entry.item}
 				{@const isSelected = selected === klass.id}
 				{#if entry.item?.used === undefined || selected === klass.id}
-					<li
-						onclick={() => {
-							selected = isSelected ? null : klass.id;
-							selectedClassName = isSelected ? null : klass.name;
-							dialog.close();
-						}}
-						onkeydown={() => {
-							// For accessibility, we also implement keydown
-							// (this accessibility manuever should be
-							// isolated into a use: directive)
-							selected = isSelected ? null : klass.id;
-							selectedClassName = isSelected ? null : klass.name;
-							dialog.close();
-						}}
-					>
-						<span class:active={isSelected}
+					<li>
+						<button
+							type="button"
+							class:active={isSelected}
+							onclick={() => {
+								selected = isSelected ? null : klass.id;
+								selectedClassName = isSelected ? null : klass.name;
+								dialog.close();
+							}}
 							>{titlecase(klass['name'])}
 							<span class="text-sm text-gray-500" class:text-white={isSelected}
-								>{titlecase(klass.teacher_first)} {titlecase(klass.teacher_last)}</span
-							></span
+								>{teacherDisplayName(klass)}</span
+							></button
 						>
 					</li>
 				{:else}
@@ -152,8 +199,7 @@
 						<span
 							>{titlecase(klass['name'])}
 							<span class="text-sm text-gray-500"
-								>{titlecase(klass.teacher_first)}
-								{titlecase(klass.teacher_last)} (already used in {klass.used})</span
+								>{teacherDisplayName(klass)} (already used in {klass.used})</span
 							></span
 						>
 					</li>
