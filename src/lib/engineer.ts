@@ -1,5 +1,3 @@
-// Implements the schedule engineering algorithm
-
 import { sum } from 'lodash-es';
 import { type VirtualSchedule, PERIODS, type UnfinishedSchedule } from './InfoInput.d';
 import { setDifference, type ArrElement } from './utils';
@@ -16,7 +14,8 @@ function scheduleToClassSet(schedule: VirtualSchedule) {
 function findCommonClasses(schedules: VirtualSchedule[]) {
 	const classSets = schedules.map(scheduleToClassSet);
 	const commonClasses = new Set<string>();
-	for (const className of classSets) {
+	// Starting from one schedule avoids testing UUIDs that cannot be in the intersection.
+	for (const className of classSets[0] ?? []) {
 		if (classSets.every((classSet) => classSet.has(className))) {
 			commonClasses.add(className);
 		}
@@ -29,12 +28,14 @@ function scheduleMovementHeuristic(a: VirtualSchedule, b: VirtualSchedule) {
 	return Object.entries(a).filter(([key, value]) => value !== b[key as keyof VirtualSchedule])
 		.length;
 }
-// Maximize the chance of having a common class for all schedules
-// e.g. if we all have the same math class, move the math class to the same time
-// and if only my friend and I have the D&A class,
-// still move the D&A class to the same time as he does.
-// TODO: In the future, we will respect the restrictions of which
-// periods each class can be in
+/**
+ * Aligns classes shared by every input schedule while minimizing total period changes.
+ *
+ * The dynamic program places the intersection of class UUIDs into a shared partial schedule. Its
+ * cost is the summed Hamming distance from the original schedules; remaining per-student classes
+ * then fill the gaps. It does not model course availability, so the result is a heuristic rather
+ * than a schedule that is guaranteed to be offered by a school.
+ */
 export function findOptimumSchedules(schedules: VirtualSchedule[]): VirtualSchedule[] {
 	const commonClasses = findCommonClasses(schedules);
 	function cost(schedule: VirtualSchedule) {
@@ -48,6 +49,7 @@ export function findOptimumSchedules(schedules: VirtualSchedule[]): VirtualSched
 		period: ArrElement<typeof PERIODS>
 	): VirtualSchedule {
 		const classesLeft = setDifference(commonClasses, Object.values(builtSoFar));
+		// Prefixes with the same remaining UUIDs share a cache entry, making tie order heuristic.
 		const key = JSON.stringify({ classesLeft: [...classesLeft], period });
 		if (cache[key]) {
 			return cache[key];

@@ -51,7 +51,8 @@
 			}
 			classes = data;
 		}
-		// Load it from localStorage
+		// The room UUID namespaces this unauthenticated convenience identity. It must never authorize
+		// database access because browser owners can edit localStorage.
 		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
 		if (
 			// If your log-in exists
@@ -130,8 +131,7 @@
 			.insert([toInsert])
 			.then(() => {
 				you = { name: detail.name, schedule: toInsert };
-				// no need to update the local db variable
-				// since that will be updated via the realtime subscription
+				// Realtime is the single schedules-list update path, including for the submitting client.
 				window.localStorage.setItem(room, JSON.stringify(you));
 			});
 	}

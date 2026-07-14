@@ -21,6 +21,7 @@
 	} = $props();
 	const PERIODS: (keyof VirtualSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
 	function matches(a: VirtualSchedule, b: VirtualSchedule) {
+		// A match is the same class row in the same period, not merely equal display text.
 		return PERIODS.some((x) => a[x] === b[x]);
 	}
 	let searchQuery = $state('');

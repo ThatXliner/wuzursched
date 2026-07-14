@@ -12,6 +12,8 @@
 		"package": "svelte-kit package",
 		"preview": "vite preview",
 		"test": "playwright test",
+		"test:docs": "node --test tests/*.test.mjs",
+		"test:unit": "playwright test --config playwright.unit.config.ts",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",

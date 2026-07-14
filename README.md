@@ -60,7 +60,8 @@ More in the [screenshot gallery](./docs/SCREENSHOTS.md).
 
 ## 🚀 Development
 
-You'll need [pnpm](https://pnpm.io), [Node.js](https://nodejs.org) 22+, and the [Supabase CLI](https://supabase.com/docs/guides/cli) (which needs Docker).
+You'll need [Node.js](https://nodejs.org) 24, pnpm 11.9.0 (the versions pinned in
+`package.json`), and the [Supabase CLI](https://supabase.com/docs/guides/cli), which uses Docker.
 
 ```bash
 # 1. Clone the repo
@@ -81,6 +82,10 @@ supabase status --output env | node convert_env.js > .env
 pnpm run dev
 ```
 
+The generated `.env` contains the local Supabase URL and anonymous key used by the app. See the
+[development guide](./docs/DEVELOPMENT.md) for troubleshooting, migrations, generated types,
+testing, and deployment.
+
 ### Useful scripts
 
 | Command                       | What it does                                      |
@@ -89,9 +94,11 @@ pnpm run dev
 | `pnpm run build`              | Production build                                  |
 | `pnpm run preview`            | Preview the production build                      |
 | `pnpm test`                   | Run Playwright end-to-end tests                   |
+| `pnpm run test:unit`          | Run tests that do not need the app or database    |
 | `pnpm run check`              | Type-check with `svelte-check`                    |
 | `pnpm run lint`               | Check formatting (Prettier) and lint (ESLint)     |
 | `pnpm run format`             | Auto-format the codebase                          |
+| `pnpm run test:docs`          | Check contributor docs for stale paths/commands   |
 | `pnpm run update-types:local` | Regenerate Supabase types from the local database |
 
 ### Project layout
@@ -112,9 +119,14 @@ supabase/
 └── seed.sql              # Local seed data
 ```
 
+For a guided tour of the room lifecycle, database/RLS model, browser identity, realtime updates,
+class comparison, and schedule-engineering algorithm, read [Architecture](./docs/ARCHITECTURE.md).
+
 ## 🤝 Contributing
 
-Issues and pull requests are welcome! CI runs Playwright tests against a real local Supabase stack and verifies that the committed database types match the schema, so please run `pnpm run check` and `pnpm run lint` before opening a PR.
+Issues and pull requests are welcome! CI runs Playwright tests against a real local Supabase stack
+and verifies that the committed database types match the schema. Follow the
+[change checklist](./docs/DEVELOPMENT.md#before-opening-a-pull-request) before opening a PR.
 
 ## 📜 License
 

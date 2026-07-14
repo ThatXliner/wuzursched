@@ -86,6 +86,12 @@ export function sqlEscape(str: string) {
 		}
 	});
 }
+/**
+ * Produces the conservative class key stored in Postgres.
+ *
+ * This is deliberately not a semantic course-name matcher: changing it affects the room-scoped
+ * uniqueness constraint for new rows without rewriting existing rows.
+ */
 export function normalize(className: string) {
 	return (
 		className
