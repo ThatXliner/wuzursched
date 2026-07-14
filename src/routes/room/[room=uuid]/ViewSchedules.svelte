@@ -23,6 +23,11 @@
 	function matches(a: VirtualSchedule, b: VirtualSchedule) {
 		return PERIODS.some((x) => a[x] === b[x]);
 	}
+	function shouldShow(schedule: Schedule) {
+		return (
+			!onlyMatching || (you !== null && you !== 'tentative' && matches(you.schedule, schedule))
+		);
+	}
 	let searchQuery = $state('');
 	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
 	let filtered = $derived(searchQuery ? fuse.search(searchQuery).map((x) => x.item) : schedules);
@@ -45,9 +50,6 @@
 </label>
 <div class="flex flex-wrap justify-evenly">
 	{#each filtered as schedule (schedule.student)}
-		<!-- You is guaranteed to !== null -->
-		<!-- I'm not sure how to express TypeScript -->
-		<!-- Within Svelte code -->
 		{#if you === 'tentative'}
 			<button
 				class="btn my-3 h-fit w-fit border border-base-300 bg-base-100 shadow-xl rounded-box p-4 text-xl font-medium"
@@ -60,7 +62,7 @@
 			</button>
 		{:else if you == null}
 			<p>Please input who you are first</p>
-		{:else if (onlyMatching && matches(you.schedule, schedule)) || !onlyMatching}
+		{:else if shouldShow(schedule)}
 			<ViewSchedule {schedule} {you} {getClass} />
 		{/if}
 	{:else}

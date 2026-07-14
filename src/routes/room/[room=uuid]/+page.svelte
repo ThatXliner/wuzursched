@@ -39,8 +39,14 @@
 	let you: You = $state()!;
 	let classes: Classes = $state([]);
 	let onlyMatching: boolean = $state(false);
+	let hasResolvedIdentity = $derived(you !== null && you !== 'tentative');
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
+	function resetIdentity() {
+		onlyMatching = false;
+		you = null;
+		window.localStorage.removeItem(room);
+	}
 	onMount(async () => {
 		{
 			const { data, error } = await getClasses(room);
@@ -217,22 +223,26 @@
 					Invite
 				</button>
 			</div>
-			<div class="tooltip" data-tip="Only show schedules with matching classes">
+			<div
+				class="tooltip"
+				data-tip={hasResolvedIdentity
+					? 'Only show schedules with matching classes'
+					: 'Select who you are to filter matching schedules'}
+			>
 				<div class="form-control rounded-box bg-base-200 p-1">
 					<label class="label cursor-pointer space-x-3">
 						<span class="label-text">Only show matching</span>
-						<input type="checkbox" class="toggle toggle-primary" bind:checked={onlyMatching} />
+						<input
+							type="checkbox"
+							class="toggle toggle-primary"
+							bind:checked={onlyMatching}
+							disabled={!hasResolvedIdentity}
+						/>
 					</label>
 				</div>
 			</div>
-			{#if you !== 'tentative'}
-				<button
-					class="btn btn-error btn-outline"
-					onclick={() => {
-						you = null;
-						window.localStorage.removeItem(room);
-					}}>Reset who you are</button
-				>
+			{#if hasResolvedIdentity}
+				<button class="btn btn-error btn-outline" onclick={resetIdentity}>Reset who you are</button>
 			{/if}
 		</div>
 		{#if room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
@@ -263,7 +273,13 @@
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
-		<ViewSchedules {schedules} bind:you {room} {getClass} {onlyMatching} />
+		<ViewSchedules
+			{schedules}
+			bind:you
+			{room}
+			{getClass}
+			onlyMatching={onlyMatching && hasResolvedIdentity}
+		/>
 	</Tabs.Content>
 	<Tabs.Content value="filter">
 		{#if you != null && you !== 'tentative'}
