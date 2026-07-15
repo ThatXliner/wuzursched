@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select extensions.plan(5);
+select extensions.plan(6);
 
 insert into public.rooms (id)
 values
@@ -15,6 +15,10 @@ values
     ('10000000-0000-0000-0000-000000000002', 'repeated', 'one', 'teacher', '00000000-0000-0000-0000-000000000001'),
     ('10000000-0000-0000-0000-000000000003', 'single', 'two', 'teacher', '00000000-0000-0000-0000-000000000001'),
     ('20000000-0000-0000-0000-000000000001', 'other room', 'three', 'teacher', '00000000-0000-0000-0000-000000000002');
+
+insert into public.classes (id, name, teacher_title, teacher_last, room)
+values
+    ('10000000-0000-0000-0000-000000000004', 'title teacher', 'Dr', 'teacher', '00000000-0000-0000-0000-000000000001');
 
 insert into public.schedules (room, student, "1a", "1b", "2a", "2b", "3a", "3b", "4a", "4b")
 values
@@ -66,8 +70,16 @@ select extensions.is(
 
 select extensions.is(
     (select count(*) from public.get_classes_with_usage('00000000-0000-0000-0000-000000000001')),
-    3::bigint,
+    4::bigint,
     'one room query returns all of that room classes'
+);
+
+select extensions.results_eq(
+    $$ select teacher_first, teacher_title
+       from public.get_classes_with_usage('00000000-0000-0000-0000-000000000001')
+       where id = '10000000-0000-0000-0000-000000000004' $$,
+    $$ values (null::text, 'Dr'::text) $$,
+    'usage results preserve title-based teacher identities'
 );
 
 select * from extensions.finish();

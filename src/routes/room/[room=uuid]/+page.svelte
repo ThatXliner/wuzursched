@@ -9,13 +9,7 @@
 	import InfoInput from './components/InfoInput.svelte';
 
 	import { page } from '$app/state';
-	import {
-		formatClassName,
-		formatTeacherName,
-		sqlEscape,
-		normalizeClassName,
-		normalizeTeacherName
-	} from '$lib/utils';
+	import { formatClassName, formatTeacherName, sqlEscape, normalizeClassName } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	import type { Schedule, VirtualSchedule } from '$lib/schedule';
@@ -27,6 +21,7 @@
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import Engineer from './Engineer.svelte';
+	import { normalizeTeacherIdentity, type TeacherIdentityInput } from '$lib/teacher';
 	import AdminPanel from './AdminPanel.svelte';
 	import { applyDatabaseChange, replayDatabaseChanges, type DatabaseChange } from '$lib/realtime';
 	import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -415,17 +410,36 @@
 	}
 	async function addClass({
 		className,
-		firstName,
+		identity,
 		lastName
 	}: {
 		className: string;
-		firstName: string;
+		identity: TeacherIdentityInput;
 		lastName: string;
 	}) {
 		if (!roomConfig.allow_class_creation) {
 			addToast('Only a room admin may add classes in this room', 'error');
 			throw new Error('Visitor class creation is disabled');
 		}
+		const normalizedTeacher = normalizeTeacherIdentity(identity, lastName);
+		const formattedTeacher =
+			roomConfig.teacher_name_format === 'preserve'
+				? {
+						teacher_first: identity.kind === 'first-name' ? identity.value.trim() : null,
+						teacher_title: identity.kind === 'title' ? identity.value.trim() : null,
+						teacher_last: lastName.trim()
+					}
+				: {
+						teacher_first:
+							normalizedTeacher.teacher_first === null
+								? null
+								: formatTeacherName(normalizedTeacher.teacher_first),
+						teacher_title:
+							normalizedTeacher.teacher_title === null
+								? null
+								: formatTeacherName(normalizedTeacher.teacher_title),
+						teacher_last: formatTeacherName(normalizedTeacher.teacher_last)
+					};
 		const payload = {
 			name:
 				roomConfig.class_name_format === 'preserve'
@@ -433,14 +447,7 @@
 					: roomConfig.class_name_format === 'title'
 						? formatClassName(normalizeClassName(className))
 						: normalizeClassName(className),
-			teacher_first:
-				roomConfig.teacher_name_format === 'preserve'
-					? firstName.trim()
-					: formatTeacherName(normalizeTeacherName(firstName)),
-			teacher_last:
-				roomConfig.teacher_name_format === 'preserve'
-					? lastName.trim()
-					: formatTeacherName(normalizeTeacherName(lastName)),
+			...formattedTeacher,
 			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();

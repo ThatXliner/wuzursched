@@ -39,22 +39,25 @@ export type Database = {
           id: string
           name: string
           room: string
-          teacher_first: string
+          teacher_first: string | null
           teacher_last: string
+          teacher_title: string | null
         }
         Insert: {
           id?: string
           name: string
           room: string
-          teacher_first: string
+          teacher_first?: string | null
           teacher_last: string
+          teacher_title?: string | null
         }
         Update: {
           id?: string
           name?: string
           room?: string
-          teacher_first?: string
+          teacher_first?: string | null
           teacher_last?: string
+          teacher_title?: string | null
         }
         Relationships: [
           {
@@ -267,8 +270,9 @@ export type Database = {
           id: string
           name: string
           room: string
-          teacher_first: string
+          teacher_first: string | null
           teacher_last: string
+          teacher_title: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -355,6 +359,7 @@ export type Database = {
           schedule_count: number
           teacher_first: string
           teacher_last: string
+          teacher_title: string
         }[]
       }
       rotate_schedule_edit_capability: {
