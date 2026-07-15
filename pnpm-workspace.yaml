@@ -7,6 +7,8 @@ allowBuilds:
   '@sveltejs/kit': true
   esbuild: true
   svelte-preprocess: true
+  # Only runs an optional OpenCollective message; OCR works without it.
+  tesseract.js: false
 onlyBuiltDependencies:
   - '@sveltejs/kit'
   - esbuild

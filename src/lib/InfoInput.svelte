@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ClassPicker from './ClassPicker.svelte';
+	import ScheduleImporter from './ScheduleImporter.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
 	import type { Classes } from './InfoInput';
 
@@ -21,6 +22,7 @@
 	} = $props();
 
 	let name = $state('');
+	let confirmed = $state(false);
 	let periods: UnfinishedSchedule = $state({
 		'1a': undefined,
 		'2a': undefined,
@@ -43,7 +45,13 @@
 	function submit() {
 		onsubmit({ name: name.trim(), schedule: periods as VirtualSchedule });
 	}
+	function applyImportedSchedule(schedule: UnfinishedSchedule) {
+		periods = { ...periods, ...schedule };
+		confirmed = false;
+	}
 </script>
+
+<ScheduleImporter {classes} {addClass} onapply={applyImportedSchedule} />
 
 <div class="form-control">
 	<label class="label justify-center">
@@ -93,7 +101,18 @@
 </div>
 
 <div class="form-control mt-6">
-	<button class="btn btn-primary" disabled={!isValid} onclick={submit}>Done</button>
+	<label class="label justify-start gap-3 cursor-pointer">
+		<input
+			class="checkbox checkbox-primary"
+			type="checkbox"
+			bind:checked={confirmed}
+			disabled={!isValid}
+		/>
+		<span>I reviewed this schedule and confirm it is ready to submit.</span>
+	</label>
+	<button class="btn btn-primary" disabled={!isValid || !confirmed} onclick={submit}
+		>Submit schedule</button
+	>
 	<p class="mx-auto mt-3 max-w-md text-center text-sm opacity-70">
 		By submitting, you agree to the <a href={resolve('/terms')} class="link">Terms of Service</a>
 		and acknowledge the <a href={resolve('/privacy')} class="link">Privacy Policy</a>. Your name,
