@@ -1,13 +1,12 @@
 <script lang="ts">
-	import ScheduleBrowser from './ScheduleBrowser.svelte';
-
-	import type { Schedule } from '$lib/schedule';
-	import type { Class } from './types';
 	import { copyToClipboard } from '$lib/actions';
-	import type { You } from './ViewSchedules';
-	import { prioritizeCurrentSchedule } from './schedule-order';
+	import type { Schedule } from '$lib/schedule';
 	import Fuse from 'fuse.js';
+	import ScheduleBrowser from './ScheduleBrowser.svelte';
+	import { prioritizeCurrentSchedule } from './schedule-order';
 	import { hasSharedClass } from './scheduleComparison';
+	import type { Class } from './types';
+	import type { You } from './ViewSchedules';
 
 	let {
 		schedules,
@@ -22,6 +21,7 @@
 		onlyMatching: boolean;
 		getClass: (id: string) => Promise<Class>;
 	} = $props();
+
 	let searchQuery = $state('');
 	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
 	let filtered = $derived(
@@ -47,6 +47,7 @@
 		viewBox="0 0 16 16"
 		fill="currentColor"
 		class="h-4 w-4 opacity-70"
+		aria-hidden="true"
 	>
 		<path
 			fill-rule="evenodd"
