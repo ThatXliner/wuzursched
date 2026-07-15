@@ -190,9 +190,7 @@ export type Database = {
     }
     Functions: {
       get_classes_with_usage: {
-        Args: {
-          room_id: string
-        }
+        Args: { room_id: string }
         Returns: {
           id: string
           name: string
