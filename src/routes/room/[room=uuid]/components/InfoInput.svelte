@@ -2,8 +2,8 @@
 	import { resolve } from '$app/paths';
 	import ClassPicker from './ClassPicker.svelte';
 	import ScheduleImporter from './ScheduleImporter.svelte';
-	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
-	import type { Classes } from './InfoInput';
+	import type { UnfinishedSchedule, VirtualSchedule } from '$lib/schedule';
+	import type { Classes } from '../types';
 
 	let {
 		classes,

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { findOptimumSchedules } from '../src/lib/engineer';
-import type { VirtualSchedule } from '../src/lib/InfoInput.d';
+import type { VirtualSchedule } from '../src/lib/schedule';
 import { normalize, setDifference } from '../src/lib/utils';
 
 const makeSchedule = (values: string[]): VirtualSchedule => ({

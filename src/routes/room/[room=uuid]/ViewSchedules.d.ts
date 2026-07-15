@@ -1,4 +1,4 @@
-import type { Schedule } from '$lib/InfoInput';
+import type { Schedule } from '$lib/schedule';
 
 export type ResolvedYou = {
 	name: string;

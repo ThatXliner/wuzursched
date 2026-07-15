@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { Class, Schedule } from '$lib/InfoInput';
+	import type { Schedule } from '$lib/schedule';
+	import type { Class } from './types';
 
 	let {
 		roomConfig,

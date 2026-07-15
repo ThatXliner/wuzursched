@@ -1,4 +1,4 @@
-import type { Schedule } from '$lib/InfoInput';
+import type { Schedule } from '$lib/schedule';
 import type { You } from './ViewSchedules';
 
 export function isCurrentSchedule(schedule: Schedule, you: You | undefined): boolean {
