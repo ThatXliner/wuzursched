@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import dotenv from 'dotenv';
 import { pinSelectedItem } from '../src/lib/classPicker';
 
@@ -7,26 +7,37 @@ const supabaseUrl = env.PUBLIC_SUPABASE_URL!;
 const supabaseKey = env.PUBLIC_SUPABASE_ANON_KEY!;
 const periods = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'] as const;
 
-async function insertTestSchedule(request: APIRequestContext, room: string, student: string) {
+async function insertTestSchedule(page: Page, room: string, student: string) {
 	const headers = {
 		apikey: supabaseKey,
 		Authorization: `Bearer ${supabaseKey}`,
 		Prefer: 'return=representation'
 	};
-	const classesResponse = await request.post(`${supabaseUrl}/rest/v1/classes`, {
-		headers,
-		data: periods.map((period) => ({
-			name: `class ${period}`,
-			teacher_first: 'test',
-			teacher_last: period,
-			room
-		}))
-	});
-	expect(classesResponse.ok()).toBe(true);
-	const classes = (await classesResponse.json()) as { id: string }[];
+	const seedResult = await page.evaluate(
+		async ({ room, classList }) => {
+			const form = new FormData();
+			form.set('class_list', classList);
+			const response = await fetch(`/room/${room}?/seed`, { method: 'POST', body: form });
+			return { ok: response.ok, body: await response.text() };
+		},
+		{
+			room,
+			classList: periods.map((period) => `class ${period},test,${period}`).join('\n')
+		}
+	);
+	expect(seedResult.ok, seedResult.body).toBe(true);
 
-	const schedule = Object.fromEntries(periods.map((period, index) => [period, classes[index].id]));
-	const scheduleResponse = await request.post(`${supabaseUrl}/rest/v1/schedules`, {
+	const classesResponse = await page.request.get(
+		`${supabaseUrl}/rest/v1/classes?select=id,name&room=eq.${room}`,
+		{ headers }
+	);
+	expect(classesResponse.ok()).toBe(true);
+	const classes = (await classesResponse.json()) as { id: string; name: string }[];
+
+	const schedule = Object.fromEntries(
+		periods.map((period) => [period, classes.find(({ name }) => name === `class ${period}`)!.id])
+	);
+	const scheduleResponse = await page.request.post(`${supabaseUrl}/rest/v1/schedules`, {
 		headers,
 		data: { room, student, ...schedule }
 	});
@@ -69,8 +80,7 @@ test('index page has expected h1', async ({ page }) => {
 
 for (const onlyMatching of [false, true]) {
 	test(`resetting identity reopens the form when matching is ${onlyMatching ? 'on' : 'off'}`, async ({
-		page,
-		request
+		page
 	}) => {
 		const pageErrors: Error[] = [];
 		page.on('pageerror', (error) => pageErrors.push(error));
@@ -78,7 +88,7 @@ for (const onlyMatching of [false, true]) {
 		await page.goto('/create');
 		const room = new URL(page.url()).pathname.split('/').at(-1)!;
 		const student = `Reset Test ${crypto.randomUUID()}`;
-		const schedule = await insertTestSchedule(request, room, student);
+		const schedule = await insertTestSchedule(page, room, student);
 
 		await page.evaluate(
 			({ room, student, schedule }) => {
