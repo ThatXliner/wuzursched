@@ -32,13 +32,9 @@ jobs:
           supabase start
           supabase db reset
       - name: Set environment variables
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 1
-          command: |
-            supabase status --output env | node convert_env.js > .env
-            test -s .env
+        run: |
+          supabase status --output env | node convert_env.js > .env || test -s .env
+          test -s .env
       - name: Install again, just in case
         run: npx playwright install
       - run: pnpm test
