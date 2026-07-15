@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { getClassMatch, type SchedulePeriod } from '../src/lib/scheduleComparison';
 import type { VirtualSchedule } from '../src/lib/schedule';
+import {
+	hasSharedClass,
+	matchesSelectedClasses,
+	sharedPeriods
+} from '../src/routes/room/[room=uuid]/scheduleComparison';
 
 function schedule(overrides: Partial<Record<SchedulePeriod, string>> = {}): VirtualSchedule {
 	return {
@@ -15,6 +20,28 @@ function schedule(overrides: Partial<Record<SchedulePeriod, string>> = {}): Virt
 		...overrides
 	};
 }
+
+const blair = schedule({
+	'2a': 'spanish',
+	'3a': 'chemistry',
+	'4a': 'design',
+	'1b': 'literature',
+	'2b': 'physics',
+	'3b': 'band',
+	'4b': 'health'
+});
+
+test('counts shared periods for compact match summaries', () => {
+	const alex = schedule();
+	expect(sharedPeriods(alex, blair)).toEqual(['1a', '3a']);
+	expect(hasSharedClass(alex, blair)).toBe(true);
+});
+
+test('requires every selectively filtered class to match', () => {
+	expect(matchesSelectedClasses(blair, { '1a': 'algebra', '3a': 'chemistry' })).toBe(true);
+	expect(matchesSelectedClasses(blair, { '1a': 'algebra', '2a': 'biology' })).toBe(false);
+	expect(matchesSelectedClasses(blair, {})).toBe(true);
+});
 
 test('marks a class in the same A-day period as a same-period match', () => {
 	const theirs = schedule();
