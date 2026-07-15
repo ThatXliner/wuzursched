@@ -41,6 +41,7 @@ jobs:
             test -s .env
       - name: Install again, just in case
         run: npx playwright install
+      - run: pnpm run test:unit
       - run: pnpm test
   check-types:
     runs-on: ubuntu-latest
