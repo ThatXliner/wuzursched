@@ -83,7 +83,7 @@ export const load: ServerLoad = async ({ params, cookies, locals: { supabase } }
 	// Surely not a N+1
 	const [{ data, error }, classesResult, auditResult, token] = await Promise.all([
 		supabase.from('schedules').select('*').eq('room', room),
-		supabase.from('classes').select('*').eq('room', room),
+		supabase.rpc('get_classes_with_usage', { room_id: room }),
 		supabase
 			.from('room_audit_log')
 			.select('*')
