@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Fuse from 'fuse.js';
-	import type { Class } from '../types';
+	import type { ClassWithUsage } from '../types';
 	import { formatClassName } from '$lib/utils';
 	import { addToast } from '$lib/toasts.svelte';
+	import { formatClassUsage } from '$lib/classUsage';
 	import {
 		isValidTeacherFirstName,
 		isValidTeacherLastName,
@@ -16,7 +17,7 @@
 	} from '$lib/teacher';
 	import { pinSelectedItem } from '$lib/classPicker';
 
-	type MenuItem = Class & { used?: string };
+	type MenuItem = ClassWithUsage & { used?: string };
 
 	let {
 		addClass,
@@ -73,7 +74,7 @@
 	let isValidClassInfo = $derived(classNameValid && identityValid && lastNameValid);
 	const displayClass = (value: string) =>
 		classNameFormat === 'preserve' ? value : formatClassName(value);
-	const displayTeacher = (teacher: Class) =>
+	const displayTeacher = (teacher: ClassWithUsage) =>
 		teacherNameFormat === 'preserve'
 			? `${teacher.teacher_first ?? teacher.teacher_title ?? ''} ${teacher.teacher_last}`.trim()
 			: teacherDisplayName(teacher);
@@ -204,7 +205,7 @@
 							}}
 							>{displayClass(klass.name)}
 							<span class="text-sm text-gray-500" class:text-white={isSelected}
-								>{displayTeacher(klass)}</span
+								>{displayTeacher(klass)} · {formatClassUsage(klass.schedule_count)}</span
 							></button
 						>
 					</li>
@@ -213,7 +214,8 @@
 						<span
 							>{displayClass(klass.name)}
 							<span class="text-sm text-gray-500"
-								>{displayTeacher(klass)} (already used in {klass.used})</span
+								>{displayTeacher(klass)} ·
+								{formatClassUsage(klass.schedule_count)} (already used in {klass.used})</span
 							></span
 						>
 					</li>
