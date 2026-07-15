@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, test, vi } from 'vitest';
-import type { Class, Schedule } from '$lib/InfoInput';
+import type { Schedule } from '$lib/schedule';
+import type { Class } from './types';
 import ViewSchedule from './ViewSchedule.svelte';
 
 const schedule: Schedule = {
