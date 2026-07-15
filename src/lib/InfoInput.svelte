@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import ClassPicker from './ClassPicker.svelte';
+	import ScheduleImporter from './ScheduleImporter.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
 	import type { Classes } from './InfoInput';
 
@@ -10,7 +11,7 @@
 		onsubmit,
 		initialName = '',
 		initialSchedule,
-		submitLabel = 'Done'
+		submitLabel = 'Submit schedule'
 	}: {
 		classes: Classes;
 		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
@@ -19,7 +20,6 @@
 		initialSchedule?: VirtualSchedule;
 		submitLabel?: string;
 	} = $props();
-
 	function getInitialName() {
 		return initialName;
 	}
@@ -38,6 +38,7 @@
 				};
 	}
 	let name = $state(getInitialName());
+	let confirmed = $state(false);
 	let periods: UnfinishedSchedule = $state(getInitialSchedule());
 	let submitting = $state(false);
 	const PERIODS: (keyof UnfinishedSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
@@ -58,7 +59,13 @@
 			submitting = false;
 		}
 	}
+	function applyImportedSchedule(schedule: UnfinishedSchedule) {
+		periods = { ...periods, ...schedule };
+		confirmed = false;
+	}
 </script>
+
+<ScheduleImporter {classes} {addClass} onapply={applyImportedSchedule} />
 
 <div class="form-control">
 	<label class="label justify-center">
@@ -102,7 +109,16 @@
 </div>
 
 <div class="form-control mt-6">
-	<button class="btn btn-primary" disabled={!isValid || submitting} onclick={submit}>
+	<label class="label justify-start gap-3 cursor-pointer">
+		<input
+			class="checkbox checkbox-primary"
+			type="checkbox"
+			bind:checked={confirmed}
+			disabled={!isValid || submitting}
+		/>
+		<span>I reviewed this schedule and confirm it is ready to submit.</span>
+	</label>
+	<button class="btn btn-primary" disabled={!isValid || !confirmed || submitting} onclick={submit}>
 		{submitting ? 'Saving…' : submitLabel}
 	</button>
 	<p class="mx-auto mt-3 max-w-md text-center text-sm opacity-70">

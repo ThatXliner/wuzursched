@@ -162,6 +162,9 @@ test('only the edit-key holder can update a schedule and everyone receives the u
 	await page.getByRole('button', { name: 'Edit my schedule' }).click();
 	const editDialog = page.getByRole('dialog').filter({ hasText: 'Edit your schedule' });
 	await editDialog.getByRole('textbox', { name: 'Name' }).fill(editedName);
+	await editDialog
+		.getByRole('checkbox', { name: 'I reviewed this schedule and confirm it is ready to submit.' })
+		.check();
 	await editDialog.getByRole('button', { name: 'Save changes' }).click();
 
 	await expect(page.getByText('Your schedule was updated')).toBeVisible();
