@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Class, Schedule } from '$lib/InfoInput';
 	import { engineerSchedules, PERIODS, type Period, type ScheduleLocks } from '$lib/engineer';
-	import { titlecase } from '$lib/utils';
+	import { formatClassName } from '$lib/utils';
 
 	let { schedules, getClass }: { schedules: Schedule[]; getClass: (id: string) => Promise<Class> } =
 		$props();
@@ -139,7 +139,7 @@
 												{#await getClass(classId)}
 													<span class="loading loading-dots loading-xs"></span>
 												{:then resolvedClass}
-													{titlecase(resolvedClass.name)}
+													{formatClassName(resolvedClass.name)}
 												{:catch}
 													<span class="font-mono text-xs">{classId}</span>
 												{/await}
@@ -212,7 +212,7 @@
 														{#await getClass(classId)}
 															<span class="loading loading-dots loading-xs"></span>
 														{:then resolvedClass}
-															{titlecase(resolvedClass.name)}
+															{formatClassName(resolvedClass.name)}
 														{:catch}<span class="font-mono text-xs">{classId}</span>{/await}
 													{:else}<span class="opacity-50">Empty</span>{/if}
 												</td>
@@ -230,7 +230,7 @@
 										{#each proposal.moves as move (`${move.classId}-${move.from}-${move.to}`)}
 											<li>
 												{#await getClass(move.classId) then resolvedClass}
-													{titlecase(resolvedClass.name)}
+													{formatClassName(resolvedClass.name)}
 												{:catch}{move.classId}{/await}:
 												{move.from.toUpperCase()} → {move.to.toUpperCase()}
 											</li>
