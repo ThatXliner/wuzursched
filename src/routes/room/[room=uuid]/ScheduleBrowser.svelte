@@ -53,10 +53,13 @@
 						{@const isYou = key === scheduleKey(you.schedule)}
 						<button
 							type="button"
-							class="flex min-h-16 w-full items-center gap-3 border-b border-base-300 px-4 py-3 text-left last:border-b-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-primary"
-							class:bg-base-200={selected && scheduleKey(selected) === key}
+							class="flex min-h-16 w-full items-center gap-3 border-b border-base-300 px-4 py-3 text-left last:border-b-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-primary {selected &&
+							scheduleKey(selected) === key
+								? 'bg-base-200'
+								: ''} {isYou ? 'bg-primary/10 text-primary' : ''}"
 							aria-pressed={selected ? scheduleKey(selected) === key : false}
 							aria-current={isYou ? 'true' : undefined}
+							data-current-user={isYou || undefined}
 							onclick={() => (selected = schedule)}
 						>
 							<span class="min-w-0 flex-1">

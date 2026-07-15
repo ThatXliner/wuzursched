@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Class, Schedule, UnfinishedSchedule } from '$lib/InfoInput';
-	import { titlecase } from '$lib/utils';
+	import { formatClassName, formatTeacherName } from '$lib/utils';
 	import ScheduleBrowser from './ScheduleBrowser.svelte';
 	import type { ResolvedYou } from './ViewSchedules';
 	import { matchesSelectedClasses, scheduleKey } from './scheduleComparison';
@@ -56,7 +56,6 @@
 						{@const scheduleB = you.schedule[bDay[period]]}
 						{@const classA = resolvedClasses[period]}
 						{@const classB = resolvedClasses[period + 4]}
-						<!-- row 1 -->
 						<tr>
 							<th>Period {period + 1}</th>
 							<td
@@ -73,9 +72,11 @@
 									}}
 								>
 									<span
-										>{titlecase(classA['name'])}
+										>{formatClassName(classA['name'])}
 										<span class="text-xs text-gray-500"
-											>{titlecase(`${classA['teacher_first']} ${classA['teacher_last']}`)}</span
+											>{formatTeacherName(
+												`${classA['teacher_first']} ${classA['teacher_last']}`
+											)}</span
 										></span
 									>
 								</button></td
@@ -94,9 +95,11 @@
 									}}
 								>
 									<span
-										>{titlecase(classB['name'])}
+										>{formatClassName(classB['name'])}
 										<span class="text-xs text-gray-500"
-											>{titlecase(`${classB['teacher_first']} ${classB['teacher_last']}`)}</span
+											>{formatTeacherName(
+												`${classB['teacher_first']} ${classB['teacher_last']}`
+											)}</span
 										></span
 									>
 								</button></td

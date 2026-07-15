@@ -4,6 +4,7 @@
 	import type { Schedule, Class } from '$lib/InfoInput';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
+	import { prioritizeCurrentSchedule } from './schedule-order';
 	import Fuse from 'fuse.js';
 	import { hasSharedClass } from './scheduleComparison';
 
@@ -22,7 +23,12 @@
 	} = $props();
 	let searchQuery = $state('');
 	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
-	let filtered = $derived(searchQuery ? fuse.search(searchQuery).map((x) => x.item) : schedules);
+	let filtered = $derived(
+		prioritizeCurrentSchedule(
+			searchQuery ? fuse.search(searchQuery).map((result) => result.item) : schedules,
+			you
+		)
+	);
 	let visible = $derived.by(() => {
 		if (you === null || you === 'tentative' || !onlyMatching) return filtered;
 		const yourSchedule = you.schedule;
