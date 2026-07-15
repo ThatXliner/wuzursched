@@ -99,14 +99,14 @@ pnpm run dev
 ```
 src/
 ├── lib/                  # Shared components & utilities
-│   ├── InfoInput.svelte  #   Schedule entry form
-│   ├── ClassPicker.svelte#   Searchable class dropdown
 │   ├── Realtime.svelte   #   Realtime connection indicator
+│   ├── schedule.ts       #   Shared schedule domain types and periods
 │   └── supabase.d.ts     #   Generated database types (don't edit by hand)
 ├── routes/
 │   ├── +page.svelte      # Landing page
 │   ├── create/           # Room creation endpoint
 │   └── room/[room=uuid]/ # The room: view, search, and compare schedules
+│       └── components/   #   Route-local schedule entry UI
 supabase/
 ├── migrations/           # Database schema
 └── seed.sql              # Local seed data
