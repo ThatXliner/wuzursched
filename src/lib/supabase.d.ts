@@ -66,33 +66,6 @@ export type Database = {
           },
         ]
       }
-      rooms: {
-        Row: {
-          allow_class_creation: boolean
-          announcement: string
-          class_name_format: string
-          created_at: string | null
-          id: string
-          teacher_name_format: string
-        }
-        Insert: {
-          allow_class_creation?: boolean
-          announcement?: string
-          class_name_format?: string
-          created_at?: string | null
-          id?: string
-          teacher_name_format?: string
-        }
-        Update: {
-          allow_class_creation?: boolean
-          announcement?: string
-          class_name_format?: string
-          created_at?: string | null
-          id?: string
-          teacher_name_format?: string
-        }
-        Relationships: []
-      }
       room_audit_log: {
         Row: {
           action: string
@@ -127,6 +100,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      rooms: {
+        Row: {
+          allow_class_creation: boolean
+          announcement: string
+          class_name_format: string
+          created_at: string | null
+          id: string
+          teacher_name_format: string
+        }
+        Insert: {
+          allow_class_creation?: boolean
+          announcement?: string
+          class_name_format?: string
+          created_at?: string | null
+          id?: string
+          teacher_name_format?: string
+        }
+        Update: {
+          allow_class_creation?: boolean
+          announcement?: string
+          class_name_format?: string
+          created_at?: string | null
+          id?: string
+          teacher_name_format?: string
+        }
+        Relationships: []
       }
       schedules: {
         Row: {
@@ -238,7 +238,24 @@ export type Database = {
     Functions: {
       admin_delete_schedule: {
         Args: { p_room: string; p_student: string; p_token: string }
-        Returns: Database["public"]["Tables"]["schedules"]["Row"]
+        Returns: {
+          "1a": string
+          "1b": string
+          "2a": string
+          "2b": string
+          "3a": string
+          "3b": string
+          "4a": string
+          "4b": string
+          room: string
+          student: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "schedules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_rotate_token: {
         Args: { p_new_token: string; p_room: string; p_token: string }
@@ -246,7 +263,19 @@ export type Database = {
       }
       admin_seed_classes: {
         Args: { p_classes: Json; p_room: string; p_token: string }
-        Returns: Database["public"]["Tables"]["classes"]["Row"][]
+        Returns: {
+          id: string
+          name: string
+          room: string
+          teacher_first: string
+          teacher_last: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "classes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       admin_update_room: {
         Args: {
@@ -257,11 +286,46 @@ export type Database = {
           p_teacher_name_format: string
           p_token: string
         }
-        Returns: Database["public"]["Tables"]["rooms"]["Row"]
+        Returns: {
+          allow_class_creation: boolean
+          announcement: string
+          class_name_format: string
+          created_at: string | null
+          id: string
+          teacher_name_format: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       admin_update_schedule: {
-        Args: { p_room: string; p_schedule: Json; p_student: string; p_token: string }
-        Returns: Database["public"]["Tables"]["schedules"]["Row"]
+        Args: {
+          p_room: string
+          p_schedule: Json
+          p_student: string
+          p_token: string
+        }
+        Returns: {
+          "1a": string
+          "1b": string
+          "2a": string
+          "2b": string
+          "3a": string
+          "3b": string
+          "4a": string
+          "4b": string
+          room: string
+          student: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "schedules"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_room_with_admin: {
         Args: { p_id: string; p_token: string }
