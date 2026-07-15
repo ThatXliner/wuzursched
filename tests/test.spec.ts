@@ -1,10 +1,63 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { formatClassUsage } from '../src/lib/classUsage';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../src/lib/supabase';
 import { pinSelectedItem } from '../src/lib/classPicker';
 
 declare const process: { env: Record<string, string | undefined> };
+
+const periods = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'] as const;
+
+async function insertTestSchedule(page: Page, room: string, student: string) {
+	const supabase = createClient<Database>(
+		process.env.PUBLIC_SUPABASE_URL!,
+		process.env.PUBLIC_SUPABASE_ANON_KEY!,
+		{ auth: { persistSession: false } }
+	);
+	const seedResult = await page.evaluate(
+		async ({ room, classList }) => {
+			const form = new FormData();
+			form.set('class_list', classList);
+			const response = await fetch(`/room/${room}?/seed`, { method: 'POST', body: form });
+			return { ok: response.ok, body: await response.text() };
+		},
+		{
+			room,
+			classList: periods.map((period) => `class ${period},Dr.,${period}`).join('\n')
+		}
+	);
+	expect(seedResult.ok, seedResult.body).toBe(true);
+
+	let classes: { id: string; name: string }[] = [];
+	await expect
+		.poll(async () => {
+			const result = await supabase.from('classes').select('id,name').eq('room', room);
+			if (result.error) throw result.error;
+			classes = result.data;
+			return classes.length;
+		})
+		.toBe(periods.length);
+
+	const schedule = Object.fromEntries(
+		periods.map((period) => [period, classes.find(({ name }) => name === `class ${period}`)!.id])
+	) as Record<(typeof periods)[number], string>;
+	const { data: editToken, error } = await supabase.rpc('create_schedule', {
+		p_room: room,
+		p_student: student,
+		p_period_1a: schedule['1a'],
+		p_period_2a: schedule['2a'],
+		p_period_3a: schedule['3a'],
+		p_period_4a: schedule['4a'],
+		p_period_1b: schedule['1b'],
+		p_period_2b: schedule['2b'],
+		p_period_3b: schedule['3b'],
+		p_period_4b: schedule['4b']
+	});
+	expect(error).toBeNull();
+	expect(editToken).toMatch(/^[a-f0-9]{64}$/);
+
+	return { schedule: { room, student, ...schedule }, editToken: editToken! };
+}
 
 const entries = ['algebra', 'biology', 'chemistry'].map((id, rank) => ({
 	item: { id },
@@ -210,6 +263,40 @@ test('class usage labels use clear singular and plural forms', () => {
 	expect(formatClassUsage(1)).toBe('1 schedule');
 	expect(formatClassUsage(12)).toBe('12 schedules');
 });
+
+for (const onlyMatching of [false, true]) {
+	test(`resetting identity reopens the form when matching is ${onlyMatching ? 'on' : 'off'}`, async ({
+		page
+	}) => {
+		const pageErrors: Error[] = [];
+		page.on('pageerror', (error) => pageErrors.push(error));
+
+		await page.goto('/create');
+		const room = new URL(page.url()).pathname.split('/').at(-1)!;
+		const student = `Reset Test ${crypto.randomUUID()}`;
+		const { schedule, editToken } = await insertTestSchedule(page, room, student);
+
+		await page.evaluate(
+			({ room, student, schedule, editToken }) => {
+				window.localStorage.setItem(room, JSON.stringify({ name: student, schedule, editToken }));
+			},
+			{ room, student, schedule, editToken }
+		);
+		await page.reload();
+
+		const matchingToggle = page.getByRole('checkbox', { name: 'Only show matching' });
+		await expect(matchingToggle).toBeEnabled();
+		if (onlyMatching) await matchingToggle.check();
+
+		await page.getByRole('button', { name: 'Reset who you are' }).click();
+
+		await expect(page.getByRole('heading', { name: 'But first...' })).toBeVisible();
+		await expect(matchingToggle).not.toBeChecked();
+		await expect(matchingToggle).toBeDisabled();
+		expect(await page.evaluate((room) => window.localStorage.getItem(room), room)).toBeNull();
+		expect(pageErrors).toEqual([]);
+	});
+}
 
 test('footer links to the legal documents', async ({ page }) => {
 	await page.goto('/');
