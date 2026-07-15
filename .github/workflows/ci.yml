@@ -19,10 +19,10 @@ jobs:
           node-version: 24
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
-      - name: Setup Supabase v2.33.5
+      - name: Setup Supabase v2.108.0
         uses: supabase/setup-cli@v1
         with:
-          version: 2.33.5
+          version: 2.108.0
       - name: Install dependencies
         run: |
           pnpm install
@@ -32,13 +32,11 @@ jobs:
           supabase start
           supabase db reset
       - name: Set environment variables
-        uses: nick-fields/retry@v2
-        with:
-          max_attempts: 3
-          timeout_minutes: 1
-          command: |
-            supabase status --output env | node convert_env.js > .env
-            test -s .env
+        run: |
+          supabase status --output env > .env.supabase
+          node convert_env.js < .env.supabase > .env
+          rm .env.supabase
+          test -s .env
       - name: Install again, just in case
         run: npx playwright install
       - run: pnpm run test:unit
@@ -55,10 +53,10 @@ jobs:
           node-version: 24
           cache: 'pnpm'
           cache-dependency-path: 'pnpm-lock.yaml'
-      - name: Setup Supabase v2.33.5
+      - name: Setup Supabase v2.108.0
         uses: supabase/setup-cli@v1
         with:
-          version: 2.33.5
+          version: 2.108.0
       - name: Install dependencies
         run: pnpm install
       - name: Start database
@@ -68,10 +66,13 @@ jobs:
       - name: Verify generated types match Postgres schema
         run: |
           supabase gen types typescript --local > src/lib/supabase.d.ts
+          node -e "const fs=require('node:fs'); const p='src/lib/supabase.d.ts'; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').trimEnd() + '\n');"
           if ! git diff --ignore-space-at-eol --exit-code --quiet src/lib/supabase.d.ts; then
-              echo "Detected uncommitted changes after build. See status below:" >> $GITHUB_STEP_SUMMARY
-              echo "```diff" >> >> $GITHUB_STEP_SUMMARY
-              echo $(git diff) >> $GITHUB_STEP_SUMMARY
-              echo "```" >> $GITHUB_STEP_SUMMARY
+              {
+                echo "Detected uncommitted changes after build. See status below:"
+                echo '```diff'
+                git diff -- src/lib/supabase.d.ts
+                echo '```'
+              } >> "$GITHUB_STEP_SUMMARY"
               exit 1
           fi
