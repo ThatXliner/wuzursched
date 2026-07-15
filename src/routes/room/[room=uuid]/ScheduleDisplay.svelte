@@ -72,11 +72,14 @@
 								class:text-warning-content={aMatch === 'different-period'}
 								data-match={aMatch}
 							>
-								<span>
-									{formatClassName(classA.name)}
-									<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span>
-									<span class="sr-only"> — {matchLabels[aMatch]}</span>
-								</span>
+								<span
+									>{formatClassName(classA.name)}
+									<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span><span
+										class="sr-only"
+									>
+										— {matchLabels[aMatch]}</span
+									></span
+								>
 							</div>
 						</td>
 						<td>
@@ -88,11 +91,14 @@
 								class:text-warning-content={bMatch === 'different-period'}
 								data-match={bMatch}
 							>
-								<span>
-									{formatClassName(classB.name)}
-									<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span>
-									<span class="sr-only"> — {matchLabels[bMatch]}</span>
-								</span>
+								<span
+									>{formatClassName(classB.name)}
+									<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span><span
+										class="sr-only"
+									>
+										— {matchLabels[bMatch]}</span
+									></span
+								>
 							</div>
 						</td>
 					</tr>
