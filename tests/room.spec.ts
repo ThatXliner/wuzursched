@@ -37,9 +37,11 @@ test.describe('critical room flows', () => {
 
 		await page.reload();
 		await expect(page.getByRole('heading', { name: 'But first...' })).toBeHidden();
-		await expect(
-			page.getByRole('tabpanel', { name: 'All Schedules' }).getByText("Alice's schedule (you)")
-		).toBeVisible();
+		const people = page
+			.getByRole('tabpanel', { name: 'All Schedules' })
+			.getByLabel('People');
+		await expect(people.getByRole('button', { name: /Alice/i })).toBeVisible();
+		await expect(people.locator('[data-current-user="true"]')).toContainText('Alice');
 	});
 
 	test('searches, creates, selects, and rejects duplicate classes', async ({ page }) => {
@@ -96,23 +98,25 @@ test.describe('critical room flows', () => {
 		await page.goto(`/room/${ROOM_ID}`);
 
 		const schedulesPanel = page.getByRole('tabpanel', { name: 'All Schedules' });
+		const people = schedulesPanel.getByLabel('People');
 		const search = page.getByPlaceholder('Search for a student');
 		await search.fill('Bob');
-		await expect(schedulesPanel.getByText("Bob's schedule")).toBeVisible();
-		await expect(schedulesPanel.getByText("Cara's schedule")).toBeHidden();
+		await expect(people.getByRole('button', { name: /Bob/i })).toBeVisible();
+		await expect(people.getByRole('button', { name: /Cara/i })).toHaveCount(0);
 		await search.clear();
 
 		await page.getByText('Only show matching').click();
-		await expect(schedulesPanel.getByText("Bob's schedule")).toBeVisible();
-		await expect(schedulesPanel.getByText("Cara's schedule")).toBeHidden();
+		await expect(people.getByRole('button', { name: /Bob/i })).toBeVisible();
+		await expect(people.getByRole('button', { name: /Cara/i })).toHaveCount(0);
 
 		await page.getByRole('tab', { name: 'Filter' }).click();
 		const sharedClassButton = page.getByRole('button', { name: /Algebra Ava Adams/i });
 		await sharedClassButton.click();
 		await expect(sharedClassButton).toHaveClass(/btn-active/);
 		const filterPanel = page.getByRole('tabpanel', { name: 'Filter' });
-		await expect(filterPanel.getByText("Bob's schedule")).toBeVisible();
-		await expect(filterPanel.getByText("Cara's schedule")).toBeHidden();
+		const filteredPeople = filterPanel.getByLabel('People');
+		await expect(filteredPeople.getByRole('button', { name: /Bob/i })).toBeVisible();
+		await expect(filteredPeople.getByRole('button', { name: /Cara/i })).toHaveCount(0);
 	});
 
 	test('handles realtime inserts and clears reset or stale identities', async ({ page }) => {
@@ -125,7 +129,10 @@ test.describe('critical room flows', () => {
 		const { error } = await adminClient().from('schedules').insert(realtimeSchedule);
 		expect(error).toBeNull();
 		await expect(
-			page.getByRole('tabpanel', { name: 'All Schedules' }).getByText("Delta's schedule")
+			page
+				.getByRole('tabpanel', { name: 'All Schedules' })
+				.getByLabel('People')
+				.getByRole('button', { name: /Delta/i })
 		).toBeVisible();
 		await expect(page.getByText('Delta just added their schedule to this room')).toBeVisible();
 

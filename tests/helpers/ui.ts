@@ -18,7 +18,7 @@ export async function selectFixtureSchedule(page: Page) {
 		await expect(dialog).toBeVisible();
 		await dialog
 			.getByRole('button', {
-				name: new RegExp(`^${classes[index][1]} ${classes[index][2]} ${classes[index][3]}$`, 'i')
+				name: new RegExp(`${classes[index][1]} ${classes[index][2]} ${classes[index][3]}`, 'i')
 			})
 			.click();
 		await expect(periodButton).toHaveClass(/btn-success/);
