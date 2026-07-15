@@ -1,7 +1,12 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import process from 'node:process';
 
-export const ROOM_ID = '10000000-0000-4000-8000-000000000013';
+let roomSequence = 13;
+export let ROOM_ID = roomId(roomSequence);
+
+function roomId(sequence: number) {
+	return `10000000-0000-4000-8000-${sequence.toString().padStart(12, '0')}`;
+}
 
 export const classes = [
 	['20000000-0000-4000-8000-000000000001', 'algebra', 'ava', 'adams'],
@@ -49,6 +54,7 @@ async function expectDatabaseSuccess(
 }
 
 export async function resetRoom({ withSchedules = true } = {}) {
+	ROOM_ID = roomId(++roomSequence);
 	const admin = adminClient();
 	await expectDatabaseSuccess(
 		admin.from('schedules').delete().eq('room', ROOM_ID),
