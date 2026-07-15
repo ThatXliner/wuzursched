@@ -9,10 +9,10 @@
 	import InfoInput from '$lib/InfoInput.svelte';
 
 	import { page } from '$app/state';
-	import { sqlEscape, normalize } from '$lib/utils';
+	import { sqlEscape, normalizeClassName, normalizeTeacherName } from '$lib/utils';
 	import { onMount } from 'svelte';
 
-	import type { VirtualSchedule, Classes, Class, Schedule } from '$lib/InfoInput.d';
+	import type { VirtualSchedule, Classes, Class, ClassWithUsage, Schedule } from '$lib/InfoInput.d';
 	import type { PageData } from './$types';
 	import memoize from 'lodash-es/memoize';
 	import ToastList from '$lib/ToastList.svelte';
@@ -20,6 +20,8 @@
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import Engineer from './Engineer.svelte';
+	import { applyDatabaseChange, replayDatabaseChanges, type DatabaseChange } from '$lib/realtime';
+	import type { RealtimeChannel } from '@supabase/supabase-js';
 
 	let { data }: { data: PageData } = $props();
 	let supabase = $derived(data.supabase);
@@ -41,45 +43,123 @@
 	let onlyMatching: boolean = $state(false);
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
-	async function refreshClasses() {
-		const { data, error } = await getClasses(room);
-		if (error !== null) {
-			throw error;
+	let refreshInFlight = false;
+	let refreshAgain = false;
+	let scheduleEventsDuringRefresh: DatabaseChange<Schedule>[] = [];
+	let classEventsDuringRefresh: DatabaseChange<Class>[] = [];
+
+	const scheduleKey = (schedule: Partial<Schedule>) =>
+		schedule.room && schedule.student ? `${schedule.room}:${schedule.student}` : undefined;
+	const classKey = (classRow: Partial<Class>) => classRow.id;
+
+	function applyClassDatabaseChange(rows: Classes, change: DatabaseChange<Class>): Classes {
+		if (change.eventType === 'DELETE') {
+			return applyDatabaseChange<ClassWithUsage>(
+				rows,
+				{ eventType: 'DELETE', new: {}, old: change.old },
+				classKey
+			);
 		}
-		classes = data;
+
+		const oldId = change.eventType === 'UPDATE' ? change.old.id : undefined;
+		const existing = rows.find((row) => row.id === change.new.id || row.id === oldId);
+		const enriched = { ...change.new, schedule_count: existing?.schedule_count ?? 0 };
+		return applyDatabaseChange<ClassWithUsage>(
+			rows,
+			{ eventType: change.eventType, new: enriched, old: change.old },
+			classKey
+		);
 	}
-	onMount(async () => {
-		await refreshClasses();
-		// Load it from localStorage
-		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
-		if (
-			// If your log-in exists
-			// But the database forgot about you
-			you !== null &&
-			you !== 'tentative' &&
-			(
-				await supabase
-					.from('schedules')
-					.select('*')
-					.eq('room', room)
-					.eq('student', you.name)
-					.single()
-			).data === null
-		) {
-			// you'll have to do the whole process again
-			you = null;
-			window.localStorage.removeItem(room);
-			// old code:
-			// let toInsert: Schedule = {
-			// 	...you['schedule'],
-			// 	room,
-			// 	student: you.name
-			// };
-			// // they should be equivalent
-			// console.assert(isEqual(toInsert, you.schedule));
+
+	function replayClassDatabaseChanges(rows: Classes, changes: DatabaseChange<Class>[]): Classes {
+		return changes.reduce(applyClassDatabaseChange, rows);
+	}
+
+	function recoverMissingUser() {
+		you = null;
+		window.localStorage.removeItem(room);
+	}
+
+	function reconcileUser(nextSchedules: Schedule[]) {
+		if (you === null || you === 'tentative') return;
+		const currentUser = you;
+		const currentSchedule = nextSchedules.find((schedule) => schedule.student === currentUser.name);
+		if (currentSchedule === undefined) {
+			recoverMissingUser();
+			return;
 		}
-		// Supabase Realtime
-		supabase
+		you = { name: currentUser.name, schedule: currentSchedule };
+		window.localStorage.setItem(room, JSON.stringify(you));
+	}
+
+	async function refreshRoom() {
+		if (refreshInFlight) {
+			refreshAgain = true;
+			return;
+		}
+
+		refreshInFlight = true;
+		scheduleEventsDuringRefresh = [];
+		classEventsDuringRefresh = [];
+		try {
+			const [scheduleResult, classResult] = await Promise.all([
+				supabase.from('schedules').select('*').eq('room', room),
+				getClasses(room)
+			]);
+			if (scheduleResult.error !== null) throw scheduleResult.error;
+			if (classResult.error !== null) throw classResult.error;
+
+			const nextSchedules = replayDatabaseChanges(
+				scheduleResult.data,
+				scheduleEventsDuringRefresh,
+				scheduleKey
+			);
+			schedules = nextSchedules;
+			classes = replayClassDatabaseChanges(classResult.data, classEventsDuringRefresh);
+			reconcileUser(nextSchedules);
+		} catch (error) {
+			console.error('Failed to refresh room after reconnecting', error);
+			addToast('Could not refresh this room after reconnecting', 'error');
+		} finally {
+			refreshInFlight = false;
+			if (refreshAgain) {
+				refreshAgain = false;
+				void refreshRoom();
+			}
+		}
+	}
+
+	function applyScheduleChange(change: DatabaseChange<Schedule>) {
+		if (refreshInFlight) scheduleEventsDuringRefresh.push(change);
+		schedules = applyDatabaseChange(schedules, change, scheduleKey);
+		if (change.eventType === 'INSERT') {
+			addToast(`${change.new.student} just added their schedule to this room`);
+		}
+		if (change.eventType !== 'INSERT') reconcileUser(schedules);
+		void refreshRoom();
+	}
+
+	function applyClassChange(change: DatabaseChange<Class>) {
+		if (refreshInFlight) classEventsDuringRefresh.push(change);
+		classes = applyClassDatabaseChange(classes, change);
+		void refreshRoom();
+	}
+
+	onMount(() => {
+		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
+
+		let previousStatus = realtimeStatus;
+		let channel: RealtimeChannel;
+		const handleOffline = () => {
+			previousStatus = 'CLOSED';
+		};
+		const handleOnline = () => {
+			if (realtimeStatus === 'SUBSCRIBED') void refreshRoom();
+		};
+		window.addEventListener('offline', handleOffline);
+		window.addEventListener('online', handleOnline);
+
+		channel = supabase
 			.channel('schema-db-changes')
 			.on<Schedule>(
 				'postgres_changes',
@@ -93,20 +173,12 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape(room)}`
 				},
-				async (payload) => {
-					if (payload.eventType === 'INSERT') {
-						schedules = [...schedules, payload.new];
-						addToast(`${payload.new.student} just added their schedule to this room`);
-					}
-					await refreshClasses();
-					console.log('1', payload);
-				}
+				(payload) => applyScheduleChange(payload as DatabaseChange<Schedule>)
 			)
 			.on<Class>(
 				'postgres_changes',
 				{
-					// The only valid event (when I'm not clearing the db/devving)
-					event: 'INSERT',
+					event: '*',
 					schema: 'public',
 					table: 'classes',
 					// please don't let this be an SQL injection
@@ -115,13 +187,21 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape(room)}`
 				},
-				async () => {
-					await refreshClasses();
-				}
+				(payload) => applyClassChange(payload as DatabaseChange<Class>)
 			)
 			.subscribe((status) => {
+				const reconnected = status === 'SUBSCRIBED' && previousStatus !== 'SUBSCRIBED';
 				realtimeStatus = status;
+				previousStatus = status;
+				if (reconnected && navigator.onLine) void refreshRoom();
 			});
+		void refreshRoom();
+
+		return () => {
+			window.removeEventListener('offline', handleOffline);
+			window.removeEventListener('online', handleOnline);
+			void supabase.removeChannel(channel);
+		};
 	});
 	function onInfoSubmitted(detail: { name: string; schedule: VirtualSchedule }) {
 		const toInsert = { ...detail.schedule, room, student: detail.name };
@@ -145,9 +225,9 @@
 		lastName: string;
 	}) {
 		const payload = {
-			name: normalize(className),
-			teacher_first: firstName.trim().toLowerCase(),
-			teacher_last: lastName.trim().toLowerCase(),
+			name: normalizeClassName(className),
+			teacher_first: normalizeTeacherName(firstName),
+			teacher_last: normalizeTeacherName(lastName),
 			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
@@ -259,7 +339,7 @@
 		<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
 			<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
 			<Tabs.Trigger value="filter">Filter</Tabs.Trigger>
-			<Tabs.Trigger value="engineer" disabled>Schedule Engineer (coming soon!)</Tabs.Trigger>
+			<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
@@ -271,7 +351,7 @@
 		{/if}
 	</Tabs.Content>
 	<Tabs.Content value="engineer">
-		<Engineer {schedules} />
+		<Engineer {schedules} {getClass} />
 	</Tabs.Content>
 </Tabs.Root>
 
