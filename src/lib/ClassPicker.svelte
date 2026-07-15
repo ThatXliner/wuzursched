@@ -3,6 +3,7 @@
 	import type { Class } from './InfoInput';
 	import { formatClassName, formatTeacherName } from '$lib/utils';
 	import { addToast } from './toasts.svelte';
+	import { pinSelectedItem } from './classPicker';
 
 	type MenuItem = Class & { used?: string };
 
@@ -30,11 +31,14 @@
 		})
 	);
 	let filtered = $derived(
-		className == ''
-			? classes.map((x) => {
-					return { item: x };
-				})
-			: searcher.search(className + firstName + lastName)
+		pinSelectedItem(
+			className == ''
+				? classes.map((x) => {
+						return { item: x };
+					})
+				: searcher.search(className + firstName + lastName),
+			selected
+		)
 	);
 	let classNameValid = $derived(className.length > 0);
 	let firstNameValid = $derived(/^\w+$/.test(firstName.trim()));
