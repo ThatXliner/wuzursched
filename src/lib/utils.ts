@@ -55,8 +55,75 @@ export const flyAndScale = (
 	};
 };
 
-export function titlecase(x: string) {
-	return x[0].toUpperCase() + x.slice(1);
+const CLASS_ACRONYMS = new Set([
+	'ab',
+	'ap',
+	'avid',
+	'bc',
+	'cte',
+	'da',
+	'ela',
+	'esl',
+	'hl',
+	'ib',
+	'pe',
+	'se',
+	'sl',
+	'stem',
+	'us'
+]);
+
+const ROMAN_NUMERAL = /^(?=[ivxlcdm]+$)m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$/i;
+const DOTTED_INITIALISM = /^(?:[a-z]\.){2,}$/i;
+
+function capitalizeWord(word: string) {
+	return word.replace(/^\p{L}/u, (letter) => letter.toLocaleUpperCase());
+}
+
+function formatClassSegment(segment: string) {
+	return CLASS_ACRONYMS.has(segment) ? segment.toLocaleUpperCase() : capitalizeWord(segment);
+}
+
+function formatClassWord(word: string) {
+	const lower = word.toLocaleLowerCase();
+
+	if (CLASS_ACRONYMS.has(lower)) return lower.toLocaleUpperCase();
+	if (DOTTED_INITIALISM.test(lower)) return lower.toLocaleUpperCase();
+	if (ROMAN_NUMERAL.test(lower)) return lower.toLocaleUpperCase();
+	if (/^\d+[a-z]$/i.test(lower)) {
+		return lower.slice(0, -1) + lower.at(-1)?.toLocaleUpperCase();
+	}
+
+	return lower
+		.split(/([-–—/])/)
+		.map((part) => (/[-–—/]/.test(part) ? part : formatClassSegment(part)))
+		.join('');
+}
+
+/** Format a canonical class name for display without changing the stored value. */
+export function formatClassName(className: string) {
+	return className.trim().replace(/\s+/g, ' ').split(' ').map(formatClassWord).join(' ');
+}
+
+function formatNamePart(part: string, index: number) {
+	const lower = part.toLocaleLowerCase();
+
+	if (/^[a-z]\.?$/i.test(lower))
+		return lower[0].toLocaleUpperCase() + (lower.endsWith('.') ? '.' : '');
+	if (DOTTED_INITIALISM.test(lower) || ROMAN_NUMERAL.test(lower)) return lower.toLocaleUpperCase();
+	if (index > 0 && /^(da|de|del|der|di|la|le|van|von)$/i.test(lower)) return lower;
+
+	return lower
+		.split(/([-'’])/)
+		.map((segment) => (/[-'’]/.test(segment) ? segment : capitalizeWord(segment)))
+		.join('')
+		.replace(/^Mc(\p{L})/u, (_, letter: string) => `Mc${letter.toLocaleUpperCase()}`)
+		.replace(/^(Jr|Sr)$/u, '$1.');
+}
+
+/** Format a canonical teacher name for display without changing the stored value. */
+export function formatTeacherName(name: string) {
+	return name.trim().replace(/\s+/g, ' ').split(' ').map(formatNamePart).join(' ');
 }
 export function sqlEscape(str: string) {
 	// this better work well
@@ -86,7 +153,7 @@ export function sqlEscape(str: string) {
 		}
 	});
 }
-export function normalize(className: string) {
+export function normalizeClassName(className: string) {
 	return (
 		className
 			.toLowerCase()
@@ -99,6 +166,12 @@ export function normalize(className: string) {
 			.replace(/\s+/, ' ')
 	);
 }
+
+/** Preserve the existing teacher storage/search/uniqueness semantics. */
+export function normalizeTeacherName(name: string) {
+	return name.trim().toLocaleLowerCase();
+}
+
 export type ArrElement<ArrType> = ArrType extends readonly (infer ElementType)[]
 	? ElementType
 	: never;

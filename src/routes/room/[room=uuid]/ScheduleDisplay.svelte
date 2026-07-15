@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { titlecase } from '$lib/utils';
+	import { formatClassName, formatTeacherName } from '$lib/utils';
 	import type { VirtualSchedule, Class } from '$lib/InfoInput.d';
 	import { getClassMatch, type ClassMatch } from '$lib/scheduleComparison';
 	let {
@@ -64,10 +64,9 @@
 							data-match={aMatch}
 						>
 							<span
-								>{titlecase(classA['name'])}
+								>{formatClassName(classA['name'])}
 								<span class="text-xs text-gray-500"
-									>{titlecase(classA['teacher_first'])}
-									{titlecase(classA['teacher_last'])}</span
+									>{formatTeacherName(`${classA['teacher_first']} ${classA['teacher_last']}`)}</span
 								>
 								<span class="sr-only"> — {matchLabels[aMatch]}</span></span
 							>
@@ -83,10 +82,9 @@
 							data-match={bMatch}
 						>
 							<span
-								>{titlecase(classB['name'])}
+								>{formatClassName(classB['name'])}
 								<span class="text-xs text-gray-500"
-									>{titlecase(classB['teacher_first'])}
-									{titlecase(classB['teacher_last'])}</span
+									>{formatTeacherName(`${classB['teacher_first']} ${classB['teacher_last']}`)}</span
 								>
 								<span class="sr-only"> — {matchLabels[bMatch]}</span></span
 							>

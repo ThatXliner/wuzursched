@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Fuse from 'fuse.js';
 	import type { Class } from './InfoInput';
-	import { titlecase } from '$lib/utils';
+	import { formatClassName, formatTeacherName } from '$lib/utils';
 	import { addToast } from './toasts.svelte';
+	import { pinSelectedItem } from './classPicker';
 
 	type MenuItem = Class & { used?: string };
 
@@ -30,11 +32,14 @@
 		})
 	);
 	let filtered = $derived(
-		className == ''
-			? classes.map((x) => {
-					return { item: x };
-				})
-			: searcher.search(className + firstName + lastName)
+		pinSelectedItem(
+			className == ''
+				? classes.map((x) => {
+						return { item: x };
+					})
+				: searcher.search(className + firstName + lastName),
+			selected
+		)
 	);
 	let classNameValid = $derived(className.length > 0);
 	let firstNameValid = $derived(/^\w+$/.test(firstName.trim()));
@@ -42,7 +47,7 @@
 	let isValidClassInfo = $derived(classNameValid && firstNameValid && lastNameValid);
 </script>
 
-<div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
+<div class="tooltip" data-tip={selectedClassName ? formatClassName(selectedClassName) : undefined}>
 	<button
 		class="btn m-1"
 		class:btn-success={selected != null}
@@ -118,6 +123,10 @@
 					</svg></button
 				></label
 			>
+			<p class="mt-2 text-sm opacity-70">
+				Creating a class publishes its name and teacher to everyone with the room link. See our
+				<a href={resolve('/privacy')} class="link">Privacy Policy</a>.
+			</p>
 		</div>
 		<ul class="menu h-60 overflow-hidden overflow-y-scroll flex-nowrap">
 			<li class="menu-title">Classes</li>
@@ -141,19 +150,19 @@
 						}}
 					>
 						<span class:active={isSelected}
-							>{titlecase(klass['name'])}
+							>{formatClassName(klass['name'])}
 							<span class="text-sm text-gray-500" class:text-white={isSelected}
-								>{titlecase(klass.teacher_first)} {titlecase(klass.teacher_last)}</span
+								>{formatTeacherName(`${klass.teacher_first} ${klass.teacher_last}`)}</span
 							></span
 						>
 					</li>
 				{:else}
 					<li class="disabled">
 						<span
-							>{titlecase(klass['name'])}
+							>{formatClassName(klass['name'])}
 							<span class="text-sm text-gray-500"
-								>{titlecase(klass.teacher_first)}
-								{titlecase(klass.teacher_last)} (already used in {klass.used})</span
+								>{formatTeacherName(`${klass.teacher_first} ${klass.teacher_last}`)} (already used in
+								{klass.used})</span
 							></span
 						>
 					</li>
