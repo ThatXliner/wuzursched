@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { engineerSchedules, type EngineerInput } from '../src/lib/engineer';
+import { engineerSchedules, findOptimumSchedules, type EngineerInput } from '../src/lib/engineer';
 import type { VirtualSchedule } from '../src/lib/schedule';
 
 function schedule(...classes: string[]): VirtualSchedule {
@@ -90,5 +90,17 @@ test('does not mutate stored schedule inputs', () => {
 		{ student: 'Friend', schedule: friend }
 	]);
 
+	expect([original, friend]).toEqual(snapshot);
+});
+
+test('preserves the original helper contract while using the new engineer', () => {
+	const original = schedule('math', 'art');
+	const friend = schedule('art', 'math');
+	const snapshot = structuredClone([original, friend]);
+	const result = findOptimumSchedules([original, friend]);
+
+	expect(result[0]).toEqual(result[1]);
+	expect(new Set(Object.values(result[0]))).toEqual(new Set(Object.values(original)));
+	expect(new Set(Object.values(result[1]))).toEqual(new Set(Object.values(friend)));
 	expect([original, friend]).toEqual(snapshot);
 });

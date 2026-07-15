@@ -59,6 +59,10 @@ jobs:
           version: 2.108.0
       - name: Install dependencies
         run: pnpm install
+      - name: Check contributor documentation
+        run: pnpm run test:docs
+      - name: Run unit tests
+        run: pnpm run test:unit
       - name: Start database
         run: |
           supabase db start

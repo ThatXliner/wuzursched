@@ -11,8 +11,7 @@ test.beforeAll(async () => {
 		globalThis as typeof globalThis & { process?: { env: Record<string, string | undefined> } }
 	).process?.env;
 	const url = environment?.PUBLIC_SUPABASE_URL;
-	const key =
-		environment?.PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? environment?.PUBLIC_SUPABASE_ANON_KEY;
+	const key = environment?.SUPABASE_SERVICE_ROLE_KEY ?? environment?.PUBLIC_SUPABASE_ANON_KEY;
 	if (!url || !key) throw new Error('Local Supabase environment is required for schedule UI tests');
 
 	const supabase = createClient(url, key);

@@ -276,6 +276,8 @@
 	}
 
 	onMount(() => {
+		// The room UUID namespaces this unauthenticated convenience identity. It must never authorize
+		// database access because browser owners can edit localStorage.
 		try {
 			you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
 		} catch {
@@ -364,7 +366,7 @@
 		}
 		const schedule = { ...detail.schedule, room, student: detail.name };
 		persistYou({ name: detail.name, schedule, editToken });
-		// Realtime will add the new schedule to the shared room view.
+		// Realtime is the single schedules-list update path, including for the submitting client.
 	}
 	async function updateYourSchedule(detail: { name: string; schedule: VirtualSchedule }) {
 		if (you === null || you === 'tentative' || !you.editToken) return;

@@ -21,7 +21,6 @@
 		onlyMatching: boolean;
 		getClass: (id: string) => Promise<Class>;
 	} = $props();
-
 	let searchQuery = $state('');
 	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
 	let filtered = $derived(
