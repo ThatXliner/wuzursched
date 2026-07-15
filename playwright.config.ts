@@ -9,7 +9,8 @@ const config: PlaywrightTestConfig = {
 		command: `pnpm run build && pnpm run preview --port ${port}`,
 		port,
 		reuseExistingServer: !process.env.CI
-	}
+	},
+	use: { baseURL: `http://localhost:${port}` }
 };
 
 export default config;
