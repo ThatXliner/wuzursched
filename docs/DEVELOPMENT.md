@@ -48,7 +48,8 @@ pnpm test
 
 - `test:docs` checks that the contributor entry points, local Markdown links, documented package
   commands, and architecture source paths remain valid.
-- `test:unit` runs algorithm tests without starting the app or local database.
+- `test:unit` runs pure algorithm, import, realtime, formatting, and ordering tests without starting
+  the app or local database.
 - `check` runs Svelte and TypeScript diagnostics.
 - `lint` runs Prettier in check mode followed by ESLint.
 - `build` catches production bundling and SSR/client-boundary errors.

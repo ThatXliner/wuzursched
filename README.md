@@ -107,6 +107,7 @@ testing, and deployment.
 src/
 ├── lib/                  # Shared components & utilities
 │   ├── InfoInput.svelte  #   Schedule entry form
+│   ├── ScheduleImporter.svelte # Browser-local screenshot/text import
 │   ├── ClassPicker.svelte#   Searchable class dropdown
 │   ├── Realtime.svelte   #   Realtime connection indicator
 │   └── supabase.d.ts     #   Generated database types (don't edit by hand)

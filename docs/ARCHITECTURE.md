@@ -31,6 +31,8 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
    on the room's `classes` and `schedules` rows, and refreshes both tables from Postgres.
 4. `InfoInput.svelte` requires a student name and one distinct class UUID for each of the eight A/B
    periods. `ClassPicker.svelte` can select an existing room class or insert a normalized class.
+   `ScheduleImporter.svelte` can prefill the same form from pasted text or browser-local screenshot
+   OCR; the user reviews matches and confirms the completed form before submission.
 5. The room page inserts one `schedules` row. The row stores the room and student plus eight foreign
    keys into `classes`; it does not duplicate class names or teacher data.
 6. After submission, the browser writes `{ name, schedule }` under the room UUID in `localStorage`.
@@ -143,14 +145,29 @@ name by the picker. Normalization is used for uniqueness and display consistency
 course equivalence. Changing it affects only new inserts unless existing rows are migrated, and can
 create collisions with the database unique constraint. Add focused examples before broadening it.
 
-Schedule comparison uses class UUID equality at the same period, not normalized text equality:
+Schedule comparison uses class UUID equality, not normalized text equality:
 
 - "Only show matching" keeps a schedule if any corresponding period has the same class UUID.
-- `ScheduleDisplay.svelte` highlights each corresponding matching period.
+- `ScheduleDisplay.svelte` marks a shared class green in the same period and yellow when it appears
+  elsewhere in the current user's schedule.
 - `Search.svelte` applies every selected period/class pair (logical AND).
 
-Consequently, two separately inserted class rows never match even if their text looks alike, and
-the same class UUID in different periods does not count as shared.
+Consequently, two separately inserted class rows never match even if their text looks alike. A
+different-period match is visible in the schedule card but does not satisfy the same-period list or
+filter predicates.
+
+## Schedule screenshot and text import
+
+`ScheduleImporter.svelte` accepts PNG, JPEG, or WebP files up to 10 MB, pasted images, or pasted
+text. Tesseract OCR runs in the browser: the image is not uploaded to Wuzursched or an OCR service,
+though the worker may download its language model. The source image is discarded after processing.
+
+`src/lib/scheduleImport.ts` extracts rows labeled `1A` through `4B`, parses class and teacher text,
+and compares candidates with the room's classes using normalized Levenshtein similarity weighted
+72% toward the class and 28% toward the teacher. Scores at least 0.82 are selected automatically;
+scores from 0.5 to 0.82 are suggestions; lower scores are unresolved. Users can edit every row,
+choose a room class, or explicitly approve creation of unmatched classes. Applying an import only
+prefills the normal schedule form; the separate review checkbox still gates schedule submission.
 
 ## Schedule-engineering algorithm
 
@@ -186,10 +203,12 @@ are accepted, with blank periods available for moved classes.
 - Room existence or initial queries: `src/routes/room/[room=uuid]/+page.server.ts`
 - Submission, browser identity, or Realtime: `src/routes/room/[room=uuid]/+page.svelte`
 - Schedule validation and period shape: `src/lib/InfoInput.svelte` and `src/lib/InfoInput.d.ts`
+- Screenshot/text parsing and matching: `src/lib/ScheduleImporter.svelte` and
+  `src/lib/scheduleImport.ts`
 - Class creation/selection: `src/lib/ClassPicker.svelte` and `normalizeClassName()` in
   `src/lib/utils.ts`
-- Display comparison: the room's `ViewSchedules.svelte`, `ScheduleDisplay.svelte`, and
-  `Search.svelte`
+- Display comparison: `src/lib/scheduleComparison.ts` and the room's `ViewSchedules.svelte`,
+  `ScheduleDisplay.svelte`, and `Search.svelte`
 - Schema, privileges, RLS, or Realtime publication: a new file in `supabase/migrations/`
 
 Before changing a flow, trace it through the UI, Supabase operation, RLS policy, Realtime event, and

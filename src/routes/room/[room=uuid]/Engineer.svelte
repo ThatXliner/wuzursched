@@ -209,10 +209,10 @@
 												<th>{period.toUpperCase()}</th>
 												<td>
 													{#if classId}
-														{#await getClass(classId)}
-															<span class="loading loading-dots loading-xs"></span>
-														{:then resolvedClass}
-														{formatClassName(resolvedClass.name)}
+												{#await getClass(classId)}
+													<span class="loading loading-dots loading-xs"></span>
+												{:then resolvedClass}
+													{formatClassName(resolvedClass.name)}
 														{:catch}<span class="font-mono text-xs">{classId}</span>{/await}
 													{:else}<span class="opacity-50">Empty</span>{/if}
 												</td>
@@ -230,7 +230,7 @@
 										{#each proposal.moves as move (`${move.classId}-${move.from}-${move.to}`)}
 											<li>
 												{#await getClass(move.classId) then resolvedClass}
-											{formatClassName(resolvedClass.name)}
+													{formatClassName(resolvedClass.name)}
 												{:catch}{move.classId}{/await}:
 												{move.from.toUpperCase()} → {move.to.toUpperCase()}
 											</li>
