@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { formatClassUsage } from '../src/lib/classUsage';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../src/lib/supabase';
 import { pinSelectedItem } from '../src/lib/classPicker';
@@ -255,6 +256,12 @@ test('only the edit-key holder can update a schedule and everyone receives the u
 	expect(newKeyValid).toBe(true);
 
 	await supabase.removeAllChannels();
+});
+
+test('class usage labels use clear singular and plural forms', () => {
+	expect(formatClassUsage(0)).toBe('0 schedules');
+	expect(formatClassUsage(1)).toBe('1 schedule');
+	expect(formatClassUsage(12)).toBe('12 schedules');
 });
 
 for (const onlyMatching of [false, true]) {

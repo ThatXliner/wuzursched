@@ -350,6 +350,18 @@ export type Database = {
         }
         Returns: string
       }
+      get_classes_with_usage: {
+        Args: { room_id: string }
+        Returns: {
+          id: string
+          name: string
+          room: string
+          schedule_count: number
+          teacher_first: string
+          teacher_last: string
+          teacher_title: string
+        }[]
+      }
       rotate_schedule_edit_capability: {
         Args: { p_edit_token: string; p_room: string; p_student: string }
         Returns: string
