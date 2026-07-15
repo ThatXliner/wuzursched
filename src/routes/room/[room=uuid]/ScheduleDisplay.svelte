@@ -2,6 +2,7 @@
 	import { formatClassName } from '$lib/utils';
 	import { teacherDisplayName } from '$lib/teacher';
 	import type { VirtualSchedule, Class } from '$lib/InfoInput.d';
+	import { getClassMatch, type ClassMatch } from '$lib/scheduleComparison';
 	let {
 		them,
 		you,
@@ -11,7 +12,27 @@
 	const periods = [0, 1, 2, 3] as const;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;
+	const matchLabels: Record<ClassMatch, string> = {
+		'same-period': 'Same class, same period',
+		'different-period': 'Same class, different period',
+		'not-shared': 'Class not shared'
+	};
 </script>
+
+<div class="mb-2 flex flex-wrap gap-x-4 gap-y-2 text-sm" aria-label="Schedule comparison legend">
+	<span class="inline-flex items-center gap-2">
+		<span class="size-4 rounded bg-success" aria-hidden="true"></span>
+		{matchLabels['same-period']}
+	</span>
+	<span class="inline-flex items-center gap-2">
+		<span class="size-4 rounded bg-warning" aria-hidden="true"></span>
+		{matchLabels['different-period']}
+	</span>
+	<span class="inline-flex items-center gap-2">
+		<span class="size-4 rounded border border-base-300 bg-base-100" aria-hidden="true"></span>
+		{matchLabels['not-shared']}
+	</span>
+</div>
 
 <table class="table w-full">
 	<thead>
@@ -27,8 +48,8 @@
 			{@const scheduleB = them[bDay[period]]}
 			{@const classA = getClass(scheduleA)}
 			{@const classB = getClass(scheduleB)}
-			{@const aInCommon = you && you[aDay[period]] == scheduleA}
-			{@const bInCommon = you && you[bDay[period]] == scheduleB}
+			{@const aMatch = getClassMatch(them, you, aDay[period])}
+			{@const bMatch = getClassMatch(them, you, bDay[period])}
 			{@const resolved = Promise.all([classA, classB])}
 			{#await resolved then [classA, classB]}
 				<!-- row 1 -->
@@ -37,24 +58,32 @@
 					<td
 						><div
 							class="rounded-box p-2 py-3 w-fit"
-							class:bg-success={aInCommon}
-							class:text-success-content={aInCommon}
+							class:bg-success={aMatch === 'same-period'}
+							class:text-success-content={aMatch === 'same-period'}
+							class:bg-warning={aMatch === 'different-period'}
+							class:text-warning-content={aMatch === 'different-period'}
+							data-match={aMatch}
 						>
 							<span
 								>{formatClassName(classA['name'])}
-								<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span></span
+								<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span>
+								<span class="sr-only"> — {matchLabels[aMatch]}</span></span
 							>
 						</div></td
 					>
 					<td
 						><div
 							class="rounded-box p-2 py-3 w-fit"
-							class:bg-success={bInCommon}
-							class:text-success-content={bInCommon}
+							class:bg-success={bMatch === 'same-period'}
+							class:text-success-content={bMatch === 'same-period'}
+							class:bg-warning={bMatch === 'different-period'}
+							class:text-warning-content={bMatch === 'different-period'}
+							data-match={bMatch}
 						>
 							<span
 								>{formatClassName(classB['name'])}
-								<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span></span
+								<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span>
+								<span class="sr-only"> — {matchLabels[bMatch]}</span></span
 							>
 						</div></td
 					>
