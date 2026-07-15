@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Fuse from 'fuse.js';
 	import type { Class } from './InfoInput';
 	import { formatClassName, formatTeacherName } from '$lib/utils';
@@ -122,6 +123,10 @@
 					</svg></button
 				></label
 			>
+			<p class="mt-2 text-sm opacity-70">
+				Creating a class publishes its name and teacher to everyone with the room link. See our
+				<a href={resolve('/privacy')} class="link">Privacy Policy</a>.
+			</p>
 		</div>
 		<ul class="menu h-60 overflow-hidden overflow-y-scroll flex-nowrap">
 			<li class="menu-title">Classes</li>

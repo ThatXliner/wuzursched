@@ -80,10 +80,12 @@
 				<a href="https://github.com/ThatXliner/wuzursched/blob/main/LICENSE" class="link">AGPLv3</a>
 			</p>
 		</aside>
-		<nav class="flex gap-5">
+		<nav class="flex flex-wrap justify-center gap-x-5 gap-y-2">
 			<a href={resolve('/')} class="link link-hover">Home</a>
 			<a href={resolve('/create')} class="link link-hover">Create a room</a>
 			<a href={resolve('/credits')} class="link link-hover">Credits</a>
+			<a href={resolve('/terms')} class="link link-hover">Terms</a>
+			<a href={resolve('/privacy')} class="link link-hover">Privacy</a>
 			<a href="https://github.com/ThatXliner/wuzursched" class="link link-hover">Source code</a>
 		</nav>
 	</footer>
