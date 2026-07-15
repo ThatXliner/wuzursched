@@ -62,6 +62,7 @@
 	let you = $state<You>(null);
 	let classes: Classes = $state(data.classes);
 	let onlyMatching: boolean = $state(false);
+	let activeTab = $state('schedules');
 	let hasResolvedIdentity = $derived(you != null && you !== 'tentative');
 	let editing = $state(false);
 	let importingEditKey = $state(false);
@@ -117,6 +118,9 @@
 
 	function resetIdentity() {
 		onlyMatching = false;
+		editing = false;
+		importingEditKey = false;
+		importValue = '';
 		you = null;
 		window.localStorage.removeItem(room);
 	}
@@ -670,7 +674,7 @@
 		{/if}
 	</div>
 </div>
-<Tabs.Root value="schedules" class="min-h-[60vh]">
+<Tabs.Root bind:value={activeTab} class="min-h-[60vh]">
 	<!-- <Tabs.List> -->
 	{#if you === 'tentative'}
 		<div class="flex w-full justify-center space-x-4">
@@ -690,21 +694,25 @@
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
-		<ViewSchedules
-			{schedules}
-			bind:you
-			{room}
-			{getClass}
-			onlyMatching={onlyMatching && hasResolvedIdentity}
-		/>
+		{#if activeTab === 'schedules'}
+			<ViewSchedules
+				{schedules}
+				bind:you
+				{room}
+				{getClass}
+				onlyMatching={onlyMatching && hasResolvedIdentity}
+			/>
+		{/if}
 	</Tabs.Content>
 	<Tabs.Content value="filter">
-		{#if you != null && you !== 'tentative'}
+		{#if activeTab === 'filter' && you != null && you !== 'tentative'}
 			<Search {you} {getClass} {schedules}></Search>
 		{/if}
 	</Tabs.Content>
 	<Tabs.Content value="engineer">
-		<Engineer {schedules} {getClass} />
+		{#if activeTab === 'engineer'}
+			<Engineer {schedules} {getClass} />
+		{/if}
 	</Tabs.Content>
 </Tabs.Root>
 

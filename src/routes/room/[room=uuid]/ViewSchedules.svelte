@@ -1,12 +1,12 @@
 <script lang="ts">
-	import ViewSchedule from './ViewSchedule.svelte';
-
-	import type { Schedule, VirtualSchedule } from '$lib/schedule';
-	import type { Class } from './types';
 	import { copyToClipboard } from '$lib/actions';
-	import type { You } from './ViewSchedules';
-	import { prioritizeCurrentSchedule } from './schedule-order';
+	import type { Schedule } from '$lib/schedule';
 	import Fuse from 'fuse.js';
+	import ScheduleBrowser from './ScheduleBrowser.svelte';
+	import { prioritizeCurrentSchedule } from './schedule-order';
+	import { hasSharedClass } from './scheduleComparison';
+	import type { Class } from './types';
+	import type { You } from './ViewSchedules';
 
 	let {
 		schedules,
@@ -21,13 +21,7 @@
 		onlyMatching: boolean;
 		getClass: (id: string) => Promise<Class>;
 	} = $props();
-	const PERIODS: (keyof VirtualSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
-	function matches(a: VirtualSchedule, b: VirtualSchedule) {
-		return PERIODS.some((x) => a[x] === b[x]);
-	}
-	function shouldShow(schedule: Schedule) {
-		return !onlyMatching || (you != null && you !== 'tentative' && matches(you.schedule, schedule));
-	}
+
 	let searchQuery = $state('');
 	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
 	let filtered = $derived(
@@ -36,15 +30,24 @@
 			you
 		)
 	);
+	let visible = $derived.by(() => {
+		if (you === null || you === 'tentative' || !onlyMatching) return filtered;
+		const yourSchedule = you.schedule;
+		return filtered.filter((schedule) => hasSharedClass(yourSchedule, schedule));
+	});
 </script>
 
-<label class="input input-bordered flex items-center gap-2 w-96 mx-auto my-5">
+<label
+	class="input input-bordered mx-auto my-5 flex w-[min(24rem,calc(100%-1.5rem))] items-center gap-2"
+>
+	<span class="sr-only">Search students</span>
 	<input type="text" class="grow" placeholder="Search for a student" bind:value={searchQuery} />
 	<svg
 		xmlns="http://www.w3.org/2000/svg"
 		viewBox="0 0 16 16"
 		fill="currentColor"
 		class="h-4 w-4 opacity-70"
+		aria-hidden="true"
 	>
 		<path
 			fill-rule="evenodd"
@@ -53,48 +56,52 @@
 		/>
 	</svg>
 </label>
-<div class="flex flex-wrap justify-evenly">
-	{#each filtered as schedule (schedule.student)}
-		{#if you === 'tentative'}
-			<button
-				class="btn my-3 h-fit w-fit border border-base-300 bg-base-100 shadow-xl rounded-box p-4 text-xl font-medium"
-				onclick={() => {
-					you = { name: schedule.student, schedule };
-					window.localStorage.setItem(room, JSON.stringify(you));
-				}}
-			>
-				{schedule.student}
-			</button>
-		{:else if you == null}
-			<p>Please input who you are first</p>
-		{:else if shouldShow(schedule)}
-			<ViewSchedule {schedule} {you} {getClass} />
-		{/if}
-	{:else}
-		<div class="alert alert-warning shadow-lg mx-auto w-fit">
-			<div>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					class="stroke-current flex-shrink-0 h-6 w-6"
-					fill="none"
-					viewBox="0 0 24 24"
-					><path
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						stroke-width="2"
-						d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-					/></svg
-				>
-				<span
-					>No schedules found. <button
-						class="link link-primary"
-						use:copyToClipboard={{
-							message: 'Room URL copied to clipboard',
-							value: window.location.href
-						}}>Invite people!</button
-					></span
-				>
+
+{#if you === 'tentative'}
+	<section class="mx-auto w-full max-w-3xl px-3 pb-6" aria-labelledby="identity-heading">
+		<h2 id="identity-heading" class="mb-3 text-3xl font-bold">Who are you?</h2>
+		{#if filtered.length > 0}
+			<div class="max-h-[32rem] overflow-y-auto rounded-box border border-base-300 bg-base-100">
+				{#each filtered as schedule (schedule.student)}
+					<button
+						type="button"
+						class="block min-h-14 w-full truncate border-b border-base-300 px-4 py-3 text-left text-lg font-medium last:border-b-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-primary"
+						title={schedule.student}
+						onclick={() => {
+							you = { name: schedule.student, schedule };
+							window.localStorage.setItem(room, JSON.stringify(you));
+						}}
+					>
+						{schedule.student}
+					</button>
+				{/each}
 			</div>
+		{:else}
+			<div role="status" class="alert alert-warning">
+				<span>No people found for “{searchQuery}”.</span>
+			</div>
+		{/if}
+	</section>
+{:else if you == null}
+	<p class="p-6 text-center" role="status">Enter your information to compare schedules.</p>
+{:else}
+	<ScheduleBrowser
+		schedules={visible}
+		{you}
+		{getClass}
+		emptyMessage={schedules.length === 0
+			? 'No schedules have been added yet. Invite people to this room to get started.'
+			: 'No schedules match your current search and filters.'}
+	/>
+	{#if schedules.length === 0}
+		<div class="pb-6 text-center">
+			<button
+				class="link link-primary"
+				use:copyToClipboard={{
+					message: 'Room URL copied to clipboard',
+					value: window.location.href
+				}}>Copy the room link</button
+			>
 		</div>
-	{/each}
-</div>
+	{/if}
+{/if}

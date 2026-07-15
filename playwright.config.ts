@@ -2,7 +2,7 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 import dotenv from 'dotenv';
 
 dotenv.config();
-const port = Number(process.env.PLAYWRIGHT_PORT ?? 4173);
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 41730);
 const config: PlaywrightTestConfig = {
 	testDir: './tests',
 	webServer: {
