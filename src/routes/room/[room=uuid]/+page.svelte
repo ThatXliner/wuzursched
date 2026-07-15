@@ -13,17 +13,20 @@
 	import { onMount } from 'svelte';
 
 	import type { VirtualSchedule, Classes, Class, Schedule } from '$lib/InfoInput.d';
-	import type { PageData } from './$types';
+	import type { ActionData, PageData } from './$types';
 	import memoize from 'lodash-es/memoize';
 	import ToastList from '$lib/ToastList.svelte';
 	import { addToast } from '$lib/toasts.svelte';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import Engineer from './Engineer.svelte';
+	import AdminPanel from './AdminPanel.svelte';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData | null } = $props();
 	let supabase = $derived(data.supabase);
 	let schedules: Schedule[] = $derived(data.data);
+	let roomConfig = $derived(data.roomConfig);
+	let auditLog = $derived(data.auditLog);
 	async function _getClass(id: string) {
 		const { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		if (error !== null) {
@@ -33,24 +36,12 @@
 		return data![0];
 	}
 	const getClass = memoize(_getClass);
-	async function getClasses(room: string) {
-		return await supabase.from('classes').select('*').eq('room', room);
-	}
 	let you: You = $state()!;
-	let classes: Classes = $state([]);
+	let classes: Classes = $derived(data.classes);
 	let onlyMatching: boolean = $state(false);
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
 	onMount(async () => {
-		{
-			const { data, error } = await getClasses(room);
-			// did not convert to console.assert
-			// to appease TypeScript
-			if (error !== null) {
-				throw error;
-			}
-			classes = data;
-		}
 		// Load it from localStorage
 		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
 		if (
@@ -98,15 +89,19 @@
 					if (payload.eventType === 'INSERT') {
 						schedules = [...schedules, payload.new];
 						addToast(`${payload.new.student} just added their schedule to this room`);
+					} else if (payload.eventType === 'UPDATE') {
+						schedules = schedules.map((schedule) =>
+							schedule.student === payload.old.student ? payload.new : schedule
+						);
+					} else if (payload.eventType === 'DELETE') {
+						schedules = schedules.filter((schedule) => schedule.student !== payload.old.student);
 					}
-					console.log('1', payload);
 				}
 			)
 			.on<Class>(
 				'postgres_changes',
 				{
-					// The only valid event (when I'm not clearing the db/devving)
-					event: 'INSERT',
+					event: '*',
 					schema: 'public',
 					table: 'classes',
 					// please don't let this be an SQL injection
@@ -116,7 +111,32 @@
 					filter: `room=eq.${sqlEscape(room)}`
 				},
 				async (payload) => {
-					classes = [...classes, payload.new];
+					if (payload.eventType === 'INSERT') classes = [...classes, payload.new];
+					if (payload.eventType === 'UPDATE') {
+						classes = classes.map((klass) => (klass.id === payload.old.id ? payload.new : klass));
+					}
+					if (payload.eventType === 'DELETE') {
+						classes = classes.filter((klass) => klass.id !== payload.old.id);
+					}
+				}
+			)
+			.on<typeof roomConfig>(
+				'postgres_changes',
+				{ event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${sqlEscape(room)}` },
+				(payload) => {
+					roomConfig = payload.new;
+				}
+			)
+			.on<(typeof auditLog)[number]>(
+				'postgres_changes',
+				{
+					event: 'INSERT',
+					schema: 'public',
+					table: 'room_audit_log',
+					filter: `room=eq.${sqlEscape(room)}`
+				},
+				(payload) => {
+					auditLog = [payload.new, ...auditLog].slice(0, 100);
 				}
 			)
 			.subscribe((status) => {
@@ -144,10 +164,30 @@
 		firstName: string;
 		lastName: string;
 	}) {
+		if (!roomConfig.allow_class_creation) {
+			addToast('Only a room admin may add classes in this room', 'error');
+			throw new Error('Visitor class creation is disabled');
+		}
+		const formattedClass =
+			roomConfig.class_name_format === 'normalized'
+				? normalize(className)
+				: roomConfig.class_name_format === 'title'
+					? className
+							.trim()
+							.toLowerCase()
+							.replace(/\b\w/g, (letter) => letter.toUpperCase())
+					: className.trim();
+		const formatTeacher = (name: string) =>
+			roomConfig.teacher_name_format === 'title'
+				? name
+						.trim()
+						.toLowerCase()
+						.replace(/\b\w/g, (letter) => letter.toUpperCase())
+				: name.trim();
 		const payload = {
-			name: normalize(className),
-			teacher_first: firstName.trim().toLowerCase(),
-			teacher_last: lastName.trim().toLowerCase(),
+			name: formattedClass,
+			teacher_first: formatTeacher(firstName),
+			teacher_last: formatTeacher(lastName),
 			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
@@ -169,7 +209,14 @@
 		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
-			<InfoInput onsubmit={onInfoSubmitted} {classes} {addClass} />
+			<InfoInput
+				onsubmit={onInfoSubmitted}
+				{classes}
+				{addClass}
+				canCreateClass={roomConfig.allow_class_creation}
+				classNameFormat={roomConfig.class_name_format}
+				teacherNameFormat={roomConfig.teacher_name_format}
+			/>
 			<button
 				class="btn btn-accent w-full my-4"
 				onclick={() => {
@@ -191,6 +238,11 @@
 			{schedules.length}
 			{schedules.length === 1 ? 'schedule' : 'schedules'} in this room so far
 		</p>
+		{#if roomConfig.announcement}
+			<div class="alert alert-info mt-3 max-w-2xl whitespace-pre-wrap">
+				{roomConfig.announcement}
+			</div>
+		{/if}
 		<!--
 			Button row
 		 -->
@@ -234,6 +286,30 @@
 					}}>Reset who you are</button
 				>
 			{/if}
+			{#if !data.isAdmin}
+				<details class="dropdown dropdown-end">
+					<summary class="btn btn-ghost">Room admin</summary>
+					<form
+						method="POST"
+						action="?/login"
+						class="card dropdown-content z-10 mt-2 w-80 border border-base-300 bg-base-100 shadow-xl"
+					>
+						<div class="card-body p-4">
+							<label class="form-control">
+								<span class="label-text">Admin credential</span>
+								<input
+									class="input input-bordered"
+									type="password"
+									name="token"
+									autocomplete="off"
+									required
+								/>
+							</label>
+							<button class="btn btn-primary" type="submit">Recover admin session</button>
+						</div>
+					</form>
+				</details>
+			{/if}
 		</div>
 		{#if room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
 			<div class="alert alert-info mx-auto mt-3 w-fit max-w-md text-sm">
@@ -274,5 +350,30 @@
 		<Engineer {schedules} />
 	</Tabs.Content>
 </Tabs.Root>
+
+{#if data.isAdmin}
+	<AdminPanel {roomConfig} {classes} {schedules} {auditLog} {form} />
+{:else}
+	<details
+		class="collapse collapse-arrow mx-auto my-8 w-11/12 max-w-5xl border border-base-300 bg-base-100"
+	>
+		<summary class="collapse-title text-xl font-medium">Public admin audit log</summary>
+		<div class="collapse-content overflow-x-auto">
+			<table class="table table-sm">
+				<thead><tr><th>Time</th><th>Change</th><th>Affected record</th></tr></thead>
+				<tbody>
+					{#each auditLog as entry (entry.id)}
+						<tr
+							><td>{new Date(entry.created_at).toLocaleString()}</td><td
+								>{entry.action} {entry.affected_table}</td
+							><td><code class="text-xs">{JSON.stringify(entry.affected_record)}</code></td></tr
+						>
+					{:else}<tr><td colspan="3">No admin changes yet.</td></tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</details>
+{/if}
 
 <Realtime {realtimeStatus} />

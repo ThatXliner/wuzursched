@@ -48,18 +48,65 @@ export type Database = {
       }
       rooms: {
         Row: {
+          allow_class_creation: boolean
+          announcement: string
+          class_name_format: string
           created_at: string | null
           id: string
+          teacher_name_format: string
         }
         Insert: {
+          allow_class_creation?: boolean
+          announcement?: string
+          class_name_format?: string
           created_at?: string | null
           id?: string
+          teacher_name_format?: string
         }
         Update: {
+          allow_class_creation?: boolean
+          announcement?: string
+          class_name_format?: string
           created_at?: string | null
           id?: string
+          teacher_name_format?: string
         }
         Relationships: []
+      }
+      room_audit_log: {
+        Row: {
+          action: string
+          affected_record: Json
+          affected_table: string
+          created_at: string
+          id: number
+          room: string
+        }
+        Insert: {
+          action: string
+          affected_record: Json
+          affected_table: string
+          created_at?: string
+          id?: never
+          room: string
+        }
+        Update: {
+          action?: string
+          affected_record?: Json
+          affected_table?: string
+          created_at?: string
+          id?: never
+          room?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_audit_log_room_fkey"
+            columns: ["room"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schedules: {
         Row: {
@@ -169,7 +216,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_delete_schedule: {
+        Args: { p_room: string; p_student: string; p_token: string }
+        Returns: Database["public"]["Tables"]["schedules"]["Row"]
+      }
+      admin_rotate_token: {
+        Args: { p_new_token: string; p_room: string; p_token: string }
+        Returns: boolean
+      }
+      admin_seed_classes: {
+        Args: { p_classes: Json; p_room: string; p_token: string }
+        Returns: Database["public"]["Tables"]["classes"]["Row"][]
+      }
+      admin_update_room: {
+        Args: {
+          p_allow_class_creation: boolean
+          p_announcement: string
+          p_class_name_format: string
+          p_room: string
+          p_teacher_name_format: string
+          p_token: string
+        }
+        Returns: Database["public"]["Tables"]["rooms"]["Row"]
+      }
+      admin_update_schedule: {
+        Args: { p_room: string; p_schedule: Json; p_student: string; p_token: string }
+        Returns: Database["public"]["Tables"]["schedules"]["Row"]
+      }
+      create_room_with_admin: {
+        Args: { p_id: string; p_token: string }
+        Returns: string
+      }
+      verify_room_admin: {
+        Args: { p_room: string; p_token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
