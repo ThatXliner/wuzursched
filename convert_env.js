@@ -16,9 +16,15 @@ const REMAP = {
 	API_URL: 'PUBLIC_SUPABASE_URL',
 	ANON_KEY: 'PUBLIC_SUPABASE_ANON_KEY'
 };
-for (let keyValue of stdin.matchAll(/(\w+)="(.+)"/gm)) {
-	const key = keyValue[1];
-	const value = keyValue[2];
+
+let entries;
+try {
+	entries = Object.entries(JSON.parse(stdin));
+} catch {
+	entries = [...stdin.matchAll(/(\w+)="(.+)"/gm)].map((match) => [match[1], match[2]]);
+}
+
+for (const [key, value] of entries) {
 	if (Object.prototype.hasOwnProperty.call(REMAP, key)) {
 		console.log(`${REMAP[key]}=${value}`);
 	}
