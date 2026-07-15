@@ -124,7 +124,9 @@
 					filter: `room=eq.${sqlEscape(room)}`
 				},
 				async (payload) => {
-					classes = [...classes, payload.new];
+					if (!classes.some((klass) => klass.id === payload.new.id)) {
+						classes = [...classes, payload.new];
+					}
 				}
 			)
 			.subscribe((status) => {
