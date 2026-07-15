@@ -11,7 +11,7 @@
 		"build": "vite build",
 		"package": "svelte-kit package",
 		"preview": "vite preview",
-		"test": "playwright test",
+		"test": "pnpm test:unit && playwright test",
 		"test:unit": "vitest run",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
