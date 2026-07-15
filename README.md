@@ -122,6 +122,7 @@ src/
 ├── lib/                  # Shared components & utilities
 │   ├── Realtime.svelte   #   Realtime connection indicator
 │   ├── schedule.ts       #   Shared schedule domain types and periods
+│   ├── teacher.ts        #   Teacher identity validation and display
 │   └── supabase.d.ts     #   Generated database types (don't edit by hand)
 ├── routes/
 │   ├── +page.svelte      # Landing page

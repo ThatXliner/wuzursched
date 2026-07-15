@@ -4,6 +4,7 @@
 	import ScheduleImporter from './ScheduleImporter.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from '$lib/schedule';
 	import type { Classes } from '../types';
+	import type { TeacherIdentityInput } from '$lib/teacher';
 
 	let {
 		classes,
@@ -17,7 +18,11 @@
 		submitLabel = 'Submit schedule'
 	}: {
 		classes: Classes;
-		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
+		addClass: (info: {
+			className: string;
+			identity: TeacherIdentityInput;
+			lastName: string;
+		}) => Promise<string>;
 		canCreateClass?: boolean;
 		classNameFormat?: string;
 		teacherNameFormat?: string;
@@ -71,7 +76,7 @@
 	}
 </script>
 
-<ScheduleImporter {classes} {addClass} onapply={applyImportedSchedule} />
+<ScheduleImporter {classes} {addClass} {canCreateClass} onapply={applyImportedSchedule} />
 
 <div class="form-control">
 	<label class="label justify-center">

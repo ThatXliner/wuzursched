@@ -49,7 +49,7 @@ function parseCsv(source: string) {
 	return rows.map(([name, teacher_first, teacher_last], index) => {
 		if (!name || !teacher_first || !teacher_last) {
 			throw new Error(
-				`Class list row ${index + 1} needs name, teacher first name, and teacher last name.`
+				`Class list row ${index + 1} needs name, teacher first name or title, and teacher last name.`
 			);
 		}
 		return { name, teacher_first, teacher_last };

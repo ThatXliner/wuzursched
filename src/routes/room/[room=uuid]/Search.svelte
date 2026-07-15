@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Schedule, UnfinishedSchedule } from '$lib/schedule';
-	import { formatClassName, formatTeacherName } from '$lib/utils';
+	import { formatClassName } from '$lib/utils';
+	import { teacherDisplayName } from '$lib/teacher';
 	import { isEqual } from 'lodash-es';
 	import ViewSchedule from './ViewSchedule.svelte';
 	import type { ResolvedYou } from './ViewSchedules';
@@ -72,11 +73,7 @@
 								>
 									<span
 										>{formatClassName(classA['name'])}
-										<span class="text-xs text-gray-500"
-											>{formatTeacherName(
-												`${classA['teacher_first']} ${classA['teacher_last']}`
-											)}</span
-										></span
+										<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span></span
 									>
 								</button></td
 							>
@@ -94,11 +91,7 @@
 								>
 									<span
 										>{formatClassName(classB['name'])}
-										<span class="text-xs text-gray-500"
-											>{formatTeacherName(
-												`${classB['teacher_first']} ${classB['teacher_last']}`
-											)}</span
-										></span
+										<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span></span
 									>
 								</button></td
 							>

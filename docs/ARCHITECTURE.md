@@ -63,10 +63,12 @@ generated TypeScript view of that schema.
 ### `classes`
 
 - `id`: generated UUID primary key.
-- `name`, `teacher_first`, `teacher_last`: normalized lowercase display/search fields.
+- `name` and `teacher_last`: required normalized display/search fields.
+- `teacher_first` and `teacher_title`: nullable alternative identity fields. A class must have
+  exactly one of a first name or a supported title (`Mr`, `Mrs`, `Ms`, `Mx`, `Dr`, or `Coach`).
 - `room`: foreign key to `rooms.id`.
-- A unique constraint on `(name, teacher_first, teacher_last, room)` prevents duplicate normalized
-  classes inside one room.
+- A normalized expression index over the room, class name, last name, first name, and title prevents
+  duplicate class/teacher identities inside one room.
 
 ### `schedules`
 
@@ -150,10 +152,13 @@ insertion it:
 - converts a trailing Roman numeral `I`, `II`, or `III` to `1`, `2`, or `3`; and
 - collapses the first run of repeated whitespace.
 
-Teacher names are separately trimmed and lowercased; spaces are removed from the teacher's last
-name by the picker. Normalization is used for uniqueness and display consistency, not semantic
-course equivalence. Changing it affects only new inserts unless existing rows are migrated, and can
-create collisions with the database unique constraint. Add focused examples before broadening it.
+Teacher identity normalization lives in `src/lib/teacher.ts`. The picker requires a last name plus
+either a natural single-part first name or a supported title, stores the unused alternative as
+`null`, and normalizes the selected identity for matching and display. The title migration also
+canonicalizes legacy rows that stored a title in `teacher_first`. Normalization is used for
+uniqueness and display consistency, not semantic course equivalence. Changing it affects only new
+inserts unless existing rows are migrated, and can create collisions with the database unique
+index. Add focused examples before broadening it.
 
 Schedule comparison uses class UUID equality, not normalized text equality:
 
@@ -172,12 +177,13 @@ filter predicates.
 text. Tesseract OCR runs in the browser: the image is not uploaded to Wuzursched or an OCR service,
 though the worker may download its language model. The source image is discarded after processing.
 
-`src/lib/scheduleImport.ts` extracts rows labeled `1A` through `4B`, parses class and teacher text,
-and compares candidates with the room's classes using normalized Levenshtein similarity weighted
-72% toward the class and 28% toward the teacher. Scores at least 0.82 are selected automatically;
-scores from 0.5 to 0.82 are suggestions; lower scores are unresolved. Users can edit every row,
-choose a room class, or explicitly approve creation of unmatched classes. Applying an import only
-prefills the normal schedule form; the separate review checkbox still gates schedule submission.
+`src/lib/scheduleImport.ts` extracts rows labeled `1A` through `4B`, parses class and teacher text
+(including dotted titles such as `Dr.`), and compares candidates with the room's classes using
+normalized Levenshtein similarity weighted 72% toward the class and 28% toward the teacher. Scores
+at least 0.82 are selected automatically; scores from 0.5 to 0.82 are suggestions; lower scores are
+unresolved. Users can edit every row, choose a room class, or explicitly approve creation of
+unmatched classes. Applying an import only prefills the normal schedule form; the separate review
+checkbox still gates schedule submission.
 
 ## Schedule-engineering algorithm
 
