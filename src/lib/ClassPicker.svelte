@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Fuse from 'fuse.js';
 	import type { Class } from './InfoInput';
-	import { titlecase } from '$lib/utils';
+	import { formatClassName, formatTeacherName } from '$lib/utils';
 	import { addToast } from './toasts.svelte';
+	import { pinSelectedItem } from './classPicker';
 
 	type MenuItem = Class & { used?: string };
 
@@ -36,24 +38,28 @@
 		})
 	);
 	let filtered = $derived(
-		className == ''
-			? classes.map((x) => {
-					return { item: x };
-				})
-			: searcher.search(className + firstName + lastName)
+		pinSelectedItem(
+			className == ''
+				? classes.map((x) => {
+						return { item: x };
+					})
+				: searcher.search(className + firstName + lastName),
+			selected
+		)
 	);
 	let classNameValid = $derived(className.length > 0);
 	let firstNameValid = $derived(/^\w+$/.test(firstName.trim()));
 	let lastNameValid = $derived(/^\w+$/.test(lastName.trim().replaceAll(/\s+/g, '')));
 	let isValidClassInfo = $derived(classNameValid && firstNameValid && lastNameValid);
-	const titleWords = (value: string) => value.replace(/\b\w/g, (letter) => letter.toUpperCase());
 	const displayClass = (value: string) =>
-		classNameFormat === 'preserve' ? value : titleWords(value);
-	const displayTeacher = (value: string) =>
-		teacherNameFormat === 'preserve' ? value : titleWords(value);
+		classNameFormat === 'preserve' ? value : formatClassName(value);
+	const displayTeacher = (first: string, last: string) => {
+		const value = `${first} ${last}`;
+		return teacherNameFormat === 'preserve' ? value : formatTeacherName(value);
+	};
 </script>
 
-<div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
+<div class="tooltip" data-tip={selectedClassName ? displayClass(selectedClassName) : undefined}>
 	<button
 		class="btn m-1"
 		class:btn-success={selected != null}
@@ -93,9 +99,7 @@
 						onclick={async (event) => {
 							if (!isValidClassInfo) {
 								console.log(className, firstName, lastName);
-								if (!classNameValid) {
-									addToast('Class name must not be empty', 'error');
-								}
+								if (!classNameValid) addToast('Class name must not be empty', 'error');
 								if (!firstNameValid) {
 									addToast("The teacher's first name must be a single word", 'error');
 								}
@@ -111,11 +115,11 @@
 								firstName: firstName.trim(),
 								lastName: lastName.trim().replaceAll(/\s+/g, '')
 							});
-							// Reset the search
 							className = '';
 							firstName = '';
 							lastName = '';
 						}}
+						aria-label="Create class"
 						><svg
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-5 w-5"
@@ -130,6 +134,10 @@
 						</svg></button
 					></label
 				>
+				<p class="mt-2 text-sm opacity-70">
+					Creating a class publishes its name and teacher to everyone with the room link. See our
+					<a href={resolve('/privacy')} class="link">Privacy Policy</a>.
+				</p>
 			</div>
 		{:else}
 			<p class="text-sm opacity-70">
@@ -149,28 +157,25 @@
 							dialog.close();
 						}}
 						onkeydown={() => {
-							// For accessibility, we also implement keydown
-							// (this accessibility manuever should be
-							// isolated into a use: directive)
 							selected = isSelected ? null : klass.id;
 							selectedClassName = isSelected ? null : klass.name;
 							dialog.close();
 						}}
 					>
 						<span class:active={isSelected}
-							>{displayClass(klass['name'])}
+							>{displayClass(klass.name)}
 							<span class="text-sm text-gray-500" class:text-white={isSelected}
-								>{displayTeacher(klass.teacher_first)} {displayTeacher(klass.teacher_last)}</span
+								>{displayTeacher(klass.teacher_first, klass.teacher_last)}</span
 							></span
 						>
 					</li>
 				{:else}
 					<li class="disabled">
 						<span
-							>{displayClass(klass['name'])}
+							>{displayClass(klass.name)}
 							<span class="text-sm text-gray-500"
-								>{displayTeacher(klass.teacher_first)}
-								{displayTeacher(klass.teacher_last)} (already used in {klass.used})</span
+								>{displayTeacher(klass.teacher_first, klass.teacher_last)} (already used in
+								{klass.used})</span
 							></span
 						>
 					</li>
@@ -179,7 +184,6 @@
 			{/each}
 		</ul>
 	</form>
-	<!-- So that clicking outside would also close the modal -->
 	<form method="dialog" class="modal-backdrop">
 		<button>close</button>
 	</form>

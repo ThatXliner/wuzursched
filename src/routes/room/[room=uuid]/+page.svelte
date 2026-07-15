@@ -9,7 +9,13 @@
 	import InfoInput from '$lib/InfoInput.svelte';
 
 	import { page } from '$app/state';
-	import { sqlEscape, normalize } from '$lib/utils';
+	import {
+		formatClassName,
+		formatTeacherName,
+		sqlEscape,
+		normalizeClassName,
+		normalizeTeacherName
+	} from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	import type { VirtualSchedule, Classes, Class, Schedule } from '$lib/InfoInput.d';
@@ -21,6 +27,8 @@
 	import type { You } from './ViewSchedules';
 	import Engineer from './Engineer.svelte';
 	import AdminPanel from './AdminPanel.svelte';
+	import { applyDatabaseChange, replayDatabaseChanges, type DatabaseChange } from '$lib/realtime';
+	import type { RealtimeChannel } from '@supabase/supabase-js';
 
 	let { data, form }: { data: PageData; form: ActionData | null } = $props();
 	let supabase = $derived(data.supabase);
@@ -36,42 +44,144 @@
 		return data![0];
 	}
 	const getClass = memoize(_getClass);
+	async function getClasses(room: string) {
+		return await supabase.from('classes').select('*').eq('room', room);
+	}
 	let you: You = $state()!;
 	let classes: Classes = $derived(data.classes);
 	let onlyMatching: boolean = $state(false);
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
-	onMount(async () => {
-		// Load it from localStorage
-		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
-		if (
-			// If your log-in exists
-			// But the database forgot about you
-			you !== null &&
-			you !== 'tentative' &&
-			(
-				await supabase
-					.from('schedules')
+	let refreshInFlight = false;
+	let refreshAgain = false;
+	let scheduleEventsDuringRefresh: DatabaseChange<Schedule>[] = [];
+	let classEventsDuringRefresh: DatabaseChange<Class>[] = [];
+	let roomEventsDuringRefresh: DatabaseChange<typeof roomConfig>[] = [];
+	let auditEventsDuringRefresh: DatabaseChange<(typeof auditLog)[number]>[] = [];
+
+	const scheduleKey = (schedule: Partial<Schedule>) =>
+		schedule.room && schedule.student ? `${schedule.room}:${schedule.student}` : undefined;
+	const classKey = (classRow: Partial<Class>) => classRow.id;
+	const roomKey = (roomRow: Partial<typeof roomConfig>) => roomRow.id;
+	const auditKey = (auditRow: Partial<(typeof auditLog)[number]>) =>
+		auditRow.id === undefined ? undefined : String(auditRow.id);
+
+	function recoverMissingUser() {
+		you = null;
+		window.localStorage.removeItem(room);
+	}
+
+	function reconcileUser(nextSchedules: Schedule[]) {
+		if (you === null || you === 'tentative') return;
+		const currentUser = you;
+		const currentSchedule = nextSchedules.find((schedule) => schedule.student === currentUser.name);
+		if (currentSchedule === undefined) {
+			recoverMissingUser();
+			return;
+		}
+		you = { name: currentUser.name, schedule: currentSchedule };
+		window.localStorage.setItem(room, JSON.stringify(you));
+	}
+
+	async function refreshRoom() {
+		if (refreshInFlight) {
+			refreshAgain = true;
+			return;
+		}
+
+		refreshInFlight = true;
+		scheduleEventsDuringRefresh = [];
+		classEventsDuringRefresh = [];
+		roomEventsDuringRefresh = [];
+		auditEventsDuringRefresh = [];
+		try {
+			const [scheduleResult, classResult, roomResult, auditResult] = await Promise.all([
+				supabase.from('schedules').select('*').eq('room', room),
+				getClasses(room),
+				supabase
+					.from('rooms')
+					.select('id, announcement, allow_class_creation, class_name_format, teacher_name_format')
+					.eq('id', room)
+					.single(),
+				supabase
+					.from('room_audit_log')
 					.select('*')
 					.eq('room', room)
-					.eq('student', you.name)
-					.single()
-			).data === null
-		) {
-			// you'll have to do the whole process again
-			you = null;
-			window.localStorage.removeItem(room);
-			// old code:
-			// let toInsert: Schedule = {
-			// 	...you['schedule'],
-			// 	room,
-			// 	student: you.name
-			// };
-			// // they should be equivalent
-			// console.assert(isEqual(toInsert, you.schedule));
+					.order('created_at', { ascending: false })
+					.limit(100)
+			]);
+			if (scheduleResult.error !== null) throw scheduleResult.error;
+			if (classResult.error !== null) throw classResult.error;
+			if (roomResult.error !== null) throw roomResult.error;
+			if (auditResult.error !== null) throw auditResult.error;
+
+			const nextSchedules = replayDatabaseChanges(
+				scheduleResult.data,
+				scheduleEventsDuringRefresh,
+				scheduleKey
+			);
+			schedules = nextSchedules;
+			classes = replayDatabaseChanges(classResult.data, classEventsDuringRefresh, classKey);
+			roomConfig =
+				replayDatabaseChanges([roomResult.data], roomEventsDuringRefresh, roomKey)[0] ??
+				roomResult.data;
+			auditLog = replayDatabaseChanges(auditResult.data, auditEventsDuringRefresh, auditKey)
+				.sort((left, right) => right.created_at.localeCompare(left.created_at))
+				.slice(0, 100);
+			reconcileUser(nextSchedules);
+		} catch (error) {
+			console.error('Failed to refresh room after reconnecting', error);
+			addToast('Could not refresh this room after reconnecting', 'error');
+		} finally {
+			refreshInFlight = false;
+			if (refreshAgain) {
+				refreshAgain = false;
+				void refreshRoom();
+			}
 		}
-		// Supabase Realtime
-		supabase
+	}
+
+	function applyScheduleChange(change: DatabaseChange<Schedule>) {
+		if (refreshInFlight) scheduleEventsDuringRefresh.push(change);
+		schedules = applyDatabaseChange(schedules, change, scheduleKey);
+		if (change.eventType === 'INSERT') {
+			addToast(`${change.new.student} just added their schedule to this room`);
+		}
+		if (change.eventType !== 'INSERT') reconcileUser(schedules);
+	}
+
+	function applyClassChange(change: DatabaseChange<Class>) {
+		if (refreshInFlight) classEventsDuringRefresh.push(change);
+		classes = applyDatabaseChange(classes, change, classKey);
+	}
+
+	function applyRoomChange(change: DatabaseChange<typeof roomConfig>) {
+		if (refreshInFlight) roomEventsDuringRefresh.push(change);
+		roomConfig = applyDatabaseChange([roomConfig], change, roomKey)[0] ?? roomConfig;
+	}
+
+	function applyAuditChange(change: DatabaseChange<(typeof auditLog)[number]>) {
+		if (refreshInFlight) auditEventsDuringRefresh.push(change);
+		auditLog = applyDatabaseChange(auditLog, change, auditKey)
+			.sort((left, right) => right.created_at.localeCompare(left.created_at))
+			.slice(0, 100);
+	}
+
+	onMount(() => {
+		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
+
+		let previousStatus = realtimeStatus;
+		let channel: RealtimeChannel;
+		const handleOffline = () => {
+			previousStatus = 'CLOSED';
+		};
+		const handleOnline = () => {
+			if (realtimeStatus === 'SUBSCRIBED') void refreshRoom();
+		};
+		window.addEventListener('offline', handleOffline);
+		window.addEventListener('online', handleOnline);
+
+		channel = supabase
 			.channel('schema-db-changes')
 			.on<Schedule>(
 				'postgres_changes',
@@ -85,18 +195,7 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape(room)}`
 				},
-				(payload) => {
-					if (payload.eventType === 'INSERT') {
-						schedules = [...schedules, payload.new];
-						addToast(`${payload.new.student} just added their schedule to this room`);
-					} else if (payload.eventType === 'UPDATE') {
-						schedules = schedules.map((schedule) =>
-							schedule.student === payload.old.student ? payload.new : schedule
-						);
-					} else if (payload.eventType === 'DELETE') {
-						schedules = schedules.filter((schedule) => schedule.student !== payload.old.student);
-					}
-				}
+				(payload) => applyScheduleChange(payload as DatabaseChange<Schedule>)
 			)
 			.on<Class>(
 				'postgres_changes',
@@ -110,22 +209,12 @@
 					// is being validated)
 					filter: `room=eq.${sqlEscape(room)}`
 				},
-				async (payload) => {
-					if (payload.eventType === 'INSERT') classes = [...classes, payload.new];
-					if (payload.eventType === 'UPDATE') {
-						classes = classes.map((klass) => (klass.id === payload.old.id ? payload.new : klass));
-					}
-					if (payload.eventType === 'DELETE') {
-						classes = classes.filter((klass) => klass.id !== payload.old.id);
-					}
-				}
+				(payload) => applyClassChange(payload as DatabaseChange<Class>)
 			)
 			.on<typeof roomConfig>(
 				'postgres_changes',
 				{ event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${sqlEscape(room)}` },
-				(payload) => {
-					roomConfig = payload.new;
-				}
+				(payload) => applyRoomChange(payload as DatabaseChange<typeof roomConfig>)
 			)
 			.on<(typeof auditLog)[number]>(
 				'postgres_changes',
@@ -135,13 +224,21 @@
 					table: 'room_audit_log',
 					filter: `room=eq.${sqlEscape(room)}`
 				},
-				(payload) => {
-					auditLog = [payload.new, ...auditLog].slice(0, 100);
-				}
+				(payload) => applyAuditChange(payload as DatabaseChange<(typeof auditLog)[number]>)
 			)
 			.subscribe((status) => {
+				const reconnected = status === 'SUBSCRIBED' && previousStatus !== 'SUBSCRIBED';
 				realtimeStatus = status;
+				previousStatus = status;
+				if (reconnected && navigator.onLine) void refreshRoom();
 			});
+		void refreshRoom();
+
+		return () => {
+			window.removeEventListener('offline', handleOffline);
+			window.removeEventListener('online', handleOnline);
+			void supabase.removeChannel(channel);
+		};
 	});
 	function onInfoSubmitted(detail: { name: string; schedule: VirtualSchedule }) {
 		const toInsert = { ...detail.schedule, room, student: detail.name };
@@ -168,26 +265,21 @@
 			addToast('Only a room admin may add classes in this room', 'error');
 			throw new Error('Visitor class creation is disabled');
 		}
-		const formattedClass =
-			roomConfig.class_name_format === 'normalized'
-				? normalize(className)
-				: roomConfig.class_name_format === 'title'
-					? className
-							.trim()
-							.toLowerCase()
-							.replace(/\b\w/g, (letter) => letter.toUpperCase())
-					: className.trim();
-		const formatTeacher = (name: string) =>
-			roomConfig.teacher_name_format === 'title'
-				? name
-						.trim()
-						.toLowerCase()
-						.replace(/\b\w/g, (letter) => letter.toUpperCase())
-				: name.trim();
 		const payload = {
-			name: formattedClass,
-			teacher_first: formatTeacher(firstName),
-			teacher_last: formatTeacher(lastName),
+			name:
+				roomConfig.class_name_format === 'preserve'
+					? className.trim()
+					: roomConfig.class_name_format === 'title'
+						? formatClassName(normalizeClassName(className))
+						: normalizeClassName(className),
+			teacher_first:
+				roomConfig.teacher_name_format === 'preserve'
+					? firstName.trim()
+					: formatTeacherName(normalizeTeacherName(firstName)),
+			teacher_last:
+				roomConfig.teacher_name_format === 'preserve'
+					? lastName.trim()
+					: formatTeacherName(normalizeTeacherName(lastName)),
 			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
@@ -335,7 +427,7 @@
 		<Tabs.List class="grid w-3/4 mx-auto grid-cols-3">
 			<Tabs.Trigger value="schedules">All Schedules</Tabs.Trigger>
 			<Tabs.Trigger value="filter">Filter</Tabs.Trigger>
-			<Tabs.Trigger value="engineer" disabled>Schedule Engineer (coming soon!)</Tabs.Trigger>
+			<Tabs.Trigger value="engineer">Schedule Engineer</Tabs.Trigger>
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
@@ -347,7 +439,7 @@
 		{/if}
 	</Tabs.Content>
 	<Tabs.Content value="engineer">
-		<Engineer {schedules} />
+		<Engineer {schedules} {getClass} />
 	</Tabs.Content>
 </Tabs.Root>
 
@@ -363,11 +455,11 @@
 				<thead><tr><th>Time</th><th>Change</th><th>Affected record</th></tr></thead>
 				<tbody>
 					{#each auditLog as entry (entry.id)}
-						<tr
-							><td>{new Date(entry.created_at).toLocaleString()}</td><td
-								>{entry.action} {entry.affected_table}</td
-							><td><code class="text-xs">{JSON.stringify(entry.affected_record)}</code></td></tr
-						>
+						<tr>
+							<td>{new Date(entry.created_at).toLocaleString()}</td>
+							<td>{entry.action} {entry.affected_table}</td>
+							<td><code class="text-xs">{JSON.stringify(entry.affected_record)}</code></td>
+						</tr>
 					{:else}<tr><td colspan="3">No admin changes yet.</td></tr>
 					{/each}
 				</tbody>
