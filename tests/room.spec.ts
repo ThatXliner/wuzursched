@@ -129,7 +129,7 @@ test.describe('critical room flows', () => {
 		).toBeVisible();
 		await expect(page.getByText('Delta just added their schedule to this room')).toBeVisible();
 
-		await page.getByRole('button', { name: 'Forget me on this browser' }).click();
+		await page.getByRole('button', { name: 'Reset who you are' }).click();
 		expect(await page.evaluate((room) => localStorage.getItem(room), ROOM_ID)).toBeNull();
 		await page.reload();
 		await expect(page.getByRole('heading', { name: 'But first...' })).toBeVisible();
