@@ -96,7 +96,8 @@ supabase status --output env | node convert_env.js > .env
 pnpm run dev
 ```
 
-The generated `.env` contains the local Supabase URL and anonymous key used by the app. See the
+The generated `.env` contains the local Supabase URL and anonymous key used by the app plus a
+server-only service-role key used by database-backed tests. See the
 [development guide](./docs/DEVELOPMENT.md) for troubleshooting, migrations, generated types,
 testing, and deployment.
 

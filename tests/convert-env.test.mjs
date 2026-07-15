@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-test('local environment conversion exposes only browser-safe Supabase values', () => {
+test('local environment conversion keeps privileged Supabase values server-only', () => {
 	const input = [
 		'API_URL="http://127.0.0.1:54321"',
 		'ANON_KEY="anonymous"',
@@ -22,6 +22,6 @@ test('local environment conversion exposes only browser-safe Supabase values', (
 	assert.equal(result.status, 0, result.stderr);
 	assert.equal(
 		result.stdout,
-		'PUBLIC_SUPABASE_URL=http://127.0.0.1:54321\nPUBLIC_SUPABASE_ANON_KEY=anonymous\n'
+		'PUBLIC_SUPABASE_URL=http://127.0.0.1:54321\nPUBLIC_SUPABASE_ANON_KEY=anonymous\nSUPABASE_SERVICE_ROLE_KEY=must-not-be-public\n'
 	);
 });

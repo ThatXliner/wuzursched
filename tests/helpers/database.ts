@@ -36,7 +36,7 @@ export function schedule(student: string, order = [0, 1, 2, 3, 4, 5, 6, 7]): Fix
 
 export function adminClient(): SupabaseClient {
 	const url = process.env.PUBLIC_SUPABASE_URL;
-	const serviceRoleKey = process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+	const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 	if (!url || !serviceRoleKey) {
 		throw new Error(
 			'Missing local Supabase credentials. Run `supabase status --output env | node convert_env.js > .env`.'

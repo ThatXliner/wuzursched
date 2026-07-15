@@ -23,15 +23,17 @@ pnpm run dev
 
 `supabase start` launches the local services; `supabase db reset` rebuilds Postgres from every file
 in `supabase/migrations/` and then runs `supabase/seed.sql`. The conversion step maps the CLI's local
-credentials to SvelteKit's `PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` names. The app does
-not use Supabase authentication, so no local sign-in setup is required.
+URL and anonymous key to SvelteKit's `PUBLIC_SUPABASE_*` names and keeps the service-role key in the
+server-only `SUPABASE_SERVICE_ROLE_KEY` variable for database fixture setup. The app does not use
+Supabase authentication, so no local sign-in setup is required.
 
 Open the URL printed by Vite, create a room, and submit a schedule. Supabase Studio is available at
 the Studio URL printed by `supabase status` (normally `http://127.0.0.1:54323`). Stop the stack with
 `supabase stop`; its Docker data persists until a reset or destructive stop.
 
-Do not commit `.env`. Only the anonymous key belongs in `PUBLIC_*` browser variables. A Supabase
-service-role key bypasses RLS and must never use a `PUBLIC_` name or be sent to the client.
+Do not commit `.env`. Only the anonymous key belongs in `PUBLIC_*` browser variables. The local
+`SUPABASE_SERVICE_ROLE_KEY` bypasses RLS, exists only for tests and fixture cleanup, and must never
+use a `PUBLIC_` name or be imported into client code.
 
 ## Checks and tests
 
