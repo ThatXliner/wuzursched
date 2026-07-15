@@ -9,13 +9,7 @@
 	import InfoInput from './components/InfoInput.svelte';
 
 	import { page } from '$app/state';
-	import {
-		formatClassName,
-		formatTeacherName,
-		sqlEscape,
-		normalizeClassName,
-		normalizeTeacherName
-	} from '$lib/utils';
+	import { formatClassName, formatTeacherName, sqlEscape, normalizeClassName } from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	import type { Schedule, VirtualSchedule } from '$lib/schedule';
@@ -27,6 +21,7 @@
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import Engineer from './Engineer.svelte';
+	import { normalizeTeacherIdentity, type TeacherIdentityInput } from '$lib/teacher';
 	import AdminPanel from './AdminPanel.svelte';
 	import { applyDatabaseChange, replayDatabaseChanges, type DatabaseChange } from '$lib/realtime';
 	import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -51,12 +46,20 @@
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	let you: You = $state()!;
+	let you = $state<You>(null);
 	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
 	let classes: Classes = $state(data.classes);
 	let onlyMatching: boolean = $state(false);
+	let editing = $state(false);
+	let importingEditKey = $state(false);
+	let importValue = $state('');
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
+	let transferCode = $derived(
+		you !== null && you !== 'tentative' && you.editToken
+			? JSON.stringify({ room, student: you.name, editToken: you.editToken })
+			: ''
+	);
 	let refreshInFlight = false;
 	let refreshAgain = false;
 	let scheduleEventsDuringRefresh: DatabaseChange<Schedule>[] = [];
@@ -71,6 +74,11 @@
 	const auditKey = (auditRow: Partial<(typeof auditLog)[number]>) =>
 		auditRow.id === undefined ? undefined : String(auditRow.id);
 
+	function persistYou(value: Exclude<You, null | 'tentative'>) {
+		you = value;
+		window.localStorage.setItem(room, JSON.stringify(value));
+	}
+
 	function recoverMissingUser() {
 		you = null;
 		window.localStorage.removeItem(room);
@@ -84,10 +92,32 @@
 			recoverMissingUser();
 			return;
 		}
-		you = { name: currentUser.name, schedule: currentSchedule };
-		window.localStorage.setItem(room, JSON.stringify(you));
+		persistYou({ ...currentUser, schedule: currentSchedule });
 	}
 
+	function scheduleRpcArgs(name: string, schedule: VirtualSchedule) {
+		return {
+			p_room: room,
+			p_student: name,
+			p_period_1a: schedule['1a'],
+			p_period_2a: schedule['2a'],
+			p_period_3a: schedule['3a'],
+			p_period_4a: schedule['4a'],
+			p_period_1b: schedule['1b'],
+			p_period_2b: schedule['2b'],
+			p_period_3b: schedule['3b'],
+			p_period_4b: schedule['4b']
+		};
+	}
+	function replaceSchedule(previousStudent: string, schedule: Schedule) {
+		const index = schedules.findIndex((candidate) => candidate.student === previousStudent);
+		schedules =
+			index === -1
+				? [...schedules, schedule]
+				: schedules.map((candidate, candidateIndex) =>
+						candidateIndex === index ? schedule : candidate
+					);
+	}
 	async function refreshRoom() {
 		if (refreshInFlight) {
 			refreshAgain = true;
@@ -146,13 +176,38 @@
 		}
 	}
 
+	async function validateEditCapability() {
+		if (you !== null && you !== 'tentative' && you.editToken) {
+			const { data: valid, error } = await supabase.rpc('verify_schedule_edit_capability', {
+				p_room: room,
+				p_student: you.name,
+				p_edit_token: you.editToken
+			});
+			if (error || !valid) {
+				const readOnlyIdentity = { ...you };
+				delete readOnlyIdentity.editToken;
+				persistYou(readOnlyIdentity);
+				addToast('This browser no longer has a valid edit key for your schedule', 'warning');
+			}
+		}
+	}
+
 	function applyScheduleChange(change: DatabaseChange<Schedule>) {
 		if (refreshInFlight) scheduleEventsDuringRefresh.push(change);
 		schedules = applyDatabaseChange(schedules, change, scheduleKey);
 		if (change.eventType === 'INSERT') {
 			addToast(`${change.new.student} just added their schedule to this room`);
 		}
-		if (change.eventType !== 'INSERT') reconcileUser(schedules);
+		if (
+			change.eventType === 'UPDATE' &&
+			you !== null &&
+			you !== 'tentative' &&
+			you.name === change.old.student
+		) {
+			persistYou({ ...you, name: change.new.student, schedule: change.new });
+		} else if (change.eventType !== 'INSERT') {
+			reconcileUser(schedules);
+		}
 	}
 
 	function applyClassChange(change: DatabaseChange<Class>) {
@@ -173,7 +228,12 @@
 	}
 
 	onMount(() => {
-		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
+		try {
+			you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
+		} catch {
+			recoverMissingUser();
+		}
+		void validateEditCapability();
 
 		let previousStatus = realtimeStatus;
 		let channel: RealtimeChannel;
@@ -246,31 +306,119 @@
 		};
 	});
 	async function onInfoSubmitted(detail: { name: string; schedule: VirtualSchedule }) {
-		const toInsert = { ...detail.schedule, room, student: detail.name };
-		const { error } = await supabase.from('schedules').insert([toInsert]);
-		if (error) {
-			addToast(`Unable to save schedule: ${error.message}`, 'error');
+		const { data: editToken, error } = await supabase.rpc(
+			'create_schedule',
+			scheduleRpcArgs(detail.name, detail.schedule)
+		);
+		if (error || !editToken) {
+			addToast(error?.message ?? 'Could not save your schedule', 'error');
 			return;
 		}
-		if (!schedules.some((schedule) => schedule.room === room && schedule.student === detail.name)) {
-			schedules = [...schedules, toInsert];
+		const schedule = { ...detail.schedule, room, student: detail.name };
+		persistYou({ name: detail.name, schedule, editToken });
+		// Realtime will add the new schedule to the shared room view.
+	}
+	async function updateYourSchedule(detail: { name: string; schedule: VirtualSchedule }) {
+		if (you === null || you === 'tentative' || !you.editToken) return;
+		const previousStudent = you.name;
+		const { error } = await supabase.rpc('update_schedule', {
+			...scheduleRpcArgs(detail.name, detail.schedule),
+			p_current_student: previousStudent,
+			p_edit_token: you.editToken
+		});
+		if (error) {
+			addToast(error.message, 'error');
+			return;
 		}
-		you = { name: detail.name, schedule: toInsert };
-		window.localStorage.setItem(room, JSON.stringify(you));
+		const schedule = { ...detail.schedule, room, student: detail.name };
+		replaceSchedule(previousStudent, schedule);
+		persistYou({ ...you, name: detail.name, schedule });
+		editing = false;
+		addToast('Your schedule was updated', 'success');
+	}
+	async function importEditKey() {
+		if (you === null || you === 'tentative') return;
+		let token = importValue.trim();
+		try {
+			const transfer = JSON.parse(token) as {
+				room?: string;
+				student?: string;
+				editToken?: string;
+			};
+			if (transfer.room !== room || !transfer.editToken) {
+				addToast('That transfer code belongs to a different room', 'error');
+				return;
+			}
+			token = transfer.editToken;
+		} catch {
+			// A raw edit key is accepted for backwards-compatible manual transfer.
+		}
+		const { data: valid, error } = await supabase.rpc('verify_schedule_edit_capability', {
+			p_room: room,
+			p_student: you.name,
+			p_edit_token: token
+		});
+		if (error || !valid) {
+			addToast('That edit key is not valid for this schedule', 'error');
+			return;
+		}
+		persistYou({ ...you, editToken: token });
+		importingEditKey = false;
+		importValue = '';
+		addToast('Edit access restored on this browser', 'success');
+	}
+	async function rotateEditKey() {
+		if (
+			you === null ||
+			you === 'tentative' ||
+			!you.editToken ||
+			!window.confirm('Replace your edit key? Any previously copied key will stop working.')
+		)
+			return;
+		const { data: editToken, error } = await supabase.rpc('rotate_schedule_edit_capability', {
+			p_room: room,
+			p_student: you.name,
+			p_edit_token: you.editToken
+		});
+		if (error || !editToken) {
+			addToast(error?.message ?? 'Could not replace the edit key', 'error');
+			return;
+		}
+		persistYou({ ...you, editToken });
+		addToast('Edit key replaced; copy the new transfer code if you need a backup', 'success');
 	}
 	async function addClass({
 		className,
-		firstName,
+		identity,
 		lastName
 	}: {
 		className: string;
-		firstName: string;
+		identity: TeacherIdentityInput;
 		lastName: string;
 	}) {
 		if (!roomConfig.allow_class_creation) {
 			addToast('Only a room admin may add classes in this room', 'error');
 			throw new Error('Visitor class creation is disabled');
 		}
+		const normalizedTeacher = normalizeTeacherIdentity(identity, lastName);
+		const formattedTeacher =
+			roomConfig.teacher_name_format === 'preserve'
+				? {
+						teacher_first: identity.kind === 'first-name' ? identity.value.trim() : null,
+						teacher_title: identity.kind === 'title' ? identity.value.trim() : null,
+						teacher_last: lastName.trim()
+					}
+				: {
+						teacher_first:
+							normalizedTeacher.teacher_first === null
+								? null
+								: formatTeacherName(normalizedTeacher.teacher_first),
+						teacher_title:
+							normalizedTeacher.teacher_title === null
+								? null
+								: formatTeacherName(normalizedTeacher.teacher_title),
+						teacher_last: formatTeacherName(normalizedTeacher.teacher_last)
+					};
 		const payload = {
 			name:
 				roomConfig.class_name_format === 'preserve'
@@ -278,14 +426,7 @@
 					: roomConfig.class_name_format === 'title'
 						? formatClassName(normalizeClassName(className))
 						: normalizeClassName(className),
-			teacher_first:
-				roomConfig.teacher_name_format === 'preserve'
-					? firstName.trim()
-					: formatTeacherName(normalizeTeacherName(firstName)),
-			teacher_last:
-				roomConfig.teacher_name_format === 'preserve'
-					? lastName.trim()
-					: formatTeacherName(normalizeTeacherName(lastName)),
+			...formattedTeacher,
 			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
@@ -303,6 +444,48 @@
 </script>
 
 <ToastList />
+{#if editing && you !== null && you !== 'tentative' && you.editToken}
+	<dialog class="modal modal-bottom modal-open sm:modal-middle">
+		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
+			<h3 class="font-bold text-lg">Edit your schedule</h3>
+			<p class="py-4">Update your name or class selections.</p>
+			<InfoInput
+				onsubmit={updateYourSchedule}
+				{classes}
+				{addClass}
+				initialName={you.name}
+				initialSchedule={you.schedule}
+				submitLabel="Save changes"
+				canCreateClass={roomConfig.allow_class_creation}
+				classNameFormat={roomConfig.class_name_format}
+				teacherNameFormat={roomConfig.teacher_name_format}
+			/>
+			<button class="btn btn-ghost w-full mt-2" onclick={() => (editing = false)}>Cancel</button>
+		</div>
+	</dialog>
+{/if}
+{#if importingEditKey && you !== null && you !== 'tentative'}
+	<dialog class="modal modal-bottom modal-open sm:modal-middle">
+		<div class="modal-box">
+			<h3 class="font-bold text-lg">Restore edit access</h3>
+			<p class="py-4">
+				Paste the transfer code or raw edit key you previously copied for {you.name}. The room link
+				alone cannot recover edit access.
+			</p>
+			<textarea
+				class="textarea textarea-bordered w-full font-mono"
+				rows="4"
+				placeholder="Paste transfer code"
+				bind:value={importValue}></textarea>
+			<div class="modal-action">
+				<button class="btn btn-ghost" onclick={() => (importingEditKey = false)}>Cancel</button>
+				<button class="btn btn-primary" disabled={!importValue.trim()} onclick={importEditKey}
+					>Restore access</button
+				>
+			</div>
+		</div>
+	</dialog>
+{/if}
 {#if you === null}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
 		<ToastList />
@@ -377,13 +560,28 @@
 					</label>
 				</div>
 			</div>
-			{#if you !== 'tentative'}
+			{#if you !== null && you !== 'tentative'}
+				{#if you.editToken}
+					<button class="btn btn-primary" onclick={() => (editing = true)}>Edit my schedule</button>
+					<button
+						class="btn btn-outline"
+						use:copyToClipboard={{
+							message: 'Schedule transfer code copied to clipboard',
+							value: transferCode
+						}}>Copy edit access</button
+					>
+					<button class="btn btn-outline" onclick={rotateEditKey}>Replace edit key</button>
+				{:else}
+					<button class="btn btn-primary btn-outline" onclick={() => (importingEditKey = true)}
+						>Restore edit access</button
+					>
+				{/if}
 				<button
 					class="btn btn-error btn-outline"
 					onclick={() => {
 						you = null;
 						window.localStorage.removeItem(room);
-					}}>Reset who you are</button
+					}}>Forget me on this browser</button
 				>
 			{/if}
 			{#if !data.isAdmin}
@@ -411,6 +609,14 @@
 				</details>
 			{/if}
 		</div>
+		{#if you !== null && you !== 'tentative'}
+			<div class="alert alert-info mx-auto mt-3 max-w-2xl text-sm">
+				<span>
+					Your edit key is stored only in this browser. Use “Copy edit access” before clearing site
+					data or moving devices. Without a copied key, the current version cannot recover access.
+				</span>
+			</div>
+		{/if}
 		{#if room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
 			<div class="alert alert-info mx-auto mt-3 w-fit max-w-md text-sm">
 				If you have any questions, direct message @thatxliner on Instagram (or email

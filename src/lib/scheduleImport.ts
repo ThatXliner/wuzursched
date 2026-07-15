@@ -1,5 +1,6 @@
 import type { UnfinishedSchedule } from './schedule';
 import type { Database } from './supabase';
+import { teacherSearchText } from './teacher.ts';
 
 type Class = Database['public']['Tables']['classes']['Row'];
 
@@ -38,8 +39,10 @@ function clean(value: string) {
 }
 
 function splitTeacher(value: string): Pick<ScheduleCandidate, 'teacherFirst' | 'teacherLast'> {
-	const teacher = clean(value.replace(/^(?:teacher|instructor|mr\.?|mrs\.?|ms\.?|dr\.?)\s*/i, ''));
+	const teacher = clean(value.replace(/^(?:teacher|instructor)\s*:?\s*/i, ''));
 	if (!teacher) return { teacherFirst: '', teacherLast: '' };
+	const titleMatch = teacher.match(/^(mr|mrs|ms|mx|dr|coach)\.?\s+(.+)$/i);
+	if (titleMatch) return { teacherFirst: titleMatch[1], teacherLast: clean(titleMatch[2]) };
 	if (teacher.includes(',')) {
 		const [last, ...first] = teacher.split(',');
 		return { teacherFirst: clean(first.join(' ')), teacherLast: clean(last) };
@@ -133,7 +136,7 @@ export function matchCandidate(candidate: ScheduleCandidate, classes: Class[]): 
 	for (const klass of classes) {
 		const classScore = similarity(candidate.className, klass.name);
 		const candidateTeacher = `${candidate.teacherFirst} ${candidate.teacherLast}`.trim();
-		const classTeacher = `${klass.teacher_first} ${klass.teacher_last}`.trim();
+		const classTeacher = teacherSearchText(klass);
 		const teacherScore = candidateTeacher ? similarity(candidateTeacher, classTeacher) : classScore;
 		const score = classScore * 0.72 + teacherScore * 0.28;
 		if (!best || score > best.score) best = { id: klass.id, score };

@@ -54,8 +54,9 @@ test.describe('critical room flows', () => {
 		await page.getByRole('button', { name: '2A', exact: true }).click();
 		dialog = page.locator('dialog[open]');
 		await dialog.getByPlaceholder('Class name').fill('Space & Electricity');
-		await dialog.getByPlaceholder('John').fill('Sam');
-		await dialog.getByPlaceholder('Doe').fill('Stone');
+		await dialog.getByLabel('Teacher name type').selectOption('title');
+		await dialog.getByLabel('Teacher title').selectOption('Dr');
+		await dialog.getByLabel('Teacher last name').fill('Stone');
 		await dialog.getByRole('button', { name: 'Create class' }).click();
 		await expect
 			.poll(async () => {
@@ -71,8 +72,9 @@ test.describe('critical room flows', () => {
 		await page.getByRole('button', { name: '3A', exact: true }).click();
 		dialog = page.locator('dialog[open]');
 		await dialog.getByPlaceholder('Class name').fill('Space & Electricity');
-		await dialog.getByPlaceholder('John').fill('Sam');
-		await dialog.getByPlaceholder('Doe').fill('Stone');
+		await dialog.getByLabel('Teacher name type').selectOption('title');
+		await dialog.getByLabel('Teacher title').selectOption('Dr');
+		await dialog.getByLabel('Teacher last name').fill('Stone');
 		await dialog.getByRole('button', { name: 'Create class' }).click();
 		await expect(page.getByText('Attempted to add duplicate class').first()).toBeVisible();
 
@@ -81,7 +83,8 @@ test.describe('critical room flows', () => {
 			.select('*', { count: 'exact', head: true })
 			.eq('room', ROOM_ID)
 			.eq('name', 'se')
-			.eq('teacher_first', 'Sam')
+			.is('teacher_first', null)
+			.eq('teacher_title', 'Dr')
 			.eq('teacher_last', 'Stone');
 		expect(error).toBeNull();
 		expect(count).toBe(1);
@@ -126,7 +129,7 @@ test.describe('critical room flows', () => {
 		).toBeVisible();
 		await expect(page.getByText('Delta just added their schedule to this room')).toBeVisible();
 
-		await page.getByRole('button', { name: 'Reset who you are' }).click();
+		await page.getByRole('button', { name: 'Forget me on this browser' }).click();
 		expect(await page.evaluate((room) => localStorage.getItem(room), ROOM_ID)).toBeNull();
 		await page.reload();
 		await expect(page.getByRole('heading', { name: 'But first...' })).toBeVisible();

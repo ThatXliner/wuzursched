@@ -111,7 +111,8 @@
 			<div class="card-body">
 				<h3 class="card-title">Seed classes</h3>
 				<p class="text-sm opacity-70">
-					CSV columns: class name, teacher first name, teacher last name. A header is optional.
+					CSV columns: class name, teacher first name or title, teacher last name. A header is
+					optional.
 				</p>
 				<textarea
 					class="textarea textarea-bordered min-h-32"
