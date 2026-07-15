@@ -9,7 +9,7 @@ test.describe('critical room flows', () => {
 		await page.goto('/');
 		await page.getByRole('link', { name: 'Create a room' }).first().click();
 		await expect(page).toHaveURL(/\/room\/[0-9a-f-]{36}$/);
-		await expect(page.getByRole('heading', { name: /^Room / })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 1, name: /^Room / })).toBeVisible();
 		await expect(page.getByText('0 schedules in this room so far')).toBeVisible();
 
 		const roomId = page.url().split('/').at(-1)!;
@@ -81,8 +81,8 @@ test.describe('critical room flows', () => {
 			.select('*', { count: 'exact', head: true })
 			.eq('room', ROOM_ID)
 			.eq('name', 'se')
-			.eq('teacher_first', 'sam')
-			.eq('teacher_last', 'stone');
+			.eq('teacher_first', 'Sam')
+			.eq('teacher_last', 'Stone');
 		expect(error).toBeNull();
 		expect(count).toBe(1);
 	});
