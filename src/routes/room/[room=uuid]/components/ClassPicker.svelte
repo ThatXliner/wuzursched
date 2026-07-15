@@ -16,6 +16,7 @@
 		type TeacherTitle
 	} from '$lib/teacher';
 	import { pinSelectedItem } from '$lib/classPicker';
+	import { tick } from 'svelte';
 
 	type MenuItem = ClassWithUsage & { used?: string };
 
@@ -26,7 +27,8 @@
 		teacherNameFormat = 'title',
 		classes,
 		selected = $bindable(),
-		period = ''
+		period = '',
+		updateSelected
 	}: {
 		addClass: (info: {
 			className: string;
@@ -39,6 +41,7 @@
 		classes: MenuItem[];
 		selected?: string | null | undefined;
 		period?: string;
+		updateSelected?: (selected: string | null) => void;
 	} = $props();
 
 	let className = $state(''),
@@ -78,6 +81,10 @@
 		teacherNameFormat === 'preserve'
 			? `${teacher.teacher_first ?? teacher.teacher_title ?? ''} ${teacher.teacher_last}`.trim()
 			: teacherDisplayName(teacher);
+	function select(value: string | null) {
+		selected = value;
+		updateSelected?.(value);
+	}
 </script>
 
 <div class="tooltip" data-tip={selectedClassName ? displayClass(selectedClassName) : undefined}>
@@ -134,8 +141,9 @@
 						bind:value={lastName}
 					/>
 					<button
-						aria-label="Create class"
+						type="button"
 						class="btn btn-primary join-item"
+						aria-label="Create class"
 						onclick={async (event) => {
 							if (!isValidClassInfo) {
 								if (!classNameValid) addToast('Class name must not be empty', 'error');
@@ -151,18 +159,26 @@
 								event.preventDefault();
 								return;
 							}
-							selectedClassName = className;
-							selected = await addClass({
-								className,
-								identity:
-									identityKind === 'first-name'
-										? { kind: 'first-name', value: firstName }
-										: { kind: 'title', value: selectedTitle },
-								lastName
-							});
-							className = '';
-							firstName = '';
-							lastName = '';
+							try {
+								select(
+									await addClass({
+										className,
+										identity:
+											identityKind === 'first-name'
+												? { kind: 'first-name', value: firstName }
+												: { kind: 'title', value: selectedTitle },
+										lastName
+									})
+								);
+								selectedClassName = className;
+								className = '';
+								firstName = '';
+								lastName = '';
+								await tick();
+								dialog.close();
+							} catch {
+								// addClass reports a user-facing error; keep the dialog open.
+							}
 						}}
 						><svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -198,9 +214,10 @@
 						<button
 							type="button"
 							class:active={isSelected}
-							onclick={() => {
-								selected = isSelected ? null : klass.id;
+							onclick={async () => {
+								select(isSelected ? null : klass.id);
 								selectedClassName = isSelected ? null : klass.name;
+								await tick();
 								dialog.close();
 							}}
 							>{displayClass(klass.name)}

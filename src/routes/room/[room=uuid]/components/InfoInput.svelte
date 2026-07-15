@@ -92,7 +92,10 @@
 	<div class="w-36">
 		{#each aDay as period (period)}
 			<ClassPicker
-				bind:selected={periods[period]}
+				selected={periods[period]}
+				updateSelected={(selected) => {
+					periods = { ...periods, [period]: selected };
+				}}
 				{addClass}
 				{canCreateClass}
 				{classNameFormat}
@@ -109,7 +112,10 @@
 	<div class="w-36">
 		{#each bDay as period (period)}
 			<ClassPicker
-				bind:selected={periods[period]}
+				selected={periods[period]}
+				updateSelected={(selected) => {
+					periods = { ...periods, [period]: selected };
+				}}
 				{addClass}
 				{canCreateClass}
 				{classNameFormat}

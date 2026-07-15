@@ -27,19 +27,17 @@
 
 	let { data, form }: { data: PageData; form: ActionData | null } = $props();
 	let supabase = $derived(data.supabase);
-	let schedules: Schedule[] = $derived(data.data);
-	let roomConfig = $derived(data.roomConfig);
-	let auditLog = $derived(data.auditLog);
-	// These caches are deliberately non-reactive: getClass can be called while a view is
-	// rendering, and mutating reactive collections there triggers Svelte's unsafe-mutation guard.
-	const classCache: Record<string, Class | undefined> = Object.create(null);
-	const pendingClasses: Record<string, Promise<Class> | undefined> = Object.create(null);
+	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
+	let schedules: Schedule[] = $state(data.data);
+	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
+	let roomConfig = $state(data.roomConfig);
+	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
+	let auditLog = $state(data.auditLog);
+	// Keep the resolved promise stable so await blocks do not restart on every render.
+	const classRequests = new Map<string, Promise<Class>>();
 	function getClass(id: string): Promise<Class> {
-		const cached = classCache[id];
-		if (cached) return Promise.resolve(cached);
-
-		const pending = pendingClasses[id];
-		if (pending) return pending;
+		const existing = classRequests.get(id);
+		if (existing) return existing;
 
 		const request = Promise.resolve(
 			supabase
@@ -49,17 +47,20 @@
 				.single()
 				.then(({ data, error }) => {
 					if (error !== null) throw error;
-					classCache[id] = data;
 					return data;
 				})
-		).finally(() => delete pendingClasses[id]);
-		pendingClasses[id] = request;
+		).catch((error) => {
+			classRequests.delete(id);
+			throw error;
+		});
+		classRequests.set(id, request);
 		return request;
 	}
 	async function getClasses(room: string) {
 		return await supabase.rpc('get_classes_with_usage', { room_id: room });
 	}
 	let you = $state<You>(null);
+	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
 	let classes: Classes = $state(data.classes);
 	let onlyMatching: boolean = $state(false);
 	let activeTab = $state('schedules');
@@ -481,6 +482,8 @@
 			// error.code == 23505 is duplicate entry
 			if (error.code == '23505') {
 				addToast('Attempted to add duplicate class', 'error');
+			} else {
+				addToast(`Unable to add class: ${error.message}`, 'error');
 			}
 			throw error;
 		}
@@ -599,7 +602,7 @@
 			</div>
 			<div
 				class="tooltip"
-				data-tip={hasResolvedIdentity
+				data-tip={you != null && you !== 'tentative'
 					? 'Only show schedules with matching classes'
 					: 'Select who you are to filter matching schedules'}
 			>
@@ -610,7 +613,7 @@
 							type="checkbox"
 							class="toggle toggle-primary"
 							bind:checked={onlyMatching}
-							disabled={!hasResolvedIdentity}
+							disabled={you == null || you === 'tentative'}
 						/>
 					</label>
 				</div>
