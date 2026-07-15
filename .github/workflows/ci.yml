@@ -67,6 +67,7 @@ jobs:
       - name: Verify generated types match Postgres schema
         run: |
           supabase gen types typescript --local > src/lib/supabase.d.ts
+          node -e "const fs=require('node:fs'); const p='src/lib/supabase.d.ts'; fs.writeFileSync(p, fs.readFileSync(p, 'utf8').trimEnd() + '\n');"
           if ! git diff --ignore-space-at-eol --exit-code --quiet src/lib/supabase.d.ts; then
               {
                 echo "Detected uncommitted changes after build. See status below:"
