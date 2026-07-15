@@ -10,15 +10,15 @@ Wuzursched is a SvelteKit application backed directly by Supabase Postgres. Ther
 account or application API layer: server loads and browser components both use the public Supabase
 client, and Postgres row-level security (RLS) is the authorization boundary.
 
-| Concern                 | Source of truth                        | Main code                                                               |
-| ----------------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| Supabase clients        | Public URL and anonymous key           | `src/hooks.server.ts`, `src/routes/+layout.ts`                          |
-| Room creation           | `rooms` row                            | `src/routes/create/+server.ts`                                          |
-| Initial room data       | Server load of `rooms` and `schedules` | `src/routes/room/[room=uuid]/+page.server.ts`                           |
-| Classes and submissions | `classes` and `schedules` tables       | `src/lib/InfoInput.svelte`, `src/lib/ClassPicker.svelte`                |
-| Browser identity        | Room-keyed `localStorage` value        | `src/routes/room/[room=uuid]/+page.svelte`                              |
-| Live updates            | Supabase Realtime publications         | The room page and `supabase/migrations/20240715235333_add_realtime.sql` |
-| Comparison UI           | Same class UUID in the same period     | `ViewSchedules.svelte`, `ScheduleDisplay.svelte`, `Search.svelte`       |
+| Concern                 | Source of truth                        | Main code                                                                                       |
+| ----------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Supabase clients        | Public URL and anonymous key           | `src/hooks.server.ts`, `src/routes/+layout.ts`                                                  |
+| Room creation           | `rooms` row                            | `src/routes/create/+server.ts`                                                                  |
+| Initial room data       | Server load of `rooms` and `schedules` | `src/routes/room/[room=uuid]/+page.server.ts`                                                   |
+| Classes and submissions | `classes` and `schedules` tables       | `src/lib/InfoInput.svelte`, `src/lib/ClassPicker.svelte`                                        |
+| Browser identity        | Room-keyed `localStorage` value        | `src/routes/room/[room=uuid]/+page.svelte`                                                      |
+| Live updates            | Supabase Realtime publications         | The room page, `src/lib/realtime.ts`, and `supabase/migrations/20240715235333_add_realtime.sql` |
+| Comparison UI           | Same class UUID in the same period     | `ViewSchedules.svelte`, `ScheduleDisplay.svelte`, `Search.svelte`                               |
 
 ## Room lifecycle and data path
 
@@ -27,8 +27,8 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
 2. The `uuid` route matcher rejects malformed room IDs before the room route runs. The server load
    verifies that the `rooms` row exists, returns 404 when PostgREST reports no row, then fetches the
    room's existing `schedules`. This server result supplies the first render.
-3. On mount, the room page fetches all `classes` for the room and restores the visitor identity from
-   `localStorage`. It then subscribes to inserts on the room's `classes` and `schedules` rows.
+3. On mount, the room page restores the visitor identity from `localStorage`, subscribes to changes
+   on the room's `classes` and `schedules` rows, and refreshes both tables from Postgres.
 4. `InfoInput.svelte` requires a student name and one distinct class UUID for each of the eight A/B
    periods. `ClassPicker.svelte` can select an existing room class or insert a normalized class.
 5. The room page inserts one `schedules` row. The row stores the room and student plus eight foreign
@@ -36,9 +36,10 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
 6. After submission, the browser writes `{ name, schedule }` under the room UUID in `localStorage`.
    The schedules list is intentionally updated by the Realtime insert event rather than by the
    submit callback, so all connected browsers—including the submitter—use the same update path.
-7. Realtime class inserts refresh picker choices. Schedule inserts append cards and display a toast.
-   A page refresh always reconciles with Postgres through the server load, so Realtime is an
-   acceleration mechanism, not the durable store.
+7. Realtime inserts, updates, and deletes are applied by primary key through `src/lib/realtime.ts`.
+   Schedule inserts display a toast. After the browser reconnects, the room refetches both tables
+   and replays events received during that fetch, preventing stale snapshots from overwriting newer
+   changes. Postgres remains the durable store.
 
 The initial schedule query runs on the server, while class loading and all inserts happen in the
 browser. When changing this split, check both SSR and browser client creation in the root layout.
@@ -129,7 +130,8 @@ regenerates the file and rejects drift. See [Development](./DEVELOPMENT.md#chang
 
 ## Class normalization and comparison
 
-`normalize()` in `src/lib/utils.ts` is intentionally small and deterministic. Before insertion it:
+`normalizeClassName()` in `src/lib/utils.ts` is intentionally small and deterministic. Before
+insertion it:
 
 - lowercases and trims the name;
 - collapses the final `word & word` into initials (for example, `Space & Electricity` to `se`);
@@ -152,34 +154,40 @@ the same class UUID in different periods does not count as shared.
 
 ## Schedule-engineering algorithm
 
-The experimental engineer UI is disabled in the room tabs, but its algorithm lives in
-`src/lib/engineer.ts`. Its input and output are arrays of `VirtualSchedule`; class UUIDs are treated
-as opaque identities.
+The enabled Schedule Engineer tab is a preview tool: it computes proposed schedules and movement
+instructions but never writes them to Supabase. Its algorithm lives in `src/lib/engineer.ts`, and
+class UUIDs are treated as opaque identities.
 
-The intended heuristic is:
+Each `EngineerInput` contains a student, a `VirtualSchedule`, and optional locks. A period lock pins
+the value currently in that period; a class lock pins that class to its current period. Inputs with
+a duplicate class, an unknown locked period, or a lock for a missing class return `no-solution`.
 
-1. Convert each schedule to a set and find the class UUIDs present in every selected schedule.
-2. Build a common partial schedule with dynamic programming. At each period, either leave it blank
-   or assign one remaining common class. A candidate's cost is the total number of period values
-   that differ from the original schedules (Hamming distance).
-3. Memoize subproblems by remaining common classes and period. Prefixes with the same remaining set
-   share an entry, so the cached search aligns universally shared classes using the movement cost
-   without promising a globally optimal answer.
-4. For each student, fill blank periods with that student's remaining classes, preserving a full
-   eight-period schedule.
+The search works as follows:
 
-Important limitations: the heuristic does not model which periods a course is offered, repeated or
-empty classes, preferences, or partial schedules; memoization collapses differently ordered
-prefixes that have the same remaining set; ties follow iteration order; and the current UI does not
-expose results. Keep those constraints explicit if the feature is enabled or the algorithm is
-replaced.
+1. The first selected student is the anchor. Enumerate the anchor's distinct schedule permutations
+   while respecting locks; blank slots are treated as interchangeable.
+2. For every friend and anchor candidate, place locked values first, then take every feasible
+   class/period match with the anchor.
+3. Keep each remaining class in its original free period where possible. Fill any remaining gaps in
+   sorted class-ID order so ties are deterministic.
+4. Rank complete proposals lexicographically by objectives: maximize the total anchor-to-friend
+   shared placements, minimize the number of classes moved, then choose the stable smallest proposal
+   key.
+5. Return each original/proposed pair and its `{ classId, from, to }` moves. The compatibility helper
+   `findOptimumSchedules()` delegates to this engine and returns only proposed schedules.
+
+Important limitations: the engineer does not model which periods a course is actually offered,
+travel time, teacher approval, or preferences; only anchor-to-friend matches are scored; and anchor
+permutation enumeration grows factorially with the number of movable classes. Incomplete schedules
+are accepted, with blank periods available for moved classes.
 
 ## Where to make a core change
 
 - Room existence or initial queries: `src/routes/room/[room=uuid]/+page.server.ts`
 - Submission, browser identity, or Realtime: `src/routes/room/[room=uuid]/+page.svelte`
 - Schedule validation and period shape: `src/lib/InfoInput.svelte` and `src/lib/InfoInput.d.ts`
-- Class creation/selection: `src/lib/ClassPicker.svelte` and `normalize()` in `src/lib/utils.ts`
+- Class creation/selection: `src/lib/ClassPicker.svelte` and `normalizeClassName()` in
+  `src/lib/utils.ts`
 - Display comparison: the room's `ViewSchedules.svelte`, `ScheduleDisplay.svelte`, and
   `Search.svelte`
 - Schema, privileges, RLS, or Realtime publication: a new file in `supabase/migrations/`

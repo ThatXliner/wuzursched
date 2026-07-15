@@ -7,7 +7,8 @@ const config: PlaywrightTestConfig = {
 	testMatch: '**/*.spec.ts',
 	webServer: {
 		command: `pnpm run build && pnpm run preview --port ${port}`,
-		port
+		port,
+		reuseExistingServer: !process.env.CI
 	}
 };
 
