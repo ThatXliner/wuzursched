@@ -24,7 +24,8 @@ function classRecord(id: string): Class {
 		room: 'room-id',
 		name: id,
 		teacher_first: 'Grace',
-		teacher_last: 'Hopper'
+		teacher_last: 'Hopper',
+		teacher_title: null
 	};
 }
 

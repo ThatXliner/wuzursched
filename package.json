@@ -14,7 +14,7 @@
 		"test": "pnpm test:unit && playwright test",
 		"test:unit": "pnpm test:unit:component && pnpm test:unit:import",
 		"test:unit:component": "vitest run",
-		"test:unit:import": "node --test tests/*.unit.ts",
+		"test:unit:import": "node --test tests/*.test.js tests/*.unit.ts",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
