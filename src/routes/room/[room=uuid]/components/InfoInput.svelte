@@ -8,10 +8,16 @@
 	let {
 		classes,
 		addClass,
+		canCreateClass = true,
+		classNameFormat = 'normalized',
+		teacherNameFormat = 'title',
 		onsubmit
 	}: {
 		classes: Classes;
 		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
+		canCreateClass?: boolean;
+		classNameFormat?: string;
+		teacherNameFormat?: string;
 		onsubmit: (detail: { name: string; schedule: VirtualSchedule }) => void;
 	} = $props();
 
@@ -63,6 +69,9 @@
 			<ClassPicker
 				bind:selected={periods[period]}
 				{addClass}
+				{canCreateClass}
+				{classNameFormat}
+				{teacherNameFormat}
 				period={period.toUpperCase()}
 				classes={classes.map((x) =>
 					Object.assign({}, x, {
@@ -77,6 +86,9 @@
 			<ClassPicker
 				bind:selected={periods[period]}
 				{addClass}
+				{canCreateClass}
+				{classNameFormat}
+				{teacherNameFormat}
 				period={period.toUpperCase()}
 				classes={classes.map((x) =>
 					Object.assign({}, x, {
