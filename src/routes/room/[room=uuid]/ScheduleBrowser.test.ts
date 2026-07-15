@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { Schedule } from '$lib/schedule';
 import ScheduleBrowser from './ScheduleBrowser.svelte';
@@ -42,7 +42,9 @@ describe('ScheduleBrowser', () => {
 
 		expect(getClass).not.toHaveBeenCalled();
 		expect(screen.queryByRole('table')).toBeNull();
-		await fireEvent.click(screen.getByRole('button', { name: /Ada/ }));
+		const person = screen.getByRole('button', { name: /Ada/ });
+		await waitFor(() => expect((person as HTMLButtonElement).disabled).toBe(false));
+		await fireEvent.click(person);
 		await screen.findByRole('table');
 		expect(getClass).toHaveBeenCalledTimes(8);
 	});
@@ -57,7 +59,9 @@ describe('ScheduleBrowser', () => {
 			getClass
 		});
 
-		await fireEvent.click(screen.getByRole('button', { name: /Ada/ }));
+		const person = screen.getByRole('button', { name: /Ada/ });
+		await waitFor(() => expect((person as HTMLButtonElement).disabled).toBe(false));
+		await fireEvent.click(person);
 		expect((await screen.findByRole('alert')).textContent).toContain("couldn't load this schedule");
 		expect(screen.getByRole('button', { name: /Ada/ })).toBeTruthy();
 	});

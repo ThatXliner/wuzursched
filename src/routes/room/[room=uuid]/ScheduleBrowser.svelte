@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Schedule } from '$lib/schedule';
+	import { onMount } from 'svelte';
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import { scheduleKey, sharedPeriods } from './scheduleComparison';
 	import type { Class } from './types';
@@ -18,6 +19,8 @@
 	} = $props();
 
 	let selected: Schedule | null = $state(null);
+	let hydrated = $state(false);
+	onMount(() => (hydrated = true));
 	$effect(() => {
 		const selectedKey = selected ? scheduleKey(selected) : null;
 		if (selectedKey && !schedules.some((schedule) => scheduleKey(schedule) === selectedKey)) {
@@ -54,6 +57,7 @@
 						{@const isYou = key === scheduleKey(you.schedule)}
 						<button
 							type="button"
+							disabled={!hydrated}
 							class="flex min-h-16 w-full items-center gap-3 border-b border-base-300 px-4 py-3 text-left last:border-b-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-primary {selected &&
 							scheduleKey(selected) === key
 								? 'bg-base-200'
