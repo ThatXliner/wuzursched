@@ -173,11 +173,14 @@ Schedule comparison uses class UUID equality, not normalized text equality:
 - `Search.svelte` applies every selected period/class pair (logical AND).
 
 Collapsed schedule cards do not fetch their class rows. Selecting a person loads the schedule's
-distinct class IDs through the room page's shared promise/value caches, so concurrent consumers
-reuse in-flight and resolved lookups; a failed detail request can be retried. These caches are
-deliberately ordinary, non-reactive objects: mutating a reactive collection while Svelte renders
-an await block causes an unsafe-mutation error. Class picker rows receive `schedule_count` from the
-`get_classes_with_usage` RPC and display that count without forcing schedule details to load.
+distinct class IDs through the room page's shared promise cache, so concurrent consumers reuse one
+stable promise per class; a rejected request is removed so the next selection can retry it. The
+cache is deliberately an ordinary, non-reactive `Map`: mutating a reactive collection while Svelte
+renders an await block causes an unsafe-mutation error, while returning a fresh resolved promise on
+every render repeatedly resets that await block. Person buttons remain disabled until hydration so
+an SSR-visible click cannot be lost before Svelte attaches its handler. Class picker rows receive
+`schedule_count` from the `get_classes_with_usage` RPC and display that count without forcing
+schedule details to load.
 
 Consequently, two separately inserted class rows never match even if their text looks alike. A
 different-period match is visible in the schedule card but does not satisfy the same-period list or

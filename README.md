@@ -42,7 +42,7 @@ More in the [screenshot gallery](./docs/SCREENSHOTS.md).
 ## 🏫 How it works
 
 1. **Create a room.** You get a unique URL backed by a fresh room in the database.
-2. **Enter your schedule.** Pick (or add) your classes for each period — A day and B day, four periods each.
+2. **Enter your schedule.** Pick (or add) your classes for each period — A day and B day, four periods each. Teachers may be identified by either a first name or a title such as Dr, Coach, or Mx.
 3. **Share the link.** As friends fill in their schedules, they show up live, with your shared classes highlighted.
 
 > [!NOTE]

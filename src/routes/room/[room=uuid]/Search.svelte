@@ -67,9 +67,9 @@
 									aria-pressed={sharedClass[aDay[period]] == scheduleA}
 									onclick={() => {
 										if (sharedClass[aDay[period]] == scheduleA) {
-											sharedClass[aDay[period]] = undefined;
+											sharedClass = { ...sharedClass, [aDay[period]]: undefined };
 										} else {
-											sharedClass[aDay[period]] = scheduleA;
+											sharedClass = { ...sharedClass, [aDay[period]]: scheduleA };
 										}
 									}}
 								>
@@ -86,9 +86,9 @@
 									aria-pressed={sharedClass[bDay[period]] == scheduleB}
 									onclick={() => {
 										if (sharedClass[bDay[period]] == scheduleB) {
-											sharedClass[bDay[period]] = undefined;
+											sharedClass = { ...sharedClass, [bDay[period]]: undefined };
 										} else {
-											sharedClass[bDay[period]] = scheduleB;
+											sharedClass = { ...sharedClass, [bDay[period]]: scheduleB };
 										}
 									}}
 								>

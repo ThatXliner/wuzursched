@@ -169,9 +169,13 @@ export function normalizeClassName(className: string) {
 			.replace(/ iii$/, ' 3')
 			.replace(/ ii$/, ' 2')
 			.replace(/ i$/, ' 1')
-			.replace(/\s+/, ' ')
+			.replace(/\s+/g, ' ')
 	);
 }
+
+// Compatibility aliases for existing callers while the more specific names are adopted.
+export const normalize = normalizeClassName;
+export const titlecase = formatClassName;
 
 /** Preserve the existing teacher storage/search/uniqueness semantics. */
 export function normalizeTeacherName(name: string) {
