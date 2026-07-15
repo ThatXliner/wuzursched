@@ -26,7 +26,10 @@ test.describe('critical room flows', () => {
 		await expect(page.getByRole('heading', { name: 'But first...' })).toBeVisible();
 		await page.getByPlaceholder('Bryan Hu').fill('Alice');
 		await selectFixtureSchedule(page);
-		await page.getByRole('button', { name: 'Done' }).click();
+		await page
+			.getByRole('checkbox', { name: 'I reviewed this schedule and confirm it is ready to submit.' })
+			.check();
+		await page.getByRole('button', { name: 'Submit schedule' }).click();
 
 		await expect
 			.poll(() => page.evaluate((room) => localStorage.getItem(room), ROOM_ID))
