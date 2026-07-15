@@ -18,6 +18,7 @@
 	let {
 		classes,
 		addClass,
+		canCreateClass = true,
 		onapply
 	}: {
 		classes: Classes;
@@ -26,6 +27,7 @@
 			identity: TeacherIdentityInput;
 			lastName: string;
 		}) => Promise<string>;
+		canCreateClass?: boolean;
 		onapply: (schedule: UnfinishedSchedule) => void;
 	} = $props();
 
@@ -106,6 +108,9 @@
 			for (const row of rows) {
 				let classId = row.selectedClassId;
 				if (!classId) {
+					if (!canCreateClass) {
+						throw new Error('Only a room admin may add classes in this room.');
+					}
 					if (!confirmCreates) throw new Error('Confirm new class creation before applying.');
 					if (!row.className || !row.teacherFirst || !row.teacherLast) {
 						throw new Error(
@@ -251,7 +256,9 @@
 										onchange={(event) =>
 											updateRow(index, { selectedClassId: event.currentTarget.value })}
 									>
-										<option value="">Create as new class</option>
+										<option value=""
+											>{canCreateClass ? 'Create as new class' : 'Choose a room class'}</option
+										>
 										{#each classes as klass (klass.id)}<option value={klass.id}
 												>{formatClassName(klass.name)} — {teacherDisplayName(klass)}{klass.id ===
 													row.classId && row.status !== 'none'
@@ -270,7 +277,7 @@
 					</tbody>
 				</table>
 			</div>
-			{#if needsCreates || hasUnresolved}
+			{#if canCreateClass && (needsCreates || hasUnresolved)}
 				<label class="label justify-start gap-3 mt-4 cursor-pointer"
 					><input
 						class="checkbox checkbox-warning"
@@ -280,12 +287,18 @@
 						>I reviewed the unmatched rows and explicitly approve creating these new room classes.</span
 					></label
 				>
+			{:else if hasUnresolved}
+				<div class="alert alert-warning mt-4">
+					<span
+						>Choose an existing room class for every row; visitor class creation is disabled.</span
+					>
+				</div>
 			{/if}
 			<div class="modal-action">
 				<button
 					class="btn btn-primary"
 					type="button"
-					disabled={applying || (hasUnresolved && !confirmCreates)}
+					disabled={applying || (hasUnresolved && (!canCreateClass || !confirmCreates))}
 					onclick={applyPreview}>{applying ? 'Applying…' : 'Apply to schedule form'}</button
 				>
 			</div>

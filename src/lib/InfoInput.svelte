@@ -9,6 +9,9 @@
 	let {
 		classes,
 		addClass,
+		canCreateClass = true,
+		classNameFormat = 'normalized',
+		teacherNameFormat = 'title',
 		onsubmit
 	}: {
 		classes: Classes;
@@ -17,6 +20,9 @@
 			identity: TeacherIdentityInput;
 			lastName: string;
 		}) => Promise<string>;
+		canCreateClass?: boolean;
+		classNameFormat?: string;
+		teacherNameFormat?: string;
 		onsubmit: (detail: { name: string; schedule: VirtualSchedule }) => void;
 	} = $props();
 
@@ -50,7 +56,7 @@
 	}
 </script>
 
-<ScheduleImporter {classes} {addClass} onapply={applyImportedSchedule} />
+<ScheduleImporter {classes} {addClass} {canCreateClass} onapply={applyImportedSchedule} />
 
 <div class="form-control">
 	<label class="label justify-center">
@@ -68,6 +74,9 @@
 			<ClassPicker
 				bind:selected={periods[period]}
 				{addClass}
+				{canCreateClass}
+				{classNameFormat}
+				{teacherNameFormat}
 				period={period.toUpperCase()}
 				classes={classes.map((x) =>
 					Object.assign({}, x, {
@@ -82,6 +91,9 @@
 			<ClassPicker
 				bind:selected={periods[period]}
 				{addClass}
+				{canCreateClass}
+				{classNameFormat}
+				{teacherNameFormat}
 				period={period.toUpperCase()}
 				classes={classes.map((x) =>
 					Object.assign({}, x, {
