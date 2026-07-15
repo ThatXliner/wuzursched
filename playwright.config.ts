@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 dotenv.config();
 const config: PlaywrightTestConfig = {
 	webServer: {
-		command: 'pnpm run build && pnpm run preview',
-		port: 4173
+		command: 'pnpm run build && pnpm exec vite preview --port 41730',
+		port: 41730
 	}
 };
 

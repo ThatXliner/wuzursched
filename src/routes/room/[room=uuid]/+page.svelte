@@ -39,6 +39,7 @@
 	let you: You = $state()!;
 	let classes: Classes = $state([]);
 	let onlyMatching: boolean = $state(false);
+	let activeTab = $state('schedules');
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
 	onMount(async () => {
@@ -243,7 +244,7 @@
 		{/if}
 	</div>
 </div>
-<Tabs.Root value="schedules" class="min-h-[60vh]">
+<Tabs.Root bind:value={activeTab} class="min-h-[60vh]">
 	<!-- <Tabs.List> -->
 	{#if you === 'tentative'}
 		<div class="flex w-full justify-center space-x-4">
@@ -263,15 +264,19 @@
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
-		<ViewSchedules {schedules} bind:you {room} {getClass} {onlyMatching} />
+		{#if activeTab === 'schedules'}
+			<ViewSchedules {schedules} bind:you {room} {getClass} {onlyMatching} />
+		{/if}
 	</Tabs.Content>
 	<Tabs.Content value="filter">
-		{#if you != null && you !== 'tentative'}
+		{#if activeTab === 'filter' && you != null && you !== 'tentative'}
 			<Search {you} {getClass} {schedules}></Search>
 		{/if}
 	</Tabs.Content>
 	<Tabs.Content value="engineer">
-		<Engineer {schedules} />
+		{#if activeTab === 'engineer'}
+			<Engineer {schedules} />
+		{/if}
 	</Tabs.Content>
 </Tabs.Root>
 
