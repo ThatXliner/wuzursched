@@ -1,4 +1,4 @@
-import type { VirtualSchedule } from '$lib/InfoInput.d';
+import type { VirtualSchedule } from '$lib/schedule';
 
 export const SCHEDULE_PERIODS = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'] as const;
 

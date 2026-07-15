@@ -6,7 +6,7 @@
 	import ViewSchedules from './ViewSchedules.svelte';
 
 	import * as Tabs from '$lib/components/ui/tabs';
-	import InfoInput from '$lib/InfoInput.svelte';
+	import InfoInput from './components/InfoInput.svelte';
 
 	import { page } from '$app/state';
 	import {
@@ -18,7 +18,8 @@
 	} from '$lib/utils';
 	import { onMount } from 'svelte';
 
-	import type { VirtualSchedule, Classes, Class, ClassWithUsage, Schedule } from '$lib/InfoInput.d';
+	import type { Schedule, VirtualSchedule } from '$lib/schedule';
+	import type { Class, Classes, ClassWithUsage } from './types';
 	import type { ActionData, PageData } from './$types';
 	import memoize from 'lodash-es/memoize';
 	import ToastList from '$lib/ToastList.svelte';

@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Fuse from 'fuse.js';
-	import type { ClassWithUsage } from './InfoInput';
+	import type { ClassWithUsage } from '../types';
 	import { formatClassName, formatTeacherName } from '$lib/utils';
-	import { addToast } from './toasts.svelte';
-	import { formatClassUsage } from './classUsage';
-	import { pinSelectedItem } from './classPicker';
+	import { addToast } from '$lib/toasts.svelte';
+	import { formatClassUsage } from '$lib/classUsage';
+	import { pinSelectedItem } from '$lib/classPicker';
 
 	type MenuItem = ClassWithUsage & { used?: string };
 

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { engineerSchedules, type EngineerInput } from '../src/lib/engineer';
-import type { VirtualSchedule } from '../src/lib/InfoInput.d';
+import type { VirtualSchedule } from '../src/lib/schedule';
 
 function schedule(...classes: string[]): VirtualSchedule {
 	const values = [...classes, ...Array(8).fill('')].slice(0, 8);
