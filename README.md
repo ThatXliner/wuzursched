@@ -37,6 +37,7 @@ More in the [screenshot gallery](./docs/SCREENSHOTS.md).
 - **🔍 Search & filter** — fuzzy-search students by name, or filter the room down to only schedules that overlap with yours.
 - **🌗 Chalkboard mode** — dark mode swaps the paper for a dusty chalkboard, following your system preference automatically.
 - **🧠 Remembers you** — your identity per room is stored locally, so you only enter your schedule once.
+- **✏️ Private editing** — update your name or classes later with a room-scoped edit key that never appears in the public room data.
 
 ## 🏫 How it works
 
@@ -46,6 +47,19 @@ More in the [screenshot gallery](./docs/SCREENSHOTS.md).
 
 > [!NOTE]
 > Wuzursched currently assumes an A/B block schedule with 4 periods per day. Good/strict class normalization (merging "AP Calc BC" and "Calculus BC") is a long-term goal.
+
+### Editing and recovering your schedule
+
+When you submit a schedule, Wuzursched saves its unguessable edit key in that browser's local
+storage. The room stays publicly readable, but changing the schedule requires that key. Use
+**Copy edit access** in the room to back up a transfer code before clearing browser data or moving
+to another device. On the other device, select your existing schedule and choose **Restore edit
+access** to paste the code.
+
+Replacing the edit key immediately revokes every previously copied transfer code. Wuzursched does
+not use accounts and cannot recover a lost key in the current version; if both browser storage and
+all copied transfer codes are lost, a room administrator must remove the old submission so you can
+submit it again.
 
 ## 🛠️ Tech stack
 

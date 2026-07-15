@@ -33,11 +33,14 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
    periods. `ClassPicker.svelte` can select an existing room class or insert a normalized class.
    `ScheduleImporter.svelte` can prefill the same form from pasted text or browser-local screenshot
    OCR; the user reviews matches and confirms the completed form before submission.
-5. The room page inserts one `schedules` row. The row stores the room and student plus eight foreign
-   keys into `classes`; it does not duplicate class names or teacher data.
-6. After submission, the browser writes `{ name, schedule }` under the room UUID in `localStorage`.
-   The schedules list is intentionally updated by the Realtime insert event rather than by the
-   submit callback, so all connected browsers—including the submitter—use the same update path.
+5. The room page calls the `create_schedule` security-definer function. It inserts one `schedules`
+   row plus a private hash of a newly generated edit key, then returns the unhashed key once to the
+   submitting browser. The schedule stores the room and student plus eight foreign keys into
+   `classes`; it does not duplicate class names or teacher data.
+6. After submission, the browser writes `{ name, schedule, editToken }` under the room UUID in
+   `localStorage`. The schedules list is intentionally updated by the Realtime insert event rather
+   than by the submit callback, so all connected browsers—including the submitter—use the same
+   update path.
 7. Realtime inserts, updates, and deletes are applied by primary key through `src/lib/realtime.ts`.
    Schedule inserts display a toast. After the browser reconnects, the room refetches both tables
    and replays events received during that fetch, preventing stale snapshots from overwriting newer
@@ -76,25 +79,28 @@ generated TypeScript view of that schema.
   referenced class belongs to the same room or that all eight class IDs differ. The entry form
   currently enforces distinct selections; code that bypasses the form must preserve both rules.
 
-Foreign keys do not cascade. Deleting rooms, classes, or schedules therefore needs an explicit
-order and a policy migration; the current public application exposes no deletion flow.
+Most original foreign keys do not cascade. Deleting rooms or classes therefore needs an explicit
+order. The private schedule edit-capability row does cascade when its schedule is renamed or
+deleted, and the room administrator flow performs authorized schedule deletion.
 
 ## Row-level security and trust model
 
 All three tables have RLS enabled. The migrations grant the anonymous and authenticated PostgREST
 roles table privileges, then narrow public access with these policies:
 
-| Table       | Select   | Insert   | Update/Delete |
-| ----------- | -------- | -------- | ------------- |
-| `rooms`     | Everyone | Everyone | None          |
-| `classes`   | Everyone | Everyone | None          |
-| `schedules` | Everyone | Everyone | None          |
+| Table       | Select   | Direct insert | Direct update/delete |
+| ----------- | -------- | ------------- | -------------------- |
+| `rooms`     | Everyone | Everyone      | None                 |
+| `classes`   | Everyone | Everyone      | None                 |
+| `schedules` | Everyone | None          | None                 |
 
 This is deliberately accountless and collaborative, not private. Anyone with the public Supabase
-credentials can read all rows allowed by these policies and insert valid rows; a room URL is a
-locator, not an authorization secret. Do not put private information in these tables, do not expose
-the service-role key to browser code, and do not assume the UI's validation is a security boundary.
-Any new mutation needs both SQL privileges and an RLS policy, with tests using the anonymous role.
+credentials can read all rows allowed by these policies and insert valid room classes; a room URL
+is a locator, not an authorization secret. Schedule creation and editing instead go through
+security-definer functions that validate room-local classes and edit capabilities. Do not put
+private information in public tables, do not expose the service-role key to browser code, and do
+not assume the UI's validation is a security boundary. Any new mutation needs explicit database
+authorization, with tests using the anonymous role.
 
 `classes` and `schedules` are part of the `supabase_realtime` publication. RLS still determines
 which change events a client may receive. Room subscriptions add a `room=eq.<uuid>` filter; the UUID
@@ -108,6 +114,7 @@ The app has no authenticated user identity. Each room UUID is a `localStorage` k
 {
 	name: string;
 	schedule: Schedule;
+	editToken?: string;
 }
 ```
 
@@ -116,8 +123,11 @@ an existing schedule; it is never persisted. On load, the app checks that the st
 has a row in this room. Missing or invalidated rows clear the local value and reopen schedule entry.
 "Reset who you are" also clears only this browser's room entry—it does not delete database rows.
 
-This value is a convenience preference and can be edited by the browser owner. Never use it to
-authorize a database operation. Changes to its shape need backward-compatible parsing or an
+The name and schedule in this value are convenience state and can be edited by the browser owner.
+The optional edit token is an unguessable bearer capability: database functions hash and verify it
+before allowing an update, so local edits to the public identity fields do not grant authority.
+Users can export a room-scoped transfer code, restore it on another browser, or rotate the token to
+revoke earlier copies. Changes to this storage shape need backward-compatible parsing or an
 explicit migration/fallback because old values can remain in browsers indefinitely.
 
 ## Generated database types
