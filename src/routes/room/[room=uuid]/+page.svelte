@@ -6,7 +6,7 @@
 	import ViewSchedules from './ViewSchedules.svelte';
 
 	import * as Tabs from '$lib/components/ui/tabs';
-	import InfoInput from '$lib/InfoInput.svelte';
+	import InfoInput from './components/InfoInput.svelte';
 
 	import { page } from '$app/state';
 	import {
@@ -19,7 +19,8 @@
 	import { onMount } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
 
-	import type { VirtualSchedule, Classes, Class, Schedule } from '$lib/InfoInput.d';
+	import type { Schedule, VirtualSchedule } from '$lib/schedule';
+	import type { Class, Classes } from './types';
 	import type { ActionData, PageData } from './$types';
 	import ToastList from '$lib/ToastList.svelte';
 	import { addToast } from '$lib/toasts.svelte';

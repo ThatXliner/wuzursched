@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { getClassMatch, type SchedulePeriod } from '../src/lib/scheduleComparison';
-import type { VirtualSchedule } from '../src/lib/InfoInput.d';
+import type { VirtualSchedule } from '../src/lib/schedule';
 
 function schedule(overrides: Partial<Record<SchedulePeriod, string>> = {}): VirtualSchedule {
 	return {

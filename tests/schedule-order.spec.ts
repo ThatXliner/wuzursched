@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import type { Schedule } from '../src/lib/InfoInput';
+import type { Schedule } from '../src/lib/schedule';
 import type { You } from '../src/routes/room/[room=uuid]/ViewSchedules';
 import {
 	isCurrentSchedule,

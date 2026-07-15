@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Classes, UnfinishedSchedule } from './InfoInput';
+	import type { UnfinishedSchedule } from '$lib/schedule';
+	import type { Classes } from '../types';
 	import {
 		extractScheduleCandidates,
 		matchCandidate,
@@ -8,8 +9,8 @@
 		validateScheduleImage,
 		type ClassMatch,
 		type ScheduleCandidate
-	} from './scheduleImport';
-	import { formatClassName, formatTeacherName } from './utils';
+	} from '$lib/scheduleImport';
+	import { formatClassName, formatTeacherName } from '$lib/utils';
 
 	type PreviewRow = ScheduleCandidate & ClassMatch & { selectedClassId: string };
 	const EXAMPLE_TEXT = '1A | AP Biology | Jane Smith\n2A | English 10 | Alex Lee';
