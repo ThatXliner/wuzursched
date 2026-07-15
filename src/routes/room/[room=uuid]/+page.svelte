@@ -11,7 +11,6 @@
 	import { page } from '$app/state';
 	import { formatClassName, formatTeacherName, sqlEscape, normalizeClassName } from '$lib/utils';
 	import { onMount } from 'svelte';
-	import { SvelteMap } from 'svelte/reactivity';
 
 	import type { Schedule, VirtualSchedule } from '$lib/schedule';
 	import type { Class, Classes } from './types';
@@ -31,13 +30,13 @@
 	let schedules: Schedule[] = $derived(data.data);
 	let roomConfig = $derived(data.roomConfig);
 	let auditLog = $derived(data.auditLog);
-	const classCache = new SvelteMap<string, Class>();
-	const pendingClasses = new SvelteMap<string, Promise<Class>>();
+	const classCache: Record<string, Class | undefined> = Object.create(null);
+	const pendingClasses: Record<string, Promise<Class> | undefined> = Object.create(null);
 	function getClass(id: string): Promise<Class> {
-		const cached = classCache.get(id);
+		const cached = classCache[id];
 		if (cached) return Promise.resolve(cached);
 
-		const pending = pendingClasses.get(id);
+		const pending = pendingClasses[id];
 		if (pending) return pending;
 
 		const request = Promise.resolve(
@@ -48,11 +47,11 @@
 				.single()
 				.then(({ data, error }) => {
 					if (error !== null) throw error;
-					classCache.set(id, data);
+					classCache[id] = data;
 					return data;
 				})
-		).finally(() => pendingClasses.delete(id));
-		pendingClasses.set(id, request);
+		).finally(() => delete pendingClasses[id]);
+		pendingClasses[id] = request;
 		return request;
 	}
 	async function getClasses(room: string) {

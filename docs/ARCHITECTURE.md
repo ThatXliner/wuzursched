@@ -123,7 +123,9 @@ The app has no authenticated user identity. Each room UUID is a `localStorage` k
 The temporary string `"tentative"` exists only in component state while a returning visitor picks
 an existing schedule; it is never persisted. On load, the app checks that the stored student still
 has a row in this room. Missing or invalidated rows clear the local value and reopen schedule entry.
-"Reset who you are" also clears only this browser's room entry—it does not delete database rows.
+"Reset who you are" also clears the matching-only filter and this browser's room entry, including
+its edit-token capability; it does not delete database rows. Matching stays disabled until the
+visitor selects or creates another local identity.
 
 The name and schedule in this value are convenience state and can be edited by the browser owner.
 The optional edit token is an unguessable bearer capability: database functions hash and verify it
