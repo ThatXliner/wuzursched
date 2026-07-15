@@ -1,3 +1,5 @@
+import { formatTeacherName, normalizeTeacherName } from './utils.ts';
+
 export const TEACHER_TITLES = ['Mr', 'Mrs', 'Ms', 'Mx', 'Dr', 'Coach'] as const;
 
 export type TeacherTitle = (typeof TEACHER_TITLES)[number];
@@ -32,19 +34,15 @@ export function normalizeTeacherIdentity(
 	const enteredAsTitle = identity.kind === 'title' || isTeacherTitle(identity.value);
 
 	return {
-		teacher_first: enteredAsTitle ? null : identity.value.trim().toLowerCase(),
-		teacher_last: lastName.trim().replace(/\s+/g, ' ').toLowerCase(),
-		teacher_title: enteredAsTitle ? identity.value.trim().toLowerCase() : null
+		teacher_first: enteredAsTitle ? null : normalizeTeacherName(identity.value),
+		teacher_last: normalizeTeacherName(lastName).replace(/\s+/g, ' '),
+		teacher_title: enteredAsTitle ? normalizeTeacherName(identity.value) : null
 	};
-}
-
-function titlecase(value: string) {
-	return value ? value[0].toUpperCase() + value.slice(1) : '';
 }
 
 export function teacherDisplayName(teacher: TeacherIdentity) {
 	const firstOrTitle = teacher.teacher_first ?? teacher.teacher_title ?? '';
-	return `${titlecase(firstOrTitle)} ${titlecase(teacher.teacher_last)}`.trim();
+	return formatTeacherName(`${firstOrTitle} ${teacher.teacher_last}`);
 }
 
 export function teacherSearchText(teacher: TeacherIdentity) {

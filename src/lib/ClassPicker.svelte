@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Fuse from 'fuse.js';
 	import type { Class } from './InfoInput';
-	import { titlecase } from '$lib/utils';
+	import { formatClassName } from '$lib/utils';
 	import { addToast } from './toasts.svelte';
 	import {
 		isValidTeacherFirstName,
@@ -13,6 +14,7 @@
 		type TeacherIdentityInput,
 		type TeacherTitle
 	} from './teacher';
+	import { pinSelectedItem } from './classPicker';
 
 	type MenuItem = Class & { used?: string };
 
@@ -52,13 +54,18 @@
 		})
 	);
 	let filtered = $derived(
-		className === '' && firstName === '' && lastName === ''
-			? searchableClasses.map((x) => {
-					return { item: x };
-				})
-			: searcher.search(
-					[className, identityKind === 'first-name' ? firstName : selectedTitle, lastName].join(' ')
-				)
+		pinSelectedItem(
+			className === '' && firstName === '' && lastName === ''
+				? searchableClasses.map((x) => {
+						return { item: x };
+					})
+				: searcher.search(
+						[className, identityKind === 'first-name' ? firstName : selectedTitle, lastName].join(
+							' '
+						)
+					),
+			selected
+		)
 	);
 	let classNameValid = $derived(className.trim().length > 0);
 	let identityValid = $derived(identityKind === 'title' || isValidTeacherFirstName(firstName));
@@ -66,7 +73,7 @@
 	let isValidClassInfo = $derived(classNameValid && identityValid && lastNameValid);
 </script>
 
-<div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
+<div class="tooltip" data-tip={selectedClassName ? formatClassName(selectedClassName) : undefined}>
 	<button
 		class="btn m-1"
 		class:btn-success={selected != null}
@@ -172,6 +179,10 @@
 					</svg></button
 				></label
 			>
+			<p class="mt-2 text-sm opacity-70">
+				Creating a class publishes its name and teacher to everyone with the room link. See our
+				<a href={resolve('/privacy')} class="link">Privacy Policy</a>.
+			</p>
 		</div>
 		<ul class="menu h-60 overflow-hidden overflow-y-scroll flex-nowrap">
 			<li class="menu-title">Classes</li>
@@ -188,7 +199,7 @@
 								selectedClassName = isSelected ? null : klass.name;
 								dialog.close();
 							}}
-							>{titlecase(klass['name'])}
+							>{formatClassName(klass['name'])}
 							<span class="text-sm text-gray-500" class:text-white={isSelected}
 								>{teacherDisplayName(klass)}</span
 							></button
@@ -197,7 +208,7 @@
 				{:else}
 					<li class="disabled">
 						<span
-							>{titlecase(klass['name'])}
+							>{formatClassName(klass['name'])}
 							<span class="text-sm text-gray-500"
 								>{teacherDisplayName(klass)} (already used in {klass.used})</span
 							></span

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Class, Schedule, UnfinishedSchedule } from '$lib/InfoInput';
-	import { titlecase } from '$lib/utils';
+	import { formatClassName } from '$lib/utils';
 	import { teacherDisplayName } from '$lib/teacher';
 	import { isEqual } from 'lodash-es';
 	import ViewSchedule from './ViewSchedule.svelte';
@@ -71,7 +71,7 @@
 									}}
 								>
 									<span
-										>{titlecase(classA['name'])}
+										>{formatClassName(classA['name'])}
 										<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span></span
 									>
 								</button></td
@@ -89,7 +89,7 @@
 									}}
 								>
 									<span
-										>{titlecase(classB['name'])}
+										>{formatClassName(classB['name'])}
 										<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span></span
 									>
 								</button></td

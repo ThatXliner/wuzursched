@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { titlecase } from '$lib/utils';
+	import { formatClassName } from '$lib/utils';
 	import { teacherDisplayName } from '$lib/teacher';
 	import type { VirtualSchedule, Class } from '$lib/InfoInput.d';
 	let {
@@ -41,7 +41,7 @@
 							class:text-success-content={aInCommon}
 						>
 							<span
-								>{titlecase(classA['name'])}
+								>{formatClassName(classA['name'])}
 								<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span></span
 							>
 						</div></td
@@ -53,7 +53,7 @@
 							class:text-success-content={bInCommon}
 						>
 							<span
-								>{titlecase(classB['name'])}
+								>{formatClassName(classB['name'])}
 								<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span></span
 							>
 						</div></td

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import ClassPicker from './ClassPicker.svelte';
 	import type { UnfinishedSchedule, VirtualSchedule } from './InfoInput.d';
 	import type { Classes } from './InfoInput';
@@ -86,4 +87,9 @@
 
 <div class="form-control mt-6">
 	<button class="btn btn-primary" disabled={!isValid} onclick={submit}>Done</button>
+	<p class="mx-auto mt-3 max-w-md text-center text-sm opacity-70">
+		By submitting, you agree to the <a href={resolve('/terms')} class="link">Terms of Service</a>
+		and acknowledge the <a href={resolve('/privacy')} class="link">Privacy Policy</a>. Your name,
+		classes, and teachers will be visible to anyone with this room link.
+	</p>
 </div>
