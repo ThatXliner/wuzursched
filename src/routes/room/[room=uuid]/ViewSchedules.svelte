@@ -5,6 +5,7 @@
 	import type { Class } from './types';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
+	import { prioritizeCurrentSchedule } from './schedule-order';
 	import Fuse from 'fuse.js';
 
 	let {
@@ -26,7 +27,12 @@
 	}
 	let searchQuery = $state('');
 	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
-	let filtered = $derived(searchQuery ? fuse.search(searchQuery).map((x) => x.item) : schedules);
+	let filtered = $derived(
+		prioritizeCurrentSchedule(
+			searchQuery ? fuse.search(searchQuery).map((result) => result.item) : schedules,
+			you
+		)
+	);
 </script>
 
 <label class="input input-bordered flex items-center gap-2 w-96 mx-auto my-5">
