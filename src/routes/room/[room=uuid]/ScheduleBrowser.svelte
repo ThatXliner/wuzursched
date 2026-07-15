@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { Class, Schedule } from '$lib/InfoInput';
+	import type { Schedule } from '$lib/schedule';
 	import ScheduleDisplay from './ScheduleDisplay.svelte';
 	import { scheduleKey, sharedPeriods } from './scheduleComparison';
+	import type { Class } from './types';
 	import type { ResolvedYou } from './ViewSchedules';
 
 	let {

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
-import type { Schedule } from '../src/lib/InfoInput';
+import type { Schedule } from '../src/lib/schedule';
 
 const room = crypto.randomUUID();
 const prefix = room.slice(0, 8);

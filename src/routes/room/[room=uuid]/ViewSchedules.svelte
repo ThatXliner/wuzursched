@@ -1,7 +1,8 @@
 <script lang="ts">
 	import ScheduleBrowser from './ScheduleBrowser.svelte';
 
-	import type { Schedule, Class } from '$lib/InfoInput';
+	import type { Schedule } from '$lib/schedule';
+	import type { Class } from './types';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import { prioritizeCurrentSchedule } from './schedule-order';

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import type { Class, Schedule, UnfinishedSchedule } from '$lib/InfoInput';
+	import type { Schedule, UnfinishedSchedule } from '$lib/schedule';
 	import { formatClassName, formatTeacherName } from '$lib/utils';
 	import ScheduleBrowser from './ScheduleBrowser.svelte';
 	import type { ResolvedYou } from './ViewSchedules';
 	import { matchesSelectedClasses, scheduleKey } from './scheduleComparison';
+	import type { Class } from './types';
 	const periods = [0, 1, 2, 3] as const;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Class, VirtualSchedule } from '$lib/InfoInput.d';
-	import { getClassMatch, type ClassMatch } from '$lib/scheduleComparison';
 	import { formatClassName, formatTeacherName } from '$lib/utils';
-
+	import type { VirtualSchedule } from '$lib/schedule';
+	import { getClassMatch, type ClassMatch } from '$lib/scheduleComparison';
+	import type { Class } from './types';
 	let {
 		them,
 		you,

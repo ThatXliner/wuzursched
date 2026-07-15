@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
-import type { VirtualSchedule } from '../src/lib/InfoInput.d';
 import { getClassMatch, type SchedulePeriod } from '../src/lib/scheduleComparison';
+import type { VirtualSchedule } from '../src/lib/schedule';
 import {
 	hasSharedClass,
 	matchesSelectedClasses,
