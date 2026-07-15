@@ -41,7 +41,7 @@
 	let you: You = $state()!;
 	let classes: Classes = $state([]);
 	let onlyMatching: boolean = $state(false);
-	let hasResolvedIdentity = $derived(you !== null && you !== 'tentative');
+	let hasResolvedIdentity = $derived(you != null && you !== 'tentative');
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
 	let refreshInFlight = false;
@@ -64,7 +64,7 @@
 	}
 
 	function reconcileUser(nextSchedules: Schedule[]) {
-		if (you === null || you === 'tentative') return;
+		if (you == null || you === 'tentative') return;
 		const currentUser = you;
 		const currentSchedule = nextSchedules.find((schedule) => schedule.student === currentUser.name);
 		if (currentSchedule === undefined) {

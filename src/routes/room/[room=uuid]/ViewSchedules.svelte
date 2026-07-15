@@ -25,9 +25,7 @@
 		return PERIODS.some((x) => a[x] === b[x]);
 	}
 	function shouldShow(schedule: Schedule) {
-		return (
-			!onlyMatching || (you !== null && you !== 'tentative' && matches(you.schedule, schedule))
-		);
+		return !onlyMatching || (you != null && you !== 'tentative' && matches(you.schedule, schedule));
 	}
 	let searchQuery = $state('');
 	let fuse = $derived(new Fuse(schedules, { keys: ['student'] }));
