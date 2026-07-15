@@ -12,6 +12,7 @@
 		"package": "svelte-kit package",
 		"preview": "vite preview",
 		"test": "playwright test",
+		"test:unit": "node --test tests/*.unit.ts",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
@@ -58,6 +59,7 @@
 		"clsx": "^2.1.1",
 		"mode-watcher": "^1.1.0",
 		"tailwind-merge": "^3.6.0",
-		"tailwind-variants": "^3.2.2"
+		"tailwind-variants": "^3.2.2",
+		"tesseract.js": "^7.0.0"
 	}
 }
