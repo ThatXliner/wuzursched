@@ -1,0 +1,9 @@
+Student Schedule
+1A | AP Biology | Jane Smith
+2A | English 10 | Alex Lee
+3A | Algebra II | Priya Patel
+4A | World History | Morgan Chen
+1B | Spanish III | Elena Garcia
+2B | Studio Art | Taylor Brown
+3B | Computer Science | Jordan Kim
+4B | PE | Casey Jones
