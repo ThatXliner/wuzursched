@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Fuse from 'fuse.js';
-	import type { Class } from './InfoInput';
+	import type { Class } from '../types';
 	import { formatClassName, formatTeacherName } from '$lib/utils';
-	import { addToast } from './toasts.svelte';
-	import { pinSelectedItem } from './classPicker';
+	import { addToast } from '$lib/toasts.svelte';
+	import { pinSelectedItem } from '$lib/classPicker';
 
 	type MenuItem = Class & { used?: string };
 

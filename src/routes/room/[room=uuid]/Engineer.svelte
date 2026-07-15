@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { Class, Schedule } from '$lib/InfoInput';
+	import type { Schedule } from '$lib/schedule';
 	import { engineerSchedules, PERIODS, type Period, type ScheduleLocks } from '$lib/engineer';
 	import { formatClassName } from '$lib/utils';
+	import type { Class } from './types';
 
 	let { schedules, getClass }: { schedules: Schedule[]; getClass: (id: string) => Promise<Class> } =
 		$props();

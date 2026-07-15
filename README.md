@@ -106,15 +106,17 @@ testing, and deployment.
 ```
 src/
 ├── lib/                  # Shared components & utilities
-│   ├── InfoInput.svelte  #   Schedule entry form
-│   ├── ScheduleImporter.svelte # Browser-local screenshot/text import
-│   ├── ClassPicker.svelte#   Searchable class dropdown
 │   ├── Realtime.svelte   #   Realtime connection indicator
+│   ├── schedule.ts       #   Shared schedule domain types and periods
 │   └── supabase.d.ts     #   Generated database types (don't edit by hand)
 ├── routes/
 │   ├── +page.svelte      # Landing page
 │   ├── create/           # Room creation endpoint
 │   └── room/[room=uuid]/ # The room: view, search, and compare schedules
+│       └── components/   #   Route-local schedule entry UI
+│           ├── InfoInput.svelte       # Schedule entry form
+│           ├── ScheduleImporter.svelte # Browser-local screenshot/text import
+│           └── ClassPicker.svelte     # Searchable class dropdown
 supabase/
 ├── migrations/           # Database schema
 └── seed.sql              # Local seed data

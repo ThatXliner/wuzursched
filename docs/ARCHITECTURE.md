@@ -15,7 +15,7 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
 | Supabase clients        | Public URL and anonymous key           | `src/hooks.server.ts`, `src/routes/+layout.ts`                                                  |
 | Room creation           | `rooms` row                            | `src/routes/create/+server.ts`                                                                  |
 | Initial room data       | Server load of `rooms` and `schedules` | `src/routes/room/[room=uuid]/+page.server.ts`                                                   |
-| Classes and submissions | `classes` and `schedules` tables       | `src/lib/InfoInput.svelte`, `src/lib/ClassPicker.svelte`                                        |
+| Classes and submissions | `classes` and `schedules` tables       | The room route's `components/InfoInput.svelte` and `components/ClassPicker.svelte`              |
 | Browser identity        | Room-keyed `localStorage` value        | `src/routes/room/[room=uuid]/+page.svelte`                                                      |
 | Live updates            | Supabase Realtime publications         | The room page, `src/lib/realtime.ts`, and `supabase/migrations/20240715235333_add_realtime.sql` |
 | Comparison UI           | Same class UUID in the same period     | `ViewSchedules.svelte`, `ScheduleDisplay.svelte`, `Search.svelte`                               |
@@ -123,8 +123,8 @@ explicit migration/fallback because old values can remain in browsers indefinite
 ## Generated database types
 
 `src/lib/supabase.d.ts` is generated from Postgres and supplies the `Database` generic to every
-Supabase client. `InfoInput.d.ts` derives application-facing class row types from query results and
-defines `VirtualSchedule` as the eight period-to-class-UUID fields.
+Supabase client. `src/routes/room/[room=uuid]/types.ts` derives the route-facing class row types,
+while `src/lib/schedule.ts` defines `VirtualSchedule` as the eight period-to-class-UUID fields.
 
 Never edit `supabase.d.ts` by hand. After a migration, reset the local database and run
 `pnpm run update-types:local`, then commit the migration and generated type diff together. CI
@@ -202,11 +202,12 @@ are accepted, with blank periods available for moved classes.
 
 - Room existence or initial queries: `src/routes/room/[room=uuid]/+page.server.ts`
 - Submission, browser identity, or Realtime: `src/routes/room/[room=uuid]/+page.svelte`
-- Schedule validation and period shape: `src/lib/InfoInput.svelte` and `src/lib/InfoInput.d.ts`
-- Screenshot/text parsing and matching: `src/lib/ScheduleImporter.svelte` and
+- Schedule validation and entry: the room route's `components/InfoInput.svelte`; shared period
+  shape: `src/lib/schedule.ts`
+- Screenshot/text parsing and matching: the room route's `components/ScheduleImporter.svelte` and
   `src/lib/scheduleImport.ts`
-- Class creation/selection: `src/lib/ClassPicker.svelte` and `normalizeClassName()` in
-  `src/lib/utils.ts`
+- Class creation/selection: the room route's `components/ClassPicker.svelte` and
+  `normalizeClassName()` in `src/lib/utils.ts`
 - Display comparison: `src/lib/scheduleComparison.ts` and the room's `ViewSchedules.svelte`,
   `ScheduleDisplay.svelte`, and `Search.svelte`
 - Schema, privileges, RLS, or Realtime publication: a new file in `supabase/migrations/`
