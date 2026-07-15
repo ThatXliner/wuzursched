@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Fuse from 'fuse.js';
-	import type { Class } from './InfoInput';
+	import type { Class } from '../types';
 	import { formatClassName } from '$lib/utils';
-	import { addToast } from './toasts.svelte';
+	import { addToast } from '$lib/toasts.svelte';
 	import {
 		isValidTeacherFirstName,
 		isValidTeacherLastName,
@@ -13,8 +13,8 @@
 		TEACHER_TITLES,
 		type TeacherIdentityInput,
 		type TeacherTitle
-	} from './teacher';
-	import { pinSelectedItem } from './classPicker';
+	} from '$lib/teacher';
+	import { pinSelectedItem } from '$lib/classPicker';
 
 	type MenuItem = Class & { used?: string };
 

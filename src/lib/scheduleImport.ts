@@ -1,5 +1,8 @@
-import type { Class, UnfinishedSchedule } from './InfoInput';
+import type { UnfinishedSchedule } from './schedule';
+import type { Database } from './supabase';
 import { teacherSearchText } from './teacher.ts';
+
+type Class = Database['public']['Tables']['classes']['Row'];
 
 export const IMPORT_PERIODS = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'] as const;
 export type ImportPeriod = (typeof IMPORT_PERIODS)[number];
