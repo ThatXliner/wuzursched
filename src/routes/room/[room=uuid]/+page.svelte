@@ -61,6 +61,7 @@
 	let you = $state<You>(null);
 	let classes: Classes = $state(data.classes);
 	let onlyMatching: boolean = $state(false);
+	let hasResolvedIdentity = $derived(you != null && you !== 'tentative');
 	let editing = $state(false);
 	let importingEditKey = $state(false);
 	let importValue = $state('');
@@ -90,13 +91,18 @@
 		window.localStorage.setItem(room, JSON.stringify(value));
 	}
 
-	function recoverMissingUser() {
+	function resetIdentity() {
+		onlyMatching = false;
 		you = null;
 		window.localStorage.removeItem(room);
 	}
 
+	function recoverMissingUser() {
+		resetIdentity();
+	}
+
 	function reconcileUser(nextSchedules: Schedule[]) {
-		if (you === null || you === 'tentative') return;
+		if (you == null || you === 'tentative') return;
 		const currentUser = you;
 		const currentSchedule = nextSchedules.find((schedule) => schedule.student === currentUser.name);
 		if (currentSchedule === undefined) {
@@ -561,11 +567,21 @@
 					Invite
 				</button>
 			</div>
-			<div class="tooltip" data-tip="Only show schedules with matching classes">
+			<div
+				class="tooltip"
+				data-tip={hasResolvedIdentity
+					? 'Only show schedules with matching classes'
+					: 'Select who you are to filter matching schedules'}
+			>
 				<div class="form-control rounded-box bg-base-200 p-1">
 					<label class="label cursor-pointer space-x-3">
 						<span class="label-text">Only show matching</span>
-						<input type="checkbox" class="toggle toggle-primary" bind:checked={onlyMatching} />
+						<input
+							type="checkbox"
+							class="toggle toggle-primary"
+							bind:checked={onlyMatching}
+							disabled={!hasResolvedIdentity}
+						/>
 					</label>
 				</div>
 			</div>
@@ -585,13 +601,7 @@
 						>Restore edit access</button
 					>
 				{/if}
-				<button
-					class="btn btn-error btn-outline"
-					onclick={() => {
-						you = null;
-						window.localStorage.removeItem(room);
-					}}>Forget me on this browser</button
-				>
+				<button class="btn btn-error btn-outline" onclick={resetIdentity}>Reset who you are</button>
 			{/if}
 			{#if !data.isAdmin}
 				<details class="dropdown dropdown-end">
@@ -654,7 +664,13 @@
 		</Tabs.List>
 	{/if}
 	<Tabs.Content value="schedules">
-		<ViewSchedules {schedules} bind:you {room} {getClass} {onlyMatching} />
+		<ViewSchedules
+			{schedules}
+			bind:you
+			{room}
+			{getClass}
+			onlyMatching={onlyMatching && hasResolvedIdentity}
+		/>
 	</Tabs.Content>
 	<Tabs.Content value="filter">
 		{#if you != null && you !== 'tentative'}

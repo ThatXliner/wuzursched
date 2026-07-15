@@ -51,6 +51,7 @@ test('restores source order when identity is reset or unresolved', () => {
 
 	expect(prioritizeCurrentSchedule(schedules, null)).toEqual(schedules);
 	expect(prioritizeCurrentSchedule(schedules, 'tentative')).toEqual(schedules);
+	expect(prioritizeCurrentSchedule(schedules, undefined)).toEqual(schedules);
 });
 
 test('uses the persisted student identity for current-user treatment', () => {
