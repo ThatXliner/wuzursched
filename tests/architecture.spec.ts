@@ -26,7 +26,7 @@ test('schedule entry components stay local to the room route', async () => {
 
 	for (const file of files) {
 		const source = await readFile(file, 'utf8');
-		if (/(?:components\/|\.\/)(?:InfoInput|ClassPicker)\.svelte/.test(source)) {
+		if (/(?:components\/|\.\/)(?:InfoInput|ClassPicker|ScheduleImporter)\.svelte/.test(source)) {
 			importers.push(file);
 		}
 	}
@@ -42,4 +42,7 @@ test('schedule entry components stay local to the room route', async () => {
 	await expect(readFile(join(routeLocalComponents, 'InfoInput.svelte'), 'utf8')).resolves.toContain(
 		"from '$lib/schedule'"
 	);
+	await expect(
+		readFile(join(routeLocalComponents, 'ScheduleImporter.svelte'), 'utf8')
+	).resolves.toContain("from '$lib/schedule'");
 });
