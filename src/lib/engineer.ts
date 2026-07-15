@@ -1,6 +1,6 @@
-import type { VirtualSchedule } from './InfoInput.d';
+import { PERIODS, type VirtualSchedule } from './schedule';
 
-export const PERIODS = ['1a', '1b', '2a', '2b', '3a', '3b', '4a', '4b'] as const;
+export { PERIODS } from './schedule';
 
 export type Period = (typeof PERIODS)[number];
 
