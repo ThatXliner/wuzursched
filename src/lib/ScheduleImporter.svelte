@@ -9,7 +9,7 @@
 		type ClassMatch,
 		type ScheduleCandidate
 	} from './scheduleImport';
-	import { titlecase } from './utils';
+	import { formatClassName, formatTeacherName } from './utils';
 
 	type PreviewRow = ScheduleCandidate & ClassMatch & { selectedClassId: string };
 	const EXAMPLE_TEXT = '1A | AP Biology | Jane Smith\n2A | English 10 | Alex Lee';
@@ -246,9 +246,9 @@
 									>
 										<option value="">Create as new class</option>
 										{#each classes as klass (klass.id)}<option value={klass.id}
-												>{titlecase(klass.name)} — {titlecase(klass.teacher_first)}
-												{titlecase(klass.teacher_last)}{klass.id === row.classId &&
-												row.status !== 'none'
+												>{formatClassName(klass.name)} — {formatTeacherName(
+													`${klass.teacher_first} ${klass.teacher_last}`
+												)}{klass.id === row.classId && row.status !== 'none'
 													? ` (suggested ${Math.round(row.confidence * 100)}%)`
 													: ''}</option
 											>{/each}
