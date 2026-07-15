@@ -15,8 +15,10 @@ function scheduleToClassSet(schedule: VirtualSchedule) {
 }
 function findCommonClasses(schedules: VirtualSchedule[]) {
 	const classSets = schedules.map(scheduleToClassSet);
+	if (classSets.length === 0) return new Set<string>();
+
 	const commonClasses = new Set<string>();
-	for (const className of classSets) {
+	for (const className of classSets[0]) {
 		if (classSets.every((classSet) => classSet.has(className))) {
 			commonClasses.add(className);
 		}
@@ -36,6 +38,8 @@ function scheduleMovementHeuristic(a: VirtualSchedule, b: VirtualSchedule) {
 // TODO: In the future, we will respect the restrictions of which
 // periods each class can be in
 export function findOptimumSchedules(schedules: VirtualSchedule[]): VirtualSchedule[] {
+	if (schedules.length === 0) return [];
+
 	const commonClasses = findCommonClasses(schedules);
 	function cost(schedule: VirtualSchedule) {
 		return sum(schedules.map((x) => scheduleMovementHeuristic(schedule, x)));

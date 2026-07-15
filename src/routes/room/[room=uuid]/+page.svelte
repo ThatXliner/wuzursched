@@ -23,7 +23,8 @@
 
 	let { data }: { data: PageData } = $props();
 	let supabase = $derived(data.supabase);
-	let schedules: Schedule[] = $derived(data.data);
+	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
+	let schedules: Schedule[] = $state(data.data);
 	async function _getClass(id: string) {
 		const { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		if (error !== null) {
@@ -96,7 +97,14 @@
 				},
 				(payload) => {
 					if (payload.eventType === 'INSERT') {
-						schedules = [...schedules, payload.new];
+						if (
+							!schedules.some(
+								(schedule) =>
+									schedule.room === payload.new.room && schedule.student === payload.new.student
+							)
+						) {
+							schedules = [...schedules, payload.new];
+						}
 						addToast(`${payload.new.student} just added their schedule to this room`);
 					}
 					console.log('1', payload);
@@ -123,17 +131,18 @@
 				realtimeStatus = status;
 			});
 	});
-	function onInfoSubmitted(detail: { name: string; schedule: VirtualSchedule }) {
+	async function onInfoSubmitted(detail: { name: string; schedule: VirtualSchedule }) {
 		const toInsert = { ...detail.schedule, room, student: detail.name };
-		supabase
-			.from('schedules')
-			.insert([toInsert])
-			.then(() => {
-				you = { name: detail.name, schedule: toInsert };
-				// no need to update the local db variable
-				// since that will be updated via the realtime subscription
-				window.localStorage.setItem(room, JSON.stringify(you));
-			});
+		const { error } = await supabase.from('schedules').insert([toInsert]);
+		if (error) {
+			addToast(`Unable to save schedule: ${error.message}`, 'error');
+			return;
+		}
+		if (!schedules.some((schedule) => schedule.room === room && schedule.student === detail.name)) {
+			schedules = [...schedules, toInsert];
+		}
+		you = { name: detail.name, schedule: toInsert };
+		window.localStorage.setItem(room, JSON.stringify(you));
 	}
 	async function addClass({
 		className,
@@ -155,6 +164,8 @@
 			// error.code == 23505 is duplicate entry
 			if (error.code == '23505') {
 				addToast('Attempted to add duplicate class', 'error');
+			} else {
+				addToast(`Unable to add class: ${error.message}`, 'error');
 			}
 			throw error;
 		}

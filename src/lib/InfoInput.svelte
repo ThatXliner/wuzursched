@@ -52,7 +52,10 @@
 	<div class="w-36">
 		{#each aDay as period (period)}
 			<ClassPicker
-				bind:selected={periods[period]}
+				selected={periods[period]}
+				updateSelected={(selected) => {
+					periods = { ...periods, [period]: selected };
+				}}
 				{addClass}
 				period={period.toUpperCase()}
 				classes={classes.map((x) =>
@@ -66,7 +69,10 @@
 	<div class="w-36">
 		{#each bDay as period (period)}
 			<ClassPicker
-				bind:selected={periods[period]}
+				selected={periods[period]}
+				updateSelected={(selected) => {
+					periods = { ...periods, [period]: selected };
+				}}
 				{addClass}
 				period={period.toUpperCase()}
 				classes={classes.map((x) =>

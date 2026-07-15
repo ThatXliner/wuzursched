@@ -96,7 +96,7 @@ export function normalize(className: string) {
 			.replace(/ iii$/, ' 3')
 			.replace(/ ii$/, ' 2')
 			.replace(/ i$/, ' 1')
-			.replace(/\s+/, ' ')
+			.replace(/\s+/g, ' ')
 	);
 }
 export type ArrElement<ArrType> = ArrType extends readonly (infer ElementType)[]

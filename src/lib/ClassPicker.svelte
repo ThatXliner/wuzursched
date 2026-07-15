@@ -3,6 +3,7 @@
 	import type { Class } from './InfoInput';
 	import { titlecase } from '$lib/utils';
 	import { addToast } from './toasts.svelte';
+	import { tick } from 'svelte';
 
 	type MenuItem = Class & { used?: string };
 
@@ -10,12 +11,14 @@
 		addClass,
 		classes,
 		selected = $bindable(),
-		period = ''
+		period = '',
+		updateSelected
 	}: {
 		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
 		classes: MenuItem[];
 		selected?: string | null | undefined;
 		period?: string;
+		updateSelected?: (selected: string | null) => void;
 	} = $props();
 
 	let className = $state(''),
@@ -40,6 +43,10 @@
 	let firstNameValid = $derived(/^\w+$/.test(firstName.trim()));
 	let lastNameValid = $derived(/^\w+$/.test(lastName.trim().replaceAll(/\s+/g, '')));
 	let isValidClassInfo = $derived(classNameValid && firstNameValid && lastNameValid);
+	function select(value: string | null) {
+		selected = value;
+		updateSelected?.(value);
+	}
 </script>
 
 <div class="tooltip" data-tip={selectedClassName ? titlecase(selectedClassName) : undefined}>
@@ -77,7 +84,9 @@
 					bind:value={lastName}
 				/>
 				<button
+					type="button"
 					class="btn btn-primary join-item"
+					aria-label="Create class"
 					onclick={async (event) => {
 						if (!isValidClassInfo) {
 							console.log(className, firstName, lastName);
@@ -93,16 +102,24 @@
 							event.preventDefault();
 							return;
 						}
-						selectedClassName = className;
-						selected = await addClass({
-							className,
-							firstName: firstName.trim(),
-							lastName: lastName.trim().replaceAll(/\s+/g, '')
-						});
-						// Reset the search
-						className = '';
-						firstName = '';
-						lastName = '';
+						try {
+							select(
+								await addClass({
+								className,
+								firstName: firstName.trim(),
+								lastName: lastName.trim().replaceAll(/\s+/g, '')
+								})
+							);
+							selectedClassName = className;
+							// Reset the search
+							className = '';
+							firstName = '';
+							lastName = '';
+							await tick();
+							dialog.close();
+						} catch {
+							// addClass reports a user-facing error; keep the dialog open.
+						}
 					}}
 					><svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -125,27 +142,21 @@
 				{@const klass = entry.item}
 				{@const isSelected = selected === klass.id}
 				{#if entry.item?.used === undefined || selected === klass.id}
-					<li
-						onclick={() => {
-							selected = isSelected ? null : klass.id;
-							selectedClassName = isSelected ? null : klass.name;
-							dialog.close();
-						}}
-						onkeydown={() => {
-							// For accessibility, we also implement keydown
-							// (this accessibility manuever should be
-							// isolated into a use: directive)
-							selected = isSelected ? null : klass.id;
-							selectedClassName = isSelected ? null : klass.name;
-							dialog.close();
-						}}
-					>
-						<span class:active={isSelected}
+					<li>
+						<button
+							type="button"
+							class:active={isSelected}
+							onclick={async () => {
+								select(isSelected ? null : klass.id);
+								selectedClassName = isSelected ? null : klass.name;
+								await tick();
+								dialog.close();
+							}}
 							>{titlecase(klass['name'])}
 							<span class="text-sm text-gray-500" class:text-white={isSelected}
 								>{titlecase(klass.teacher_first)} {titlecase(klass.teacher_last)}</span
-							></span
-						>
+							>
+						</button>
 					</li>
 				{:else}
 					<li class="disabled">
