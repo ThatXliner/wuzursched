@@ -11,11 +11,11 @@
 	import { page } from '$app/state';
 	import { formatClassName, formatTeacherName, sqlEscape, normalizeClassName } from '$lib/utils';
 	import { onMount } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	import type { Schedule, VirtualSchedule } from '$lib/schedule';
 	import type { Class, Classes } from './types';
 	import type { ActionData, PageData } from './$types';
-	import memoize from 'lodash-es/memoize';
 	import ToastList from '$lib/ToastList.svelte';
 	import { addToast } from '$lib/toasts.svelte';
 	import { copyToClipboard } from '$lib/actions';
@@ -34,15 +34,30 @@
 	let roomConfig = $state(data.roomConfig);
 	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
 	let auditLog = $state(data.auditLog);
-	async function _getClass(id: string) {
-		const { data, error } = await supabase.from('classes').select('*').eq('id', id);
-		if (error !== null) {
-			throw error;
-		}
-		console.assert(data !== null);
-		return data![0];
+	const classCache = new SvelteMap<string, Class>();
+	const pendingClasses = new SvelteMap<string, Promise<Class>>();
+	function getClass(id: string): Promise<Class> {
+		const cached = classCache.get(id);
+		if (cached) return Promise.resolve(cached);
+
+		const pending = pendingClasses.get(id);
+		if (pending) return pending;
+
+		const request = Promise.resolve(
+			supabase
+				.from('classes')
+				.select('*')
+				.eq('id', id)
+				.single()
+				.then(({ data, error }) => {
+					if (error !== null) throw error;
+					classCache.set(id, data);
+					return data;
+				})
+		).finally(() => pendingClasses.delete(id));
+		pendingClasses.set(id, request);
+		return request;
 	}
-	const getClass = memoize(_getClass);
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
