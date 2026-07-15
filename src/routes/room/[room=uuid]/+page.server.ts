@@ -1,4 +1,5 @@
-import { error as returnError, fail, redirect, type Actions, type ServerLoad } from '@sveltejs/kit';
+import { error as returnError, fail, redirect } from '@sveltejs/kit';
+import type { Actions, PageServerLoad } from './$types';
 
 const adminCookie = (room: string) => `wuzursched_admin_${room}`;
 
@@ -69,7 +70,7 @@ async function requireToken(
 	return !error && data ? token : null;
 }
 
-export const load: ServerLoad = async ({ params, cookies, locals: { supabase } }) => {
+export const load: PageServerLoad = async ({ params, cookies, locals: { supabase } }) => {
 	const room = params.room!;
 	const roomResult = await supabase
 		.from('rooms')
