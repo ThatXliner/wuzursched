@@ -14,7 +14,7 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
 | ----------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | Supabase clients        | Public URL and anonymous key           | `src/hooks.server.ts`, `src/routes/+layout.ts`                                                  |
 | Room creation           | `rooms` row                            | `src/routes/create/+server.ts`                                                                  |
-| Initial room data       | Server load of `rooms` and `schedules` | `src/routes/room/[room=uuid]/+page.server.ts`                                                   |
+| Initial room data       | Server load plus usage-count RPC       | `src/routes/room/[room=uuid]/+page.server.ts`, `get_classes_with_usage`                          |
 | Classes and submissions | `classes` and `schedules` tables       | The room route's `components/InfoInput.svelte` and `components/ClassPicker.svelte`              |
 | Browser identity        | Room-keyed `localStorage` value        | `src/routes/room/[room=uuid]/+page.svelte`                                                      |
 | Live updates            | Supabase Realtime publications         | The room page, `src/lib/realtime.ts`, and `supabase/migrations/20240715235333_add_realtime.sql` |
@@ -26,7 +26,8 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
    and redirects to `/room/<uuid>`.
 2. The `uuid` route matcher rejects malformed room IDs before the room route runs. The server load
    verifies that the `rooms` row exists, returns 404 when PostgREST reports no row, then fetches the
-   room's existing `schedules`. This server result supplies the first render.
+   room's schedules, room configuration, audit log, and title-aware class usage rows from
+   `get_classes_with_usage`. This server result supplies the first render.
 3. On mount, the room page restores the visitor identity from `localStorage`, subscribes to changes
    on the room's `classes` and `schedules` rows, and refreshes both tables from Postgres.
 4. `InfoInput.svelte` requires a student name and one distinct class UUID for each of the eight A/B
@@ -46,8 +47,10 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
    and replays events received during that fetch, preventing stale snapshots from overwriting newer
    changes. Postgres remains the durable store.
 
-The initial schedule query runs on the server, while class loading and all inserts happen in the
-browser. When changing this split, check both SSR and browser client creation in the root layout.
+The initial schedule and class-usage queries run on the server. Detailed class rows are fetched
+on demand in the browser, while schedule edits and administrative mutations use capability-checked
+RPCs or server actions. When changing this split, check both SSR and browser client creation in the
+root layout.
 
 ## Supabase data model
 
@@ -169,9 +172,12 @@ Schedule comparison uses class UUID equality, not normalized text equality:
   elsewhere in the current user's schedule.
 - `Search.svelte` applies every selected period/class pair (logical AND).
 
-Collapsed schedule cards do not fetch their class rows. Expanding a card loads its distinct class
-IDs through the room page's shared promise/cache maps, so concurrent cards reuse in-flight and
-resolved lookups; a failed detail request can be retried from that card.
+Collapsed schedule cards do not fetch their class rows. Selecting a person loads the schedule's
+distinct class IDs through the room page's shared promise/value caches, so concurrent consumers
+reuse in-flight and resolved lookups; a failed detail request can be retried. These caches are
+deliberately ordinary, non-reactive objects: mutating a reactive collection while Svelte renders
+an await block causes an unsafe-mutation error. Class picker rows receive `schedule_count` from the
+`get_classes_with_usage` RPC and display that count without forcing schedule details to load.
 
 Consequently, two separately inserted class rows never match even if their text looks alike. A
 different-period match is visible in the schedule card but does not satisfy the same-period list or

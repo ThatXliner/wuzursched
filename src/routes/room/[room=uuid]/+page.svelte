@@ -13,7 +13,7 @@
 	import { onMount } from 'svelte';
 
 	import type { Schedule, VirtualSchedule } from '$lib/schedule';
-	import type { Class, Classes } from './types';
+	import type { Class, Classes, ClassWithUsage } from './types';
 	import type { ActionData, PageData } from './$types';
 	import ToastList from '$lib/ToastList.svelte';
 	import { addToast } from '$lib/toasts.svelte';
@@ -30,6 +30,8 @@
 	let schedules: Schedule[] = $derived(data.data);
 	let roomConfig = $derived(data.roomConfig);
 	let auditLog = $derived(data.auditLog);
+	// These caches are deliberately non-reactive: getClass can be called while a view is
+	// rendering, and mutating reactive collections there triggers Svelte's unsafe-mutation guard.
 	const classCache: Record<string, Class | undefined> = Object.create(null);
 	const pendingClasses: Record<string, Promise<Class> | undefined> = Object.create(null);
 	function getClass(id: string): Promise<Class> {
@@ -55,7 +57,7 @@
 		return request;
 	}
 	async function getClasses(room: string) {
-		return await supabase.from('classes').select('*').eq('room', room);
+		return await supabase.rpc('get_classes_with_usage', { room_id: room });
 	}
 	let you = $state<You>(null);
 	let classes: Classes = $state(data.classes);
@@ -84,6 +86,29 @@
 	const roomKey = (roomRow: Partial<typeof roomConfig>) => roomRow.id;
 	const auditKey = (auditRow: Partial<(typeof auditLog)[number]>) =>
 		auditRow.id === undefined ? undefined : String(auditRow.id);
+
+	function applyClassDatabaseChange(rows: Classes, change: DatabaseChange<Class>): Classes {
+		if (change.eventType === 'DELETE') {
+			return applyDatabaseChange<ClassWithUsage>(
+				rows,
+				{ eventType: 'DELETE', new: {}, old: change.old },
+				classKey
+			);
+		}
+
+		const oldId = change.eventType === 'UPDATE' ? change.old.id : undefined;
+		const existing = rows.find((row) => row.id === change.new.id || row.id === oldId);
+		const enriched = { ...change.new, schedule_count: existing?.schedule_count ?? 0 };
+		return applyDatabaseChange<ClassWithUsage>(
+			rows,
+			{ eventType: change.eventType, new: enriched, old: change.old },
+			classKey
+		);
+	}
+
+	function replayClassDatabaseChanges(rows: Classes, changes: DatabaseChange<Class>[]): Classes {
+		return changes.reduce(applyClassDatabaseChange, rows);
+	}
 
 	function persistYou(value: Exclude<You, null | 'tentative'>) {
 		you = value;
@@ -172,7 +197,7 @@
 				scheduleKey
 			);
 			schedules = nextSchedules;
-			classes = replayDatabaseChanges(classResult.data, classEventsDuringRefresh, classKey);
+			classes = replayClassDatabaseChanges(classResult.data, classEventsDuringRefresh);
 			roomConfig =
 				replayDatabaseChanges([roomResult.data], roomEventsDuringRefresh, roomKey)[0] ??
 				roomResult.data;
@@ -224,11 +249,13 @@
 		} else if (change.eventType !== 'INSERT') {
 			reconcileUser(schedules);
 		}
+		void refreshRoom();
 	}
 
 	function applyClassChange(change: DatabaseChange<Class>) {
 		if (refreshInFlight) classEventsDuringRefresh.push(change);
-		classes = applyDatabaseChange(classes, change, classKey);
+		classes = applyClassDatabaseChange(classes, change);
+		void refreshRoom();
 	}
 
 	function applyRoomChange(change: DatabaseChange<typeof roomConfig>) {
