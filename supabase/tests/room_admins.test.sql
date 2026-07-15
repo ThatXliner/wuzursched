@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(14);
 
 select is(
   public.create_room_with_admin(
@@ -115,6 +115,27 @@ select ok(
     'replacement-admin-token-that-is-long-enough'
   ),
   'rotation revokes the old credential'
+);
+
+select is(
+  (
+    select count(*)
+    from public.admin_seed_classes(
+      '00000000-0000-0000-0000-000000000018'::uuid,
+      'replacement-admin-token-that-is-long-enough',
+      '[{"name":"chemistry","teacher_first":"Dr.","teacher_last":"Curie"}]'::jsonb
+    )
+  ),
+  1::bigint,
+  'an admin can seed a class using a teacher title'
+);
+
+select results_eq(
+  $$ select teacher_first, teacher_title from public.classes
+     where room = '00000000-0000-0000-0000-000000000018'::uuid
+       and lower(name) = 'chemistry' $$,
+  $$ values (null::text, 'Dr'::text) $$,
+  'admin-seeded titles use the explicit teacher title column'
 );
 
 select ok(

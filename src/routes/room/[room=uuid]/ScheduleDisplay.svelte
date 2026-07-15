@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { formatClassName, formatTeacherName } from '$lib/utils';
 	import type { VirtualSchedule } from '$lib/schedule';
 	import { getClassMatch, type ClassMatch } from '$lib/scheduleComparison';
+	import { teacherDisplayName } from '$lib/teacher';
+	import { formatClassName } from '$lib/utils';
 	import type { Class } from './types';
+
 	let {
 		them,
 		you,
@@ -72,9 +74,7 @@
 							>
 								<span>
 									{formatClassName(classA.name)}
-									<span class="text-xs text-gray-500">
-										{formatTeacherName(`${classA.teacher_first} ${classA.teacher_last}`)}
-									</span>
+									<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span>
 									<span class="sr-only"> — {matchLabels[aMatch]}</span>
 								</span>
 							</div>
@@ -90,9 +90,7 @@
 							>
 								<span>
 									{formatClassName(classB.name)}
-									<span class="text-xs text-gray-500">
-										{formatTeacherName(`${classB.teacher_first} ${classB.teacher_last}`)}
-									</span>
+									<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span>
 									<span class="sr-only"> — {matchLabels[bMatch]}</span>
 								</span>
 							</div>
