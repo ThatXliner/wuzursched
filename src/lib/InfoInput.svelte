@@ -6,24 +6,39 @@
 	let {
 		classes,
 		addClass,
-		onsubmit
+		onsubmit,
+		initialName = '',
+		initialSchedule,
+		submitLabel = 'Done'
 	}: {
 		classes: Classes;
 		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
-		onsubmit: (detail: { name: string; schedule: VirtualSchedule }) => void;
+		onsubmit: (detail: { name: string; schedule: VirtualSchedule }) => void | Promise<void>;
+		initialName?: string;
+		initialSchedule?: VirtualSchedule;
+		submitLabel?: string;
 	} = $props();
 
-	let name = $state('');
-	let periods: UnfinishedSchedule = $state({
-		'1a': undefined,
-		'2a': undefined,
-		'3a': undefined,
-		'4a': undefined,
-		'1b': undefined,
-		'2b': undefined,
-		'3b': undefined,
-		'4b': undefined
-	});
+	function getInitialName() {
+		return initialName;
+	}
+	function getInitialSchedule(): UnfinishedSchedule {
+		return initialSchedule
+			? { ...initialSchedule }
+			: {
+					'1a': undefined,
+					'2a': undefined,
+					'3a': undefined,
+					'4a': undefined,
+					'1b': undefined,
+					'2b': undefined,
+					'3b': undefined,
+					'4b': undefined
+				};
+	}
+	let name = $state(getInitialName());
+	let periods: UnfinishedSchedule = $state(getInitialSchedule());
+	let submitting = $state(false);
 	const PERIODS: (keyof UnfinishedSchedule)[] = ['1a', '2a', '3a', '4a', '1b', '2b', '3b', '4b'];
 	let values = $derived(PERIODS.map((period) => periods[period]));
 	let isValid = $derived(
@@ -33,8 +48,14 @@
 	);
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
 	const bDay = ['1b', '2b', '3b', '4b'] as const;
-	function submit() {
-		onsubmit({ name: name.trim(), schedule: periods as VirtualSchedule });
+	async function submit() {
+		if (submitting) return;
+		submitting = true;
+		try {
+			await onsubmit({ name: name.trim(), schedule: periods as VirtualSchedule });
+		} finally {
+			submitting = false;
+		}
 	}
 </script>
 
@@ -80,5 +101,7 @@
 </div>
 
 <div class="form-control mt-6">
-	<button class="btn btn-primary" disabled={!isValid} onclick={submit}>Done</button>
+	<button class="btn btn-primary" disabled={!isValid || submitting} onclick={submit}>
+		{submitting ? 'Saving…' : submitLabel}
+	</button>
 </div>

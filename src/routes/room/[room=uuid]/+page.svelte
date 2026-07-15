@@ -36,11 +36,46 @@
 	async function getClasses(room: string) {
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
-	let you: You = $state()!;
+	let you: You = $state(null);
 	let classes: Classes = $state([]);
 	let onlyMatching: boolean = $state(false);
+	let editing = $state(false);
+	let importingEditKey = $state(false);
+	let importValue = $state('');
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
+	let transferCode = $derived(
+		you !== null && you !== 'tentative' && you.editToken
+			? JSON.stringify({ room, student: you.name, editToken: you.editToken })
+			: ''
+	);
+	function persistYou(value: Exclude<You, null | 'tentative'>) {
+		you = value;
+		window.localStorage.setItem(room, JSON.stringify(value));
+	}
+	function scheduleRpcArgs(name: string, schedule: VirtualSchedule) {
+		return {
+			p_room: room,
+			p_student: name,
+			p_period_1a: schedule['1a'],
+			p_period_2a: schedule['2a'],
+			p_period_3a: schedule['3a'],
+			p_period_4a: schedule['4a'],
+			p_period_1b: schedule['1b'],
+			p_period_2b: schedule['2b'],
+			p_period_3b: schedule['3b'],
+			p_period_4b: schedule['4b']
+		};
+	}
+	function replaceSchedule(previousStudent: string, schedule: Schedule) {
+		const index = schedules.findIndex((candidate) => candidate.student === previousStudent);
+		schedules =
+			index === -1
+				? [...schedules, schedule]
+				: schedules.map((candidate, candidateIndex) =>
+						candidateIndex === index ? schedule : candidate
+					);
+	}
 	onMount(async () => {
 		{
 			const { data, error } = await getClasses(room);
@@ -51,33 +86,40 @@
 			}
 			classes = data;
 		}
-		// Load it from localStorage
-		you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
-		if (
-			// If your log-in exists
-			// But the database forgot about you
-			you !== null &&
-			you !== 'tentative' &&
-			(
-				await supabase
-					.from('schedules')
-					.select('*')
-					.eq('room', room)
-					.eq('student', you.name)
-					.single()
-			).data === null
-		) {
-			// you'll have to do the whole process again
+		// Load the room-scoped identity and edit capability from localStorage.
+		try {
+			you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
+		} catch {
 			you = null;
 			window.localStorage.removeItem(room);
-			// old code:
-			// let toInsert: Schedule = {
-			// 	...you['schedule'],
-			// 	room,
-			// 	student: you.name
-			// };
-			// // they should be equivalent
-			// console.assert(isEqual(toInsert, you.schedule));
+		}
+		if (you !== null && you !== 'tentative') {
+			const { data: savedSchedule } = await supabase
+				.from('schedules')
+				.select('*')
+				.eq('room', room)
+				.eq('student', you.name)
+				.single();
+			if (savedSchedule === null) {
+				you = null;
+				window.localStorage.removeItem(room);
+			} else {
+				// A second device may have changed the schedule since this browser last visited.
+				persistYou({ ...you, name: savedSchedule.student, schedule: savedSchedule });
+			}
+		}
+		if (you !== null && you !== 'tentative' && you.editToken) {
+			const { data: valid, error } = await supabase.rpc('verify_schedule_edit_capability', {
+				p_room: room,
+				p_student: you.name,
+				p_edit_token: you.editToken
+			});
+			if (error || !valid) {
+				const readOnlyIdentity = { ...you };
+				delete readOnlyIdentity.editToken;
+				persistYou(readOnlyIdentity);
+				addToast('This browser no longer has a valid edit key for your schedule', 'warning');
+			}
 		}
 		// Supabase Realtime
 		supabase
@@ -96,10 +138,15 @@
 				},
 				(payload) => {
 					if (payload.eventType === 'INSERT') {
-						schedules = [...schedules, payload.new];
+						replaceSchedule(payload.new.student, payload.new);
 						addToast(`${payload.new.student} just added their schedule to this room`);
+					} else if (payload.eventType === 'UPDATE') {
+						const previousStudent = payload.old.student ?? payload.new.student;
+						replaceSchedule(previousStudent, payload.new);
+						if (you !== null && you !== 'tentative' && you.name === previousStudent) {
+							persistYou({ ...you, name: payload.new.student, schedule: payload.new });
+						}
 					}
-					console.log('1', payload);
 				}
 			)
 			.on<Class>(
@@ -123,17 +170,87 @@
 				realtimeStatus = status;
 			});
 	});
-	function onInfoSubmitted(detail: { name: string; schedule: VirtualSchedule }) {
-		const toInsert = { ...detail.schedule, room, student: detail.name };
-		supabase
-			.from('schedules')
-			.insert([toInsert])
-			.then(() => {
-				you = { name: detail.name, schedule: toInsert };
-				// no need to update the local db variable
-				// since that will be updated via the realtime subscription
-				window.localStorage.setItem(room, JSON.stringify(you));
-			});
+	async function onInfoSubmitted(detail: { name: string; schedule: VirtualSchedule }) {
+		const { data: editToken, error } = await supabase.rpc(
+			'create_schedule',
+			scheduleRpcArgs(detail.name, detail.schedule)
+		);
+		if (error || !editToken) {
+			addToast(error?.message ?? 'Could not save your schedule', 'error');
+			return;
+		}
+		const schedule = { ...detail.schedule, room, student: detail.name };
+		persistYou({ name: detail.name, schedule, editToken });
+		// Realtime will add the new schedule to the shared room view.
+	}
+	async function updateYourSchedule(detail: { name: string; schedule: VirtualSchedule }) {
+		if (you === null || you === 'tentative' || !you.editToken) return;
+		const previousStudent = you.name;
+		const { error } = await supabase.rpc('update_schedule', {
+			...scheduleRpcArgs(detail.name, detail.schedule),
+			p_current_student: previousStudent,
+			p_edit_token: you.editToken
+		});
+		if (error) {
+			addToast(error.message, 'error');
+			return;
+		}
+		const schedule = { ...detail.schedule, room, student: detail.name };
+		replaceSchedule(previousStudent, schedule);
+		persistYou({ ...you, name: detail.name, schedule });
+		editing = false;
+		addToast('Your schedule was updated', 'success');
+	}
+	async function importEditKey() {
+		if (you === null || you === 'tentative') return;
+		let token = importValue.trim();
+		try {
+			const transfer = JSON.parse(token) as {
+				room?: string;
+				student?: string;
+				editToken?: string;
+			};
+			if (transfer.room !== room || !transfer.editToken) {
+				addToast('That transfer code belongs to a different room', 'error');
+				return;
+			}
+			token = transfer.editToken;
+		} catch {
+			// A raw edit key is accepted for backwards-compatible manual transfer.
+		}
+		const { data: valid, error } = await supabase.rpc('verify_schedule_edit_capability', {
+			p_room: room,
+			p_student: you.name,
+			p_edit_token: token
+		});
+		if (error || !valid) {
+			addToast('That edit key is not valid for this schedule', 'error');
+			return;
+		}
+		persistYou({ ...you, editToken: token });
+		importingEditKey = false;
+		importValue = '';
+		addToast('Edit access restored on this browser', 'success');
+	}
+	async function rotateEditKey() {
+		if (
+			you === null ||
+			you === 'tentative' ||
+			!you.editToken ||
+			!window.confirm('Replace your edit key? Any previously copied key will stop working.')
+		)
+			return;
+		const { data: editToken, error } = await supabase.rpc('rotate_schedule_edit_capability', {
+			p_room: room,
+			p_student: you.name,
+			p_edit_token: you.editToken
+		});
+		if (error || !editToken) {
+			addToast(error?.message ?? 'Could not replace the edit key', 'error');
+			return;
+		}
+		persistYou({ ...you, editToken });
+		addToast('Edit key replaced; copy the new transfer code if you need a backup', 'success');
 	}
 	async function addClass({
 		className,
@@ -163,6 +280,45 @@
 </script>
 
 <ToastList />
+{#if editing && you !== null && you !== 'tentative' && you.editToken}
+	<dialog class="modal modal-bottom modal-open sm:modal-middle">
+		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
+			<h3 class="font-bold text-lg">Edit your schedule</h3>
+			<p class="py-4">Update your name or class selections.</p>
+			<InfoInput
+				onsubmit={updateYourSchedule}
+				{classes}
+				{addClass}
+				initialName={you.name}
+				initialSchedule={you.schedule}
+				submitLabel="Save changes"
+			/>
+			<button class="btn btn-ghost w-full mt-2" onclick={() => (editing = false)}>Cancel</button>
+		</div>
+	</dialog>
+{/if}
+{#if importingEditKey && you !== null && you !== 'tentative'}
+	<dialog class="modal modal-bottom modal-open sm:modal-middle">
+		<div class="modal-box">
+			<h3 class="font-bold text-lg">Restore edit access</h3>
+			<p class="py-4">
+				Paste the transfer code or raw edit key you previously copied for {you.name}. The room link
+				alone cannot recover edit access.
+			</p>
+			<textarea
+				class="textarea textarea-bordered w-full font-mono"
+				rows="4"
+				placeholder="Paste transfer code"
+				bind:value={importValue}></textarea>
+			<div class="modal-action">
+				<button class="btn btn-ghost" onclick={() => (importingEditKey = false)}>Cancel</button>
+				<button class="btn btn-primary" disabled={!importValue.trim()} onclick={importEditKey}
+					>Restore access</button
+				>
+			</div>
+		</div>
+	</dialog>
+{/if}
 {#if you === null}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
 		<ToastList />
@@ -225,16 +381,39 @@
 					</label>
 				</div>
 			</div>
-			{#if you !== 'tentative'}
+			{#if you !== null && you !== 'tentative'}
+				{#if you.editToken}
+					<button class="btn btn-primary" onclick={() => (editing = true)}>Edit my schedule</button>
+					<button
+						class="btn btn-outline"
+						use:copyToClipboard={{
+							message: 'Schedule transfer code copied to clipboard',
+							value: transferCode
+						}}>Copy edit access</button
+					>
+					<button class="btn btn-outline" onclick={rotateEditKey}>Replace edit key</button>
+				{:else}
+					<button class="btn btn-primary btn-outline" onclick={() => (importingEditKey = true)}
+						>Restore edit access</button
+					>
+				{/if}
 				<button
 					class="btn btn-error btn-outline"
 					onclick={() => {
 						you = null;
 						window.localStorage.removeItem(room);
-					}}>Reset who you are</button
+					}}>Forget me on this browser</button
 				>
 			{/if}
 		</div>
+		{#if you !== null && you !== 'tentative'}
+			<div class="alert alert-info mx-auto mt-3 max-w-2xl text-sm">
+				<span>
+					Your edit key is stored only in this browser. Use “Copy edit access” before clearing site
+					data or moving devices. Without a copied key, the current version cannot recover access.
+				</span>
+			</div>
+		{/if}
 		{#if room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
 			<div class="alert alert-info mx-auto mt-3 w-fit max-w-md text-sm">
 				If you have any questions, direct message @thatxliner on Instagram (or email

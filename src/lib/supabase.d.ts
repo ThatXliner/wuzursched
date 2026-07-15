@@ -7,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "12.2.12 (cd3cf9e)"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -169,7 +189,46 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_schedule: {
+        Args: {
+          p_period_1a: string
+          p_period_1b: string
+          p_period_2a: string
+          p_period_2b: string
+          p_period_3a: string
+          p_period_3b: string
+          p_period_4a: string
+          p_period_4b: string
+          p_room: string
+          p_student: string
+        }
+        Returns: string
+      }
+      rotate_schedule_edit_capability: {
+        Args: { p_edit_token: string; p_room: string; p_student: string }
+        Returns: string
+      }
+      update_schedule: {
+        Args: {
+          p_current_student: string
+          p_edit_token: string
+          p_period_1a: string
+          p_period_1b: string
+          p_period_2a: string
+          p_period_2b: string
+          p_period_3a: string
+          p_period_3b: string
+          p_period_4a: string
+          p_period_4b: string
+          p_room: string
+          p_student: string
+        }
+        Returns: undefined
+      }
+      verify_schedule_edit_capability: {
+        Args: { p_edit_token: string; p_room: string; p_student: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
@@ -298,6 +357,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
