@@ -7,8 +7,8 @@
 	let {
 		them,
 		you,
-		getClass
-	}: { them: VirtualSchedule; you: VirtualSchedule; getClass: (id: string) => Promise<Class> } =
+		classes
+	}: { them: VirtualSchedule; you: VirtualSchedule; classes: ReadonlyMap<string, Class> } =
 		$props();
 	const periods = [0, 1, 2, 3] as const;
 	const aDay = ['1a', '2a', '3a', '4a'] as const;
@@ -47,49 +47,47 @@
 		{#each periods as period (period)}
 			{@const scheduleA = them[aDay[period]]}
 			{@const scheduleB = them[bDay[period]]}
-			{@const classA = getClass(scheduleA)}
-			{@const classB = getClass(scheduleB)}
+			{@const classA = classes.get(scheduleA)!}
+			{@const classB = classes.get(scheduleB)!}
 			{@const aMatch = getClassMatch(them, you, aDay[period])}
 			{@const bMatch = getClassMatch(them, you, bDay[period])}
-			{@const resolved = Promise.all([classA, classB])}
-			{#await resolved then [classA, classB]}
-				<!-- row 1 -->
-				<tr>
-					<th>Period {period + 1}</th>
-					<td
-						><div
-							class="rounded-box p-2 py-3 w-fit"
-							class:bg-success={aMatch === 'same-period'}
-							class:text-success-content={aMatch === 'same-period'}
-							class:bg-warning={aMatch === 'different-period'}
-							class:text-warning-content={aMatch === 'different-period'}
-							data-match={aMatch}
-						>
-							<span
-								>{formatClassName(classA['name'])}
-								<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span>
-								<span class="sr-only"> — {matchLabels[aMatch]}</span></span
-							>
-						</div></td
+			<tr>
+				<th>Period {period + 1}</th>
+				<td
+					><div
+						class="rounded-box p-2 py-3 w-fit"
+						class:bg-success={aMatch === 'same-period'}
+						class:text-success-content={aMatch === 'same-period'}
+						class:bg-warning={aMatch === 'different-period'}
+						class:text-warning-content={aMatch === 'different-period'}
+						data-match={aMatch}
 					>
-					<td
-						><div
-							class="rounded-box p-2 py-3 w-fit"
-							class:bg-success={bMatch === 'same-period'}
-							class:text-success-content={bMatch === 'same-period'}
-							class:bg-warning={bMatch === 'different-period'}
-							class:text-warning-content={bMatch === 'different-period'}
-							data-match={bMatch}
-						>
-							<span
-								>{formatClassName(classB['name'])}
-								<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span>
-								<span class="sr-only"> — {matchLabels[bMatch]}</span></span
+						<span
+							>{formatClassName(classA['name'])}
+							<span class="text-xs text-gray-500">{teacherDisplayName(classA)}</span
 							>
-						</div></td
+							<span class="sr-only"> — {matchLabels[aMatch]}</span></span
+						>
+					</div></td
+				>
+				<td
+					><div
+						class="rounded-box p-2 py-3 w-fit"
+						class:bg-success={bMatch === 'same-period'}
+						class:text-success-content={bMatch === 'same-period'}
+						class:bg-warning={bMatch === 'different-period'}
+						class:text-warning-content={bMatch === 'different-period'}
+						data-match={bMatch}
 					>
-				</tr>
-			{/await}
+						<span
+							>{formatClassName(classB['name'])}
+							<span class="text-xs text-gray-500">{teacherDisplayName(classB)}</span
+							>
+							<span class="sr-only"> — {matchLabels[bMatch]}</span></span
+						>
+					</div></td
+				>
+			</tr>
 		{/each}
 	</tbody>
 </table>

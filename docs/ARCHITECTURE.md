@@ -167,6 +167,10 @@ Schedule comparison uses class UUID equality, not normalized text equality:
   elsewhere in the current user's schedule.
 - `Search.svelte` applies every selected period/class pair (logical AND).
 
+Collapsed schedule cards do not fetch their class rows. Expanding a card loads its distinct class
+IDs through the room page's shared promise/cache maps, so concurrent cards reuse in-flight and
+resolved lookups; a failed detail request can be retried from that card.
+
 Consequently, two separately inserted class rows never match even if their text looks alike. A
 different-period match is visible in the schedule card but does not satisfy the same-period list or
 filter predicates.
