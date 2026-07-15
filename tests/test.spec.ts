@@ -79,10 +79,7 @@ test('only the edit-key holder can update a schedule and everyone receives the u
 	});
 	expect(wrongKeyUpdate.error?.message).toContain('Invalid schedule edit key');
 
-	let resolveRealtimeUpdate: (student: string) => void = () => {};
-	const realtimeUpdate = new Promise<string>((resolve) => {
-		resolveRealtimeUpdate = resolve;
-	});
+	const realtimeStudents: string[] = [];
 	const realtimeReady = new Promise<void>((resolve, reject) => {
 		const timeout = setTimeout(
 			() => reject(new Error('Timed out subscribing to realtime updates')),
@@ -94,7 +91,7 @@ test('only the edit-key holder can update a schedule and everyone receives the u
 				'postgres_changes',
 				{ event: 'UPDATE', schema: 'public', table: 'schedules', filter: `room=eq.${room}` },
 				(payload) => {
-					resolveRealtimeUpdate(payload.new.student as string);
+					realtimeStudents.push(payload.new.student as string);
 				}
 			)
 			.subscribe((status) => {
@@ -105,6 +102,21 @@ test('only the edit-key holder can update a schedule and everyone receives the u
 			});
 	});
 	await realtimeReady;
+	await expect
+		.poll(
+			async () => {
+				const { error } = await supabase.rpc('update_schedule', {
+					...rpcSchedule,
+					p_current_student: originalName,
+					p_edit_token: editToken!
+				});
+				if (error) throw error;
+				return realtimeStudents.includes(originalName);
+			},
+			{ message: 'Realtime CDC should become ready', timeout: 10_000, intervals: [500, 1_000] }
+		)
+		.toBe(true);
+	realtimeStudents.length = 0;
 
 	await page.addInitScript(
 		({ storageKey, identity }) => localStorage.setItem(storageKey, JSON.stringify(identity)),
@@ -124,14 +136,12 @@ test('only the edit-key holder can update a schedule and everyone receives the u
 	await editDialog.getByRole('button', { name: 'Save changes' }).click();
 
 	await expect(page.getByText('Your schedule was updated')).toBeVisible();
-	await expect(
-		Promise.race([
-			realtimeUpdate,
-			new Promise((_, reject) =>
-				setTimeout(() => reject(new Error('Timed out waiting for realtime update')), 10_000)
-			)
-		])
-	).resolves.toBe(editedName);
+	await expect
+		.poll(() => realtimeStudents.includes(editedName), {
+			message: 'Everyone in the room should receive the edited schedule',
+			timeout: 10_000
+		})
+		.toBe(true);
 	const { data: updated } = await supabase
 		.from('schedules')
 		.select('*')
