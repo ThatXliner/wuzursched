@@ -39,22 +39,25 @@ export type Database = {
           id: string
           name: string
           room: string
-          teacher_first: string
+          teacher_first: string | null
           teacher_last: string
+          teacher_title: string | null
         }
         Insert: {
           id?: string
           name: string
           room: string
-          teacher_first: string
+          teacher_first?: string | null
           teacher_last: string
+          teacher_title?: string | null
         }
         Update: {
           id?: string
           name?: string
           room?: string
-          teacher_first?: string
+          teacher_first?: string | null
           teacher_last?: string
+          teacher_title?: string | null
         }
         Relationships: [
           {
@@ -267,8 +270,9 @@ export type Database = {
           id: string
           name: string
           room: string
-          teacher_first: string
+          teacher_first: string | null
           teacher_last: string
+          teacher_title: string | null
         }[]
         SetofOptions: {
           from: "*"
@@ -331,8 +335,48 @@ export type Database = {
         Args: { p_id: string; p_token: string }
         Returns: string
       }
+      create_schedule: {
+        Args: {
+          p_period_1a: string
+          p_period_1b: string
+          p_period_2a: string
+          p_period_2b: string
+          p_period_3a: string
+          p_period_3b: string
+          p_period_4a: string
+          p_period_4b: string
+          p_room: string
+          p_student: string
+        }
+        Returns: string
+      }
+      rotate_schedule_edit_capability: {
+        Args: { p_edit_token: string; p_room: string; p_student: string }
+        Returns: string
+      }
+      update_schedule: {
+        Args: {
+          p_current_student: string
+          p_edit_token: string
+          p_period_1a: string
+          p_period_1b: string
+          p_period_2a: string
+          p_period_2b: string
+          p_period_3a: string
+          p_period_3b: string
+          p_period_4a: string
+          p_period_4b: string
+          p_room: string
+          p_student: string
+        }
+        Returns: undefined
+      }
       verify_room_admin: {
         Args: { p_room: string; p_token: string }
+        Returns: boolean
+      }
+      verify_schedule_edit_capability: {
+        Args: { p_edit_token: string; p_room: string; p_student: string }
         Returns: boolean
       }
     }

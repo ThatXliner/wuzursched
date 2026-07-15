@@ -10,7 +10,8 @@
 		type ClassMatch,
 		type ScheduleCandidate
 	} from '$lib/scheduleImport';
-	import { formatClassName, formatTeacherName } from '$lib/utils';
+	import { isTeacherTitle, teacherDisplayName, type TeacherIdentityInput } from '$lib/teacher';
+	import { formatClassName } from '$lib/utils';
 
 	type PreviewRow = ScheduleCandidate & ClassMatch & { selectedClassId: string };
 	const EXAMPLE_TEXT = '1A | AP Biology | Jane Smith\n2A | English 10 | Alex Lee';
@@ -18,10 +19,16 @@
 	let {
 		classes,
 		addClass,
+		canCreateClass = true,
 		onapply
 	}: {
 		classes: Classes;
-		addClass: (info: { className: string; firstName: string; lastName: string }) => Promise<string>;
+		addClass: (info: {
+			className: string;
+			identity: TeacherIdentityInput;
+			lastName: string;
+		}) => Promise<string>;
+		canCreateClass?: boolean;
 		onapply: (schedule: UnfinishedSchedule) => void;
 	} = $props();
 
@@ -102,15 +109,20 @@
 			for (const row of rows) {
 				let classId = row.selectedClassId;
 				if (!classId) {
+					if (!canCreateClass) {
+						throw new Error('Only a room admin may add classes in this room.');
+					}
 					if (!confirmCreates) throw new Error('Confirm new class creation before applying.');
 					if (!row.className || !row.teacherFirst || !row.teacherLast) {
 						throw new Error(
-							`${row.period.toUpperCase()} needs a class and the teacher's first and last name.`
+							`${row.period.toUpperCase()} needs a class, the teacher's first name or title, and last name.`
 						);
 					}
 					classId = await addClass({
 						className: row.className,
-						firstName: row.teacherFirst,
+						identity: isTeacherTitle(row.teacherFirst)
+							? { kind: 'title', value: row.teacherFirst }
+							: { kind: 'first-name', value: row.teacherFirst },
 						lastName: row.teacherLast
 					});
 				}
@@ -206,7 +218,7 @@
 				<table class="table table-sm">
 					<thead
 						><tr
-							><th>Period</th><th>Class</th><th>Teacher first</th><th>Teacher last</th><th
+							><th>Period</th><th>Class</th><th>Teacher first or title</th><th>Teacher last</th><th
 								>Room class match</th
 							></tr
 						></thead
@@ -245,11 +257,12 @@
 										onchange={(event) =>
 											updateRow(index, { selectedClassId: event.currentTarget.value })}
 									>
-										<option value="">Create as new class</option>
+										<option value=""
+											>{canCreateClass ? 'Create as new class' : 'Choose a room class'}</option
+										>
 										{#each classes as klass (klass.id)}<option value={klass.id}
-												>{formatClassName(klass.name)} — {formatTeacherName(
-													`${klass.teacher_first} ${klass.teacher_last}`
-												)}{klass.id === row.classId && row.status !== 'none'
+												>{formatClassName(klass.name)} — {teacherDisplayName(klass)}{klass.id ===
+													row.classId && row.status !== 'none'
 													? ` (suggested ${Math.round(row.confidence * 100)}%)`
 													: ''}</option
 											>{/each}
@@ -265,7 +278,7 @@
 					</tbody>
 				</table>
 			</div>
-			{#if needsCreates || hasUnresolved}
+			{#if canCreateClass && (needsCreates || hasUnresolved)}
 				<label class="label justify-start gap-3 mt-4 cursor-pointer"
 					><input
 						class="checkbox checkbox-warning"
@@ -275,12 +288,18 @@
 						>I reviewed the unmatched rows and explicitly approve creating these new room classes.</span
 					></label
 				>
+			{:else if hasUnresolved}
+				<div class="alert alert-warning mt-4">
+					<span
+						>Choose an existing room class for every row; visitor class creation is disabled.</span
+					>
+				</div>
 			{/if}
 			<div class="modal-action">
 				<button
 					class="btn btn-primary"
 					type="button"
-					disabled={applying || (hasUnresolved && !confirmCreates)}
+					disabled={applying || (hasUnresolved && (!canCreateClass || !confirmCreates))}
 					onclick={applyPreview}>{applying ? 'Applying…' : 'Apply to schedule form'}</button
 				>
 			</div>

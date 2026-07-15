@@ -2,15 +2,23 @@ import { addToast } from './toasts.svelte';
 
 export function copyToClipboard(
 	node: HTMLButtonElement,
-	{ value, message }: { value: string; message: string }
+	options: { value: string; message: string }
 ) {
-	if (value) {
-		const listener = () => {
-			navigator.clipboard.writeText(value).then(() => {
-				addToast(message, 'success');
-			});
-		};
+	const listener = () => {
+		if (!options.value) return;
+		navigator.clipboard
+			.writeText(options.value)
+			.then(() => addToast(options.message, 'success'))
+			.catch(() => addToast('Could not copy to the clipboard', 'error'));
+	};
 
-		node.addEventListener('click', listener);
-	}
+	node.addEventListener('click', listener);
+	return {
+		update(nextOptions: { value: string; message: string }) {
+			options = nextOptions;
+		},
+		destroy() {
+			node.removeEventListener('click', listener);
+		}
+	};
 }

@@ -48,6 +48,7 @@ describe('schedule import', () => {
 				name: 'ap biology',
 				teacher_first: 'jane',
 				teacher_last: 'smith',
+				teacher_title: null,
 				room: 'room'
 			}
 		];
@@ -72,6 +73,15 @@ describe('schedule import', () => {
 			).status,
 			'none'
 		);
+	});
+
+	it('preserves a teacher title as the imported identity', () => {
+		assert.deepEqual(extractScheduleCandidates('1A | Biology | Dr. Smith')[0], {
+			period: '1a',
+			className: 'Biology',
+			teacherFirst: 'Dr',
+			teacherLast: 'Smith'
+		});
 	});
 
 	it('maps confirmed rows into the normal schedule form shape', () => {
