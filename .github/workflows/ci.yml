@@ -33,7 +33,9 @@ jobs:
           supabase db reset
       - name: Set environment variables
         run: |
-          supabase status --output env | node convert_env.js > .env || test -s .env
+          supabase status --output env > .env.supabase
+          node convert_env.js < .env.supabase > .env
+          rm .env.supabase
           test -s .env
       - name: Install again, just in case
         run: npx playwright install
