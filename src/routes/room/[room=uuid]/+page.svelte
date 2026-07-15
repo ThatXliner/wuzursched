@@ -9,23 +9,32 @@
 	import InfoInput from '$lib/InfoInput.svelte';
 
 	import { page } from '$app/state';
-	import { sqlEscape, normalizeClassName, normalizeTeacherName } from '$lib/utils';
+	import {
+		formatClassName,
+		formatTeacherName,
+		sqlEscape,
+		normalizeClassName,
+		normalizeTeacherName
+	} from '$lib/utils';
 	import { onMount } from 'svelte';
 
 	import type { VirtualSchedule, Classes, Class, Schedule } from '$lib/InfoInput.d';
-	import type { PageData } from './$types';
+	import type { ActionData, PageData } from './$types';
 	import memoize from 'lodash-es/memoize';
 	import ToastList from '$lib/ToastList.svelte';
 	import { addToast } from '$lib/toasts.svelte';
 	import { copyToClipboard } from '$lib/actions';
 	import type { You } from './ViewSchedules';
 	import Engineer from './Engineer.svelte';
+	import AdminPanel from './AdminPanel.svelte';
 	import { applyDatabaseChange, replayDatabaseChanges, type DatabaseChange } from '$lib/realtime';
 	import type { RealtimeChannel } from '@supabase/supabase-js';
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData | null } = $props();
 	let supabase = $derived(data.supabase);
 	let schedules: Schedule[] = $derived(data.data);
+	let roomConfig = $derived(data.roomConfig);
+	let auditLog = $derived(data.auditLog);
 	async function _getClass(id: string) {
 		const { data, error } = await supabase.from('classes').select('*').eq('id', id);
 		if (error !== null) {
@@ -39,7 +48,7 @@
 		return await supabase.from('classes').select('*').eq('room', room);
 	}
 	let you = $state<You>(null);
-	let classes: Classes = $state([]);
+	let classes: Classes = $state(data.classes);
 	let onlyMatching: boolean = $state(false);
 	let editing = $state(false);
 	let importingEditKey = $state(false);
@@ -55,10 +64,15 @@
 	let refreshAgain = false;
 	let scheduleEventsDuringRefresh: DatabaseChange<Schedule>[] = [];
 	let classEventsDuringRefresh: DatabaseChange<Class>[] = [];
+	let roomEventsDuringRefresh: DatabaseChange<typeof roomConfig>[] = [];
+	let auditEventsDuringRefresh: DatabaseChange<(typeof auditLog)[number]>[] = [];
 
 	const scheduleKey = (schedule: Partial<Schedule>) =>
 		schedule.room && schedule.student ? `${schedule.room}:${schedule.student}` : undefined;
 	const classKey = (classRow: Partial<Class>) => classRow.id;
+	const roomKey = (roomRow: Partial<typeof roomConfig>) => roomRow.id;
+	const auditKey = (auditRow: Partial<(typeof auditLog)[number]>) =>
+		auditRow.id === undefined ? undefined : String(auditRow.id);
 
 	function persistYou(value: Exclude<You, null | 'tentative'>) {
 		you = value;
@@ -113,13 +127,28 @@
 		refreshInFlight = true;
 		scheduleEventsDuringRefresh = [];
 		classEventsDuringRefresh = [];
+		roomEventsDuringRefresh = [];
+		auditEventsDuringRefresh = [];
 		try {
-			const [scheduleResult, classResult] = await Promise.all([
+			const [scheduleResult, classResult, roomResult, auditResult] = await Promise.all([
 				supabase.from('schedules').select('*').eq('room', room),
-				getClasses(room)
+				getClasses(room),
+				supabase
+					.from('rooms')
+					.select('id, announcement, allow_class_creation, class_name_format, teacher_name_format')
+					.eq('id', room)
+					.single(),
+				supabase
+					.from('room_audit_log')
+					.select('*')
+					.eq('room', room)
+					.order('created_at', { ascending: false })
+					.limit(100)
 			]);
 			if (scheduleResult.error !== null) throw scheduleResult.error;
 			if (classResult.error !== null) throw classResult.error;
+			if (roomResult.error !== null) throw roomResult.error;
+			if (auditResult.error !== null) throw auditResult.error;
 
 			const nextSchedules = replayDatabaseChanges(
 				scheduleResult.data,
@@ -128,6 +157,12 @@
 			);
 			schedules = nextSchedules;
 			classes = replayDatabaseChanges(classResult.data, classEventsDuringRefresh, classKey);
+			roomConfig =
+				replayDatabaseChanges([roomResult.data], roomEventsDuringRefresh, roomKey)[0] ??
+				roomResult.data;
+			auditLog = replayDatabaseChanges(auditResult.data, auditEventsDuringRefresh, auditKey)
+				.sort((left, right) => right.created_at.localeCompare(left.created_at))
+				.slice(0, 100);
 			reconcileUser(nextSchedules);
 		} catch (error) {
 			console.error('Failed to refresh room after reconnecting', error);
@@ -180,6 +215,18 @@
 		classes = applyDatabaseChange(classes, change, classKey);
 	}
 
+	function applyRoomChange(change: DatabaseChange<typeof roomConfig>) {
+		if (refreshInFlight) roomEventsDuringRefresh.push(change);
+		roomConfig = applyDatabaseChange([roomConfig], change, roomKey)[0] ?? roomConfig;
+	}
+
+	function applyAuditChange(change: DatabaseChange<(typeof auditLog)[number]>) {
+		if (refreshInFlight) auditEventsDuringRefresh.push(change);
+		auditLog = applyDatabaseChange(auditLog, change, auditKey)
+			.sort((left, right) => right.created_at.localeCompare(left.created_at))
+			.slice(0, 100);
+	}
+
 	onMount(() => {
 		try {
 			you = JSON.parse(window.localStorage.getItem(room) ?? 'null');
@@ -228,6 +275,21 @@
 					filter: `room=eq.${sqlEscape(room)}`
 				},
 				(payload) => applyClassChange(payload as DatabaseChange<Class>)
+			)
+			.on<typeof roomConfig>(
+				'postgres_changes',
+				{ event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${sqlEscape(room)}` },
+				(payload) => applyRoomChange(payload as DatabaseChange<typeof roomConfig>)
+			)
+			.on<(typeof auditLog)[number]>(
+				'postgres_changes',
+				{
+					event: 'INSERT',
+					schema: 'public',
+					table: 'room_audit_log',
+					filter: `room=eq.${sqlEscape(room)}`
+				},
+				(payload) => applyAuditChange(payload as DatabaseChange<(typeof auditLog)[number]>)
 			)
 			.subscribe((status) => {
 				const reconnected = status === 'SUBSCRIBED' && previousStatus !== 'SUBSCRIBED';
@@ -334,10 +396,25 @@
 		firstName: string;
 		lastName: string;
 	}) {
+		if (!roomConfig.allow_class_creation) {
+			addToast('Only a room admin may add classes in this room', 'error');
+			throw new Error('Visitor class creation is disabled');
+		}
 		const payload = {
-			name: normalizeClassName(className),
-			teacher_first: normalizeTeacherName(firstName),
-			teacher_last: normalizeTeacherName(lastName),
+			name:
+				roomConfig.class_name_format === 'preserve'
+					? className.trim()
+					: roomConfig.class_name_format === 'title'
+						? formatClassName(normalizeClassName(className))
+						: normalizeClassName(className),
+			teacher_first:
+				roomConfig.teacher_name_format === 'preserve'
+					? firstName.trim()
+					: formatTeacherName(normalizeTeacherName(firstName)),
+			teacher_last:
+				roomConfig.teacher_name_format === 'preserve'
+					? lastName.trim()
+					: formatTeacherName(normalizeTeacherName(lastName)),
 			room
 		};
 		const { data, error } = await supabase.from('classes').insert([payload]).select();
@@ -365,6 +442,9 @@
 				initialName={you.name}
 				initialSchedule={you.schedule}
 				submitLabel="Save changes"
+				canCreateClass={roomConfig.allow_class_creation}
+				classNameFormat={roomConfig.class_name_format}
+				teacherNameFormat={roomConfig.teacher_name_format}
 			/>
 			<button class="btn btn-ghost w-full mt-2" onclick={() => (editing = false)}>Cancel</button>
 		</div>
@@ -398,7 +478,14 @@
 		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
-			<InfoInput onsubmit={onInfoSubmitted} {classes} {addClass} />
+			<InfoInput
+				onsubmit={onInfoSubmitted}
+				{classes}
+				{addClass}
+				canCreateClass={roomConfig.allow_class_creation}
+				classNameFormat={roomConfig.class_name_format}
+				teacherNameFormat={roomConfig.teacher_name_format}
+			/>
 			<button
 				class="btn btn-accent w-full my-4"
 				onclick={() => {
@@ -420,6 +507,11 @@
 			{schedules.length}
 			{schedules.length === 1 ? 'schedule' : 'schedules'} in this room so far
 		</p>
+		{#if roomConfig.announcement}
+			<div class="alert alert-info mt-3 max-w-2xl whitespace-pre-wrap">
+				{roomConfig.announcement}
+			</div>
+		{/if}
 		<!--
 			Button row
 		 -->
@@ -478,6 +570,30 @@
 					}}>Forget me on this browser</button
 				>
 			{/if}
+			{#if !data.isAdmin}
+				<details class="dropdown dropdown-end">
+					<summary class="btn btn-ghost">Room admin</summary>
+					<form
+						method="POST"
+						action="?/login"
+						class="card dropdown-content z-10 mt-2 w-80 border border-base-300 bg-base-100 shadow-xl"
+					>
+						<div class="card-body p-4">
+							<label class="form-control">
+								<span class="label-text">Admin credential</span>
+								<input
+									class="input input-bordered"
+									type="password"
+									name="token"
+									autocomplete="off"
+									required
+								/>
+							</label>
+							<button class="btn btn-primary" type="submit">Recover admin session</button>
+						</div>
+					</form>
+				</details>
+			{/if}
 		</div>
 		{#if you !== null && you !== 'tentative'}
 			<div class="alert alert-info mx-auto mt-3 max-w-2xl text-sm">
@@ -526,5 +642,30 @@
 		<Engineer {schedules} {getClass} />
 	</Tabs.Content>
 </Tabs.Root>
+
+{#if data.isAdmin}
+	<AdminPanel {roomConfig} {classes} {schedules} {auditLog} {form} />
+{:else}
+	<details
+		class="collapse collapse-arrow mx-auto my-8 w-11/12 max-w-5xl border border-base-300 bg-base-100"
+	>
+		<summary class="collapse-title text-xl font-medium">Public admin audit log</summary>
+		<div class="collapse-content overflow-x-auto">
+			<table class="table table-sm">
+				<thead><tr><th>Time</th><th>Change</th><th>Affected record</th></tr></thead>
+				<tbody>
+					{#each auditLog as entry (entry.id)}
+						<tr>
+							<td>{new Date(entry.created_at).toLocaleString()}</td>
+							<td>{entry.action} {entry.affected_table}</td>
+							<td><code class="text-xs">{JSON.stringify(entry.affected_record)}</code></td>
+						</tr>
+					{:else}<tr><td colspan="3">No admin changes yet.</td></tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+	</details>
+{/if}
 
 <Realtime {realtimeStatus} />
