@@ -1,59 +1,29 @@
 <script>
 	import '../app.css';
 	import { resolve } from '$app/paths';
-	import { ModeWatcher, mode, theme, setTheme } from 'mode-watcher';
 
 	let { children } = $props();
-
-	// mode-watcher owns the data-theme attribute on <html>, which blocks
-	// daisyUI's prefers-color-scheme fallback — so pick the daisyUI theme
-	// through mode-watcher (it persists it and applies it before first paint)
-	$effect(() => {
-		const wanted = mode.current === 'dark' ? 'chalkboard' : 'paper';
-		if (theme.current !== wanted) setTheme(wanted);
-	});
 </script>
 
-<ModeWatcher />
-
 <div class="flex min-h-screen flex-col bg-base-100 text-base-content">
-	<div class="w-full bg-base-200 py-1.5 text-center font-marker text-lg opacity-80">
-		<a href="https://vcsdclub.org" class="link-hover">
-			scribbled together by the Valley Christian Software Development Club →
+	<div
+		class="w-full bg-neutral px-4 py-2 text-center text-sm text-neutral-content"
+	>
+		<a href="https://vcsdclub.org" class="link link-hover">
+			Built by the Valley Christian Software Development Club
 		</a>
 	</div>
 
-	<header
-		class="navbar sticky top-0 z-40 border-b-2 border-dashed border-base-content/30 bg-base-100/90 px-4 backdrop-blur md:px-8"
-	>
+	<header class="navbar border-b border-base-300 bg-base-100 px-4 md:px-8">
 		<div class="navbar-start">
-			<a href={resolve('/')} class="flex items-center gap-2">
-				<!-- Placeholder scribble "W" — to be replaced by the real hand-drawn logo -->
-				<svg
-					viewBox="0 0 32 32"
-					class="h-8 w-8"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					aria-hidden="true"
-				>
-					<path
-						d="M4 7c1 4 2.2 12.5 4 18.5c.6 2 2.6 2 3.4.2C13 21.5 14.5 16 15.8 12c1.3 4 2.6 9.5 4.3 13.7c.8 1.8 2.8 1.8 3.4-.2c1.8-6 3.2-14.5 4.5-18.5"
-					/>
-				</svg>
-				<span class="font-marker text-3xl font-bold">Wuzursched</span>
-			</a>
+			<a href={resolve('/')} class="btn btn-ghost text-xl">Wuzursched</a>
 		</div>
 		<div class="navbar-end gap-2">
-			<a href={resolve('/credits')} class="btn btn-ghost btn-sm hidden sm:inline-flex">Credits</a>
-			<a href={resolve('/create')} class="btn btn-outline btn-primary btn-sm sketchy border-2"
-				>Create a room</a
-			>
+			<a href={resolve('/credits')} class="btn btn-ghost hidden sm:inline-flex">Credits</a>
+			<a href={resolve('/create')} class="btn btn-primary">Create a room</a>
 			<a
 				href="https://github.com/ThatXliner/wuzursched"
-				class="btn btn-ghost btn-square btn-sm"
+				class="btn btn-ghost btn-square"
 				aria-label="GitHub repository"
 				><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
 					><path
@@ -69,12 +39,8 @@
 		{@render children()}
 	</main>
 
-	<footer
-		class="footer footer-center gap-4 border-t-2 border-dashed border-base-content/30 bg-base-200 p-8"
-	>
-		<aside class="flex flex-col items-center gap-1">
-			<p class="font-marker text-2xl font-bold">Wuzursched</p>
-			<p class="opacity-70">What's your schedule?</p>
+	<footer class="footer footer-center gap-3 border-t border-base-300 bg-base-100 p-6">
+		<aside>
 			<p class="text-sm opacity-70">
 				Copyright © 2023 ThatXliner · Licensed under the
 				<a href="https://github.com/ThatXliner/wuzursched/blob/main/LICENSE" class="link">AGPLv3</a>
