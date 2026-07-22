@@ -1,51 +1,47 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 
-	let roomId = $state('');
+	let roomId: string = $state('');
 	const UUID_REGEX =
 		/[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}/;
-
-	function getRoomId() {
-		return roomId.match(UUID_REGEX)?.[0];
-	}
-
-	function join() {
-		const id = getRoomId();
-		if (id) window.location.href = `/room/${id}`;
+	function isValid(id: string): boolean {
+		return UUID_REGEX.test(id);
 	}
 </script>
 
-<section class="hero min-h-[calc(100vh-12rem)] bg-base-200 px-4 py-16">
-	<div class="hero-content max-w-2xl text-center">
-		<div>
-			<h1 class="text-5xl font-bold sm:text-6xl">Wuzursched</h1>
-			<p class="mx-auto max-w-xl py-6 text-lg sm:text-xl">
-				Share one link with your friends and quickly find the classes you have together.
-			</p>
+<section class="h-screen">
+	<div class="hero h-full bg-gray-200 dark:bg-zinc-900">
+		<div class="hero-content text-center flex-col">
+			<div class="max-w-md">
+				<h1
+					class="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-fuchsia-500"
+				>
+					Wuzursched
+				</h1>
 
-			<div class="flex flex-col items-center justify-center gap-3 sm:flex-row">
-				<a href={resolve('/create')} class="btn btn-primary btn-lg w-full sm:w-auto">
-					Create a room
-				</a>
-				<div class="divider my-0 sm:divider-horizontal">or</div>
-				<label class="join w-full max-w-md">
-					<input
-						type="text"
-						bind:value={roomId}
-						placeholder="Paste a room link or ID"
-						aria-label="Room link or ID"
-						class="input input-bordered input-lg join-item min-w-0 flex-1 bg-base-100"
-						onkeydown={(event) => {
-							if (event.key === 'Enter') join();
-						}}
-					/>
-					<button class="btn btn-neutral btn-lg join-item" disabled={!getRoomId()} onclick={join}>
-						Join
-					</button>
-				</label>
+				<i class="py-6 dark:text-gray-300 font-mono block">What's your schedule?</i>
+				<div class="flex justify-evenly md:space-x-3 space-y-3 md:space-y-0 flex-col md:flex-row">
+					<div class="form-control inline">
+						<label class="join">
+							<input
+								type="text"
+								bind:value={roomId}
+								placeholder="Join a room"
+								class="input input-bordered join-item"
+							/>
+							<button
+								class="btn btn-primary join-item"
+								disabled={!isValid(roomId)}
+								onclick={() => {
+									window.location.href = `/room/${roomId.match(UUID_REGEX)?.[0]}`;
+								}}>Join</button
+							>
+						</label>
+					</div>
+					<a href={resolve('/create')} class="btn btn-primary">Create a room</a>
+				</div>
 			</div>
-
-			<p class="mt-6 text-sm opacity-60">No account required.</p>
+			<a href={resolve('/credits')} class="link">Credits to our beta testers</a>
 		</div>
 	</div>
 </section>

@@ -12,17 +12,17 @@
 	/>
 </svelte:head>
 
-<section class="ruled py-12 md:py-16">
+<section class="bg-base-200 py-12 md:py-16">
 	<article class="mx-auto max-w-3xl px-6">
-		<header class="sketchy border-2 border-base-content/40 bg-base-100 p-6 shadow-sm md:p-8">
-			<p class="font-marker text-lg opacity-70">What Wuzursched knows and why</p>
-			<h1 class="mt-1 font-marker text-5xl font-bold md:text-6xl">Privacy Policy</h1>
+		<header class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm md:p-8">
+			<p class="text-lg opacity-70">What Wuzursched knows and why</p>
+			<h1 class="mt-1 text-5xl font-bold md:text-6xl">Privacy Policy</h1>
 			<p class="mt-3 font-semibold">Effective July 14, 2026</p>
 		</header>
 
 		<div class="mt-8 space-y-8 rounded-box bg-base-100 p-6 shadow-sm md:p-10">
 			<section>
-				<h2 class="font-marker text-3xl font-bold">Overview</h2>
+				<h2 class="text-3xl font-bold">Overview</h2>
 				<p class="mt-2">
 					This Privacy Policy explains how Wuzursched collects, uses, discloses, and retains
 					information when you use the service. Wuzursched lets people share and compare class
@@ -37,7 +37,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">Information we collect</h2>
+				<h2 class="text-3xl font-bold">Information we collect</h2>
 				<h3 class="mt-3 text-2xl font-bold">Information submitted to rooms</h3>
 				<p class="mt-2">Depending on how you use Wuzursched, room data may include:</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
@@ -72,7 +72,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">How we use information</h2>
+				<h2 class="text-3xl font-bold">How we use information</h2>
 				<p class="mt-2">We use information to:</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
 					<li>create rooms and display, compare, search, and update schedules in realtime;</li>
@@ -84,7 +84,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">How information is disclosed</h2>
+				<h2 class="text-3xl font-bold">How information is disclosed</h2>
 				<p class="mt-2">
 					<strong>People with a room link.</strong> Student names, classes, teachers, and schedules in
 					a room are visible to people who can access its link. A recipient may copy or share that information
@@ -108,7 +108,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">Retention and deletion</h2>
+				<h2 class="text-3xl font-bold">Retention and deletion</h2>
 				<p class="mt-2">
 					Room information is retained while the room remains available or as needed to operate,
 					secure, and comply with legal obligations for the service. Technical logs and backups may
@@ -125,7 +125,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">Students and minors</h2>
+				<h2 class="text-3xl font-bold">Students and minors</h2>
 				<p class="mt-2">
 					Wuzursched is designed for sharing school schedules, so submitted information may concern
 					students who are minors. The service is not directed to children under 13, and information
@@ -142,7 +142,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">Security and international processing</h2>
+				<h2 class="text-3xl font-bold">Security and international processing</h2>
 				<p class="mt-2">
 					We use reasonable measures intended to protect the service, but no storage or transmission
 					method is completely secure. Information may be processed in locations where Wuzursched,
@@ -152,7 +152,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">Changes to this policy</h2>
+				<h2 class="text-3xl font-bold">Changes to this policy</h2>
 				<p class="mt-2">
 					We may update this Policy as Wuzursched changes. We will post the updated version on this
 					page and revise the effective date. Material changes may also be communicated through the
@@ -161,7 +161,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">Contact</h2>
+				<h2 class="text-3xl font-bold">Contact</h2>
 				<p class="mt-2">
 					For privacy questions or requests, email
 					<a href="mailto:thatxliner@gmail.com" class="link">thatxliner@gmail.com</a>. Questions

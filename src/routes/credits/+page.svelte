@@ -2,28 +2,20 @@
 	import { resolve } from '$app/paths';
 
 	const names = ['Amaar Chughtai', 'Justin Shi'];
-	const notes = ['bg-accent/35', 'bg-base-100'];
 </script>
 
-<section class="hero min-h-[70vh] bg-base-100 px-4 py-16">
-	<div class="hero-content flex-col text-center">
-		<div>
-			<h1 class="text-5xl font-bold md:text-6xl">Thank you ♡</h1>
-			<p class="mt-4 text-xl text-base-content/70">
-				Version 2 was beta tested by these fine folks:
-			</p>
+<section class="h-screen">
+	<div class="hero min-h-screen bg-base-200 h-full">
+		<div class="hero-content text-center flex-col">
+			<div>
+				<h1 class="text-5xl font-bold">Version 2</h1>
+				<p>was beta tested by:</p>
+			</div>
+			<div class="flex flex-wrap space-x-3 text-lg py-6">
+				{#each names as name (name)}<span class="shadow-lg rounded-box p-3 bg-base-100">{name}</span
+					>{/each}
+			</div>
+			<a href={resolve('/')} class="link">Go back home</a>
 		</div>
-		<div class="flex flex-wrap justify-center gap-8 py-8">
-			{#each names as name, i (name)}
-				<div
-					class="flex min-h-32 w-52 items-center justify-center rounded-2xl border border-base-300 p-5 shadow-sm {notes[
-						i % notes.length
-					]}"
-				>
-					<span class="text-2xl font-bold">{name}</span>
-				</div>
-			{/each}
-		</div>
-		<a href={resolve('/')} class="btn btn-ghost btn-lg">← Go back home</a>
 	</div>
 </section>

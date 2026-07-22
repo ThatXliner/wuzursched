@@ -33,7 +33,7 @@
 <section class="mx-auto my-8 w-11/12 max-w-5xl space-y-6">
 	<div class="flex flex-wrap items-center justify-between gap-3">
 		<div>
-			<h2 class="font-marker text-4xl font-bold">Room administration</h2>
+			<h2 class="text-4xl font-bold">Room administration</h2>
 			<p class="opacity-70">Your admin session is stored securely on this device.</p>
 		</div>
 		<form method="POST" action="?/logout">

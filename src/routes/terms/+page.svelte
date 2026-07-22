@@ -12,17 +12,17 @@
 	/>
 </svelte:head>
 
-<section class="ruled py-12 md:py-16">
+<section class="bg-base-200 py-12 md:py-16">
 	<article class="mx-auto max-w-3xl px-6">
-		<header class="sketchy border-2 border-base-content/40 bg-base-100 p-6 shadow-sm md:p-8">
-			<p class="font-marker text-lg opacity-70">The rules for using Wuzursched</p>
-			<h1 class="mt-1 font-marker text-5xl font-bold md:text-6xl">Terms of Service</h1>
+		<header class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm md:p-8">
+			<p class="text-lg opacity-70">The rules for using Wuzursched</p>
+			<h1 class="mt-1 text-5xl font-bold md:text-6xl">Terms of Service</h1>
 			<p class="mt-3 font-semibold">Effective July 14, 2026</p>
 		</header>
 
 		<div class="mt-8 space-y-8 rounded-box bg-base-100 p-6 shadow-sm md:p-10">
 			<section>
-				<h2 class="font-marker text-3xl font-bold">1. Agreement to these terms</h2>
+				<h2 class="text-3xl font-bold">1. Agreement to these terms</h2>
 				<p class="mt-2">
 					These Terms of Service (the “Terms”) govern your access to and use of Wuzursched. By
 					accessing or using the service, creating a room, or submitting information, you agree to
@@ -33,7 +33,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">2. Who may use Wuzursched</h2>
+				<h2 class="text-3xl font-bold">2. Who may use Wuzursched</h2>
 				<p class="mt-2">
 					You must be able to agree to these Terms under the laws that apply to you. Wuzursched is
 					not directed to children under 13, and children under 13 may not use the service or have
@@ -43,7 +43,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">3. Rooms and shared links</h2>
+				<h2 class="text-3xl font-bold">3. Rooms and shared links</h2>
 				<p class="mt-2">
 					Rooms are accessed through unique links rather than private accounts. A room link is not a
 					password. Anyone who receives or discovers a room link may be able to read the room’s
@@ -54,7 +54,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">4. Your submissions</h2>
+				<h2 class="text-3xl font-bold">4. Your submissions</h2>
 				<p class="mt-2">
 					You keep any rights you have in information you submit. You give Wuzursched permission to
 					host, store, reproduce, display, and transmit that information only as needed to operate,
@@ -64,7 +64,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">5. Acceptable use</h2>
+				<h2 class="text-3xl font-bold">5. Acceptable use</h2>
 				<p class="mt-2">You may not use Wuzursched to:</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
 					<li>break the law or violate another person’s rights;</li>
@@ -77,7 +77,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">6. Service changes and enforcement</h2>
+				<h2 class="text-3xl font-bold">6. Service changes and enforcement</h2>
 				<p class="mt-2">
 					We may change, suspend, or discontinue any part of Wuzursched. We may remove content,
 					restrict access, or take other reasonable action when we believe these Terms, the law, or
@@ -87,7 +87,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">7. Third-party services</h2>
+				<h2 class="text-3xl font-bold">7. Third-party services</h2>
 				<p class="mt-2">
 					Wuzursched relies on third-party services, including Supabase for database,
 					authentication, and realtime features and Vercel for hosting. Those providers may process
@@ -97,7 +97,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">8. Disclaimers</h2>
+				<h2 class="text-3xl font-bold">8. Disclaimers</h2>
 				<p class="mt-2">
 					Wuzursched is provided “as is” and “as available.” To the fullest extent permitted by law,
 					we disclaim warranties of merchantability, fitness for a particular purpose,
@@ -108,7 +108,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">9. Limitation of liability</h2>
+				<h2 class="text-3xl font-bold">9. Limitation of liability</h2>
 				<p class="mt-2">
 					To the fullest extent permitted by law, Wuzursched and its maintainers will not be liable
 					for indirect, incidental, special, consequential, exemplary, or punitive damages, or for
@@ -118,7 +118,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">10. Changes to these terms</h2>
+				<h2 class="text-3xl font-bold">10. Changes to these terms</h2>
 				<p class="mt-2">
 					We may update these Terms as the service changes. We will post the updated version here
 					and change the effective date. Your continued use after an update means you accept the
@@ -127,7 +127,7 @@
 			</section>
 
 			<section>
-				<h2 class="font-marker text-3xl font-bold">11. Contact</h2>
+				<h2 class="text-3xl font-bold">11. Contact</h2>
 				<p class="mt-2">
 					Questions about these Terms may be sent to
 					<a href="mailto:thatxliner@gmail.com" class="link">thatxliner@gmail.com</a>.

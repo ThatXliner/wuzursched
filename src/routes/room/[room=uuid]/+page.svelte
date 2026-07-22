@@ -9,8 +9,10 @@
 	import InfoInput from './components/InfoInput.svelte';
 
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { formatClassName, formatTeacherName, sqlEscape, normalizeClassName } from '$lib/utils';
 	import { onMount } from 'svelte';
+	import { SvelteMap } from 'svelte/reactivity';
 
 	import type { Schedule, VirtualSchedule } from '$lib/schedule';
 	import type { Class, Classes, ClassWithUsage } from './types';
@@ -27,14 +29,14 @@
 
 	let { data, form }: { data: PageData; form: ActionData | null } = $props();
 	let supabase = $derived(data.supabase);
-	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
+	// svelte-ignore state_referenced_locally
 	let schedules: Schedule[] = $state(data.data);
-	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
+	// svelte-ignore state_referenced_locally
 	let roomConfig = $state(data.roomConfig);
-	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
+	// svelte-ignore state_referenced_locally
 	let auditLog = $state(data.auditLog);
 	// Keep the resolved promise stable so await blocks do not restart on every render.
-	const classRequests = new Map<string, Promise<Class>>();
+	const classRequests = new SvelteMap<string, Promise<Class>>();
 	function getClass(id: string): Promise<Class> {
 		const existing = classRequests.get(id);
 		if (existing) return existing;
@@ -60,7 +62,7 @@
 		return await supabase.rpc('get_classes_with_usage', { room_id: room });
 	}
 	let you = $state<You>(null);
-	// svelte-ignore state_referenced_locally -- realtime updates own this state after initial load
+	// svelte-ignore state_referenced_locally
 	let classes: Classes = $state(data.classes);
 	let onlyMatching: boolean = $state(false);
 	let activeTab = $state('schedules');
@@ -560,17 +562,13 @@
 	</dialog>
 {/if}
 
-<div class="hero ruled min-h-[25vh] border-b-2 border-dashed border-base-content/30">
-	<div class="hero-content flex-col py-10">
-		<h1 class="text-center font-marker text-5xl font-bold md:text-6xl">
-			Room <code class="sketchy border-2 border-base-content/40 bg-base-200 px-2 py-1"
+<div class="hero min-h-[30vh]">
+	<div class="hero-content flex-col">
+		<h1 class="text-5xl text-center font-bold">
+			Schedules for room <code class="bg-base-200 p-1 rounded-lg"
 				>{room.slice(0, 8)}</code
 			>
 		</h1>
-		<p class="opacity-70">
-			{schedules.length}
-			{schedules.length === 1 ? 'schedule' : 'schedules'} in this room so far
-		</p>
 		{#if roomConfig.announcement}
 			<div class="alert alert-info mt-3 max-w-2xl whitespace-pre-wrap">
 				{roomConfig.announcement}
@@ -579,10 +577,11 @@
 		<!--
 			Button row
 		 -->
-		<div class="mt-3 flex flex-wrap items-center justify-center gap-3">
+		<div class="flex justify-evenly flex-row space-x-4 mt-3">
 			<div class="tooltip tooltip-right md:tooltip-top" data-tip="Copy room link to clipboard">
 				<button
 					class="btn btn-accent"
+					aria-label="Copy room link"
 					use:copyToClipboard={{
 						message: 'Room URL copied to clipboard',
 						value: window.location.href
@@ -591,7 +590,7 @@
 						xmlns="http://www.w3.org/2000/svg"
 						viewBox="0 0 24 24"
 						fill="currentColor"
-						class="w-5 h-5"
+						class="w-6 h-6"
 					>
 						<path
 							fill-rule="evenodd"
@@ -599,16 +598,31 @@
 							clip-rule="evenodd"
 						/>
 					</svg>
-					Invite
 				</button>
 			</div>
+			<a href={resolve('/')} class="btn" title="Go home"
+				><svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-6 w-6"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+					/>
+				</svg></a
+			>
 			<div
 				class="tooltip"
 				data-tip={you != null && you !== 'tentative'
 					? 'Only show schedules with matching classes'
 					: 'Select who you are to filter matching schedules'}
 			>
-				<div class="form-control rounded-box bg-base-200 p-1">
+				<div class="form-control bg-base-200 rounded-box p-1">
 					<label class="label cursor-pointer space-x-3">
 						<span class="label-text">Only show matching</span>
 						<input
@@ -636,7 +650,7 @@
 						>Restore edit access</button
 					>
 				{/if}
-				<button class="btn btn-error btn-outline" onclick={resetIdentity}>Reset who you are</button>
+				<button class="btn btn-error" onclick={resetIdentity}>Reset who you are</button>
 			{/if}
 			{#if !data.isAdmin}
 				<details class="dropdown dropdown-end">
@@ -672,9 +686,11 @@
 			</div>
 		{/if}
 		{#if room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
-			<div class="alert alert-info mx-auto mt-3 w-fit max-w-md text-sm">
-				If you have any questions, direct message @thatxliner on Instagram (or email
-				thatxliner@gmail.com). I can help you delete your previous submissions, etc.
+			<div class="flex flex-col justify-center mx-auto">
+				<div class="w-sm mx-auto">
+					If you have any questions, direct message @thatxliner on Instagram (or email
+					thatxliner@gmail.com). I can help you delete your previous submissions, etc.
+				</div>
 			</div>
 		{/if}
 	</div>

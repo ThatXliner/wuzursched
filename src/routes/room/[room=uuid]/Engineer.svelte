@@ -59,7 +59,7 @@
 
 <section class="mx-auto w-11/12 max-w-6xl py-8">
 	<header class="mb-6 text-center">
-		<h2 class="font-marker text-4xl font-bold md:text-5xl">Schedule Engineer</h2>
+		<h2 class="text-4xl font-bold md:text-5xl">Schedule Engineer</h2>
 		<p class="mx-auto mt-3 max-w-3xl opacity-75">
 			Choose an anchor student and friends, then preview the fewest schedule moves needed to
 			maximize the classes they can share. This is a planning tool: stored schedules are never
@@ -180,7 +180,7 @@
 			</div>
 		{:else if result.status === 'success'}
 			<section class="mt-8" aria-live="polite">
-				<h3 class="font-marker text-3xl font-bold">Proposed schedules</h3>
+				<h3 class="text-3xl font-bold">Proposed schedules</h3>
 				<div
 					class="stats stats-vertical mt-3 w-full border border-base-300 shadow sm:stats-horizontal"
 				>
