@@ -9,12 +9,16 @@ test.describe('critical room flows', () => {
 		await page.goto('/');
 		await page.getByRole('link', { name: 'Create a room' }).first().click();
 		await expect(page).toHaveURL(/\/room\/[0-9a-f-]{36}$/);
-		await expect(page.getByRole('heading', { level: 1, name: /^Room / })).toBeVisible();
-		await expect(page.getByText('0 schedules in this room so far')).toBeVisible();
+		await expect(
+			page.getByRole('heading', { level: 1, name: /^Schedules for room / })
+		).toBeVisible();
+		await expect(page.getByRole('status')).toHaveText(
+			'Enter your information to compare schedules.'
+		);
 
 		const roomId = page.url().split('/').at(-1)!;
 		await page.goto('/');
-		await page.getByPlaceholder('Paste a room link or ID').fill(roomId);
+		await page.getByPlaceholder('Join a room').fill(roomId);
 		await page.getByRole('button', { name: 'Join' }).click();
 		await expect(page).toHaveURL(`/room/${roomId}`);
 		await adminClient().from('rooms').delete().eq('id', roomId);
@@ -27,7 +31,9 @@ test.describe('critical room flows', () => {
 		await page.getByPlaceholder('Bryan Hu').fill('Alice');
 		await selectFixtureSchedule(page);
 		await page
-			.getByRole('checkbox', { name: 'I reviewed this schedule and confirm it is ready to submit.' })
+			.getByRole('checkbox', {
+				name: 'I reviewed this schedule and confirm it is ready to submit.'
+			})
 			.check();
 		await page.getByRole('button', { name: 'Submit schedule' }).click();
 
@@ -37,11 +43,11 @@ test.describe('critical room flows', () => {
 
 		await page.reload();
 		await expect(page.getByRole('heading', { name: 'But first...' })).toBeHidden();
-		const people = page
+		const scheduleCards = page
 			.getByRole('tabpanel', { name: 'All Schedules' })
-			.getByLabel('People');
-		await expect(people.getByRole('button', { name: /Alice/i })).toBeVisible();
-		await expect(people.locator('[data-current-user="true"]')).toContainText('Alice');
+			.getByLabel('Schedule cards');
+		await expect(scheduleCards.getByRole('button', { name: /Alice/i })).toBeVisible();
+		await expect(scheduleCards.locator('[data-current-user="true"]')).toContainText('Alice');
 	});
 
 	test('searches, creates, selects, and rejects duplicate classes', async ({ page }) => {
@@ -98,25 +104,25 @@ test.describe('critical room flows', () => {
 		await page.goto(`/room/${ROOM_ID}`);
 
 		const schedulesPanel = page.getByRole('tabpanel', { name: 'All Schedules' });
-		const people = schedulesPanel.getByLabel('People');
+		const scheduleCards = schedulesPanel.getByLabel('Schedule cards');
 		const search = page.getByPlaceholder('Search for a student');
 		await search.fill('Bob');
-		await expect(people.getByRole('button', { name: /Bob/i })).toBeVisible();
-		await expect(people.getByRole('button', { name: /Cara/i })).toHaveCount(0);
+		await expect(scheduleCards.getByRole('button', { name: /Bob/i })).toBeVisible();
+		await expect(scheduleCards.getByRole('button', { name: /Cara/i })).toHaveCount(0);
 		await search.clear();
 
 		await page.getByText('Only show matching').click();
-		await expect(people.getByRole('button', { name: /Bob/i })).toBeVisible();
-		await expect(people.getByRole('button', { name: /Cara/i })).toHaveCount(0);
+		await expect(scheduleCards.getByRole('button', { name: /Bob/i })).toBeVisible();
+		await expect(scheduleCards.getByRole('button', { name: /Cara/i })).toHaveCount(0);
 
 		await page.getByRole('tab', { name: 'Filter' }).click();
 		const sharedClassButton = page.getByRole('button', { name: /Algebra Ava Adams/i });
 		await sharedClassButton.click();
 		await expect(sharedClassButton).toHaveClass(/btn-active/);
 		const filterPanel = page.getByRole('tabpanel', { name: 'Filter' });
-		const filteredPeople = filterPanel.getByLabel('People');
-		await expect(filteredPeople.getByRole('button', { name: /Bob/i })).toBeVisible();
-		await expect(filteredPeople.getByRole('button', { name: /Cara/i })).toHaveCount(0);
+		const filteredCards = filterPanel.getByLabel('Schedule cards');
+		await expect(filteredCards.getByRole('button', { name: /Bob/i })).toBeVisible();
+		await expect(filteredCards.getByRole('button', { name: /Cara/i })).toHaveCount(0);
 	});
 
 	test('handles realtime inserts and clears reset or stale identities', async ({ page }) => {
@@ -131,7 +137,7 @@ test.describe('critical room flows', () => {
 		await expect(
 			page
 				.getByRole('tabpanel', { name: 'All Schedules' })
-				.getByLabel('People')
+				.getByLabel('Schedule cards')
 				.getByRole('button', { name: /Delta/i })
 		).toBeVisible();
 		await expect(page.getByText('Delta just added their schedule to this room')).toBeVisible();

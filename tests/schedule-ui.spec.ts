@@ -60,7 +60,7 @@ async function identifyAsFirstStudent(page: Page) {
 	});
 }
 
-test('large rooms use a compact overview and lazy detail loading', async ({ page }) => {
+test('large rooms use expandable schedule cards and lazy detail loading', async ({ page }) => {
 	await identifyAsFirstStudent(page);
 	let detailRequests = 0;
 	page.on('request', (request) => {
@@ -69,13 +69,15 @@ test('large rooms use a compact overview and lazy detail loading', async ({ page
 
 	await page.goto(`/room/${room}`);
 	const schedulesPanel = page.getByRole('tabpanel', { name: 'All Schedules' });
-	await expect(page.getByRole('heading', { name: 'People & matches' })).toBeVisible();
-	await expect(schedulesPanel.getByLabel('People').getByRole('button')).toHaveCount(120);
-	await expect(schedulesPanel.getByRole('heading', { name: 'Select a person' })).toBeVisible();
+	const scheduleCards = schedulesPanel.getByLabel('Schedule cards');
+	await expect(page.getByRole('heading', { name: 'Schedules', exact: true })).toBeVisible();
+	await expect(scheduleCards.locator('article')).toHaveCount(120);
 	expect(detailRequests).toBe(0);
 
-	const firstPerson = schedulesPanel.getByLabel('People').getByRole('button').first();
-	await firstPerson.focus();
+	const firstCard = scheduleCards
+		.getByRole('button', { name: new RegExp(schedules[0].student) })
+		.first();
+	await firstCard.focus();
 	await page.keyboard.press('Enter');
 	await expect(
 		page.getByRole('heading', { name: `${schedules[0].student}'s schedule` })
@@ -87,15 +89,15 @@ test('large rooms use a compact overview and lazy detail loading', async ({ page
 	expect(detailRequests).toBeGreaterThan(0);
 
 	await page.getByRole('checkbox', { name: 'Only show matching' }).check();
-	await expect(schedulesPanel.getByLabel('People').getByRole('button')).toHaveCount(60);
+	await expect(scheduleCards.locator('article')).toHaveCount(60);
 	await page.getByRole('checkbox', { name: 'Only show matching' }).uncheck();
 	await page.getByPlaceholder('Search for a student').fill('exceptionally long name');
-	await expect(schedulesPanel.getByLabel('People').getByRole('button')).toHaveCount(1);
+	await expect(scheduleCards.locator('article')).toHaveCount(1);
 
 	await page.getByRole('tab', { name: 'Filter', exact: true }).click();
 	const filterPanel = page.getByRole('tabpanel', { name: 'Filter', exact: true });
 	await filterPanel.getByRole('button', { name: /Fixture class 1/i }).click();
-	await expect(filterPanel.getByLabel('People').getByRole('button')).toHaveCount(59);
+	await expect(filterPanel.getByLabel('Schedule cards').locator('article')).toHaveCount(59);
 });
 
 test('the comparison remains contained on a mobile viewport', async ({ page }) => {
@@ -103,7 +105,7 @@ test('the comparison remains contained on a mobile viewport', async ({ page }) =
 	await identifyAsFirstStudent(page);
 	await page.goto(`/room/${room}`);
 
-	await page.getByLabel('People').getByRole('button').last().click();
+	await page.getByLabel('Schedule cards').locator('article').last().getByRole('button').click();
 	await expect(page.getByRole('region', { name: 'Schedule details' })).toBeVisible();
 	const dimensions = await page.evaluate(() => ({
 		scrollWidth: document.documentElement.scrollWidth,

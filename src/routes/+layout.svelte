@@ -35,7 +35,9 @@
 			>
 		</p>
 	</div>
-	<div class="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
+	<div class="grid-flow-col items-center gap-4 md:place-self-center md:justify-self-end">
+		<a href="/terms" class="link">Terms</a>
+		<a href="/privacy" class="link">Privacy</a>
 		<a href="https://github.com/ThatXliner/wuzursched" aria-label="GitHub repository"
 			><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
 				><path

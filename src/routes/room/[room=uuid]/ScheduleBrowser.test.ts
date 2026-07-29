@@ -32,7 +32,7 @@ function classRecord(id: string): Class {
 afterEach(cleanup);
 
 describe('ScheduleBrowser', () => {
-	test('loads details only after a person is selected', async () => {
+	test('loads details only after a schedule card is opened', async () => {
 		const getClass = vi.fn(async (id: string) => classRecord(id));
 		render(ScheduleBrowser, {
 			schedules: [schedule],
@@ -49,7 +49,7 @@ describe('ScheduleBrowser', () => {
 		expect(getClass).toHaveBeenCalledTimes(8);
 	});
 
-	test('contains a detail-loading failure without losing the people list', async () => {
+	test('contains a detail-loading failure without losing the schedule cards', async () => {
 		const getClass = vi
 			.fn<(id: string) => Promise<Class>>()
 			.mockRejectedValue(new Error('offline'));

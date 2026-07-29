@@ -21,25 +21,25 @@
 	let selected: Schedule | null = $state(null);
 	let hydrated = $state(false);
 	onMount(() => (hydrated = true));
+
 	$effect(() => {
 		const selectedKey = selected ? scheduleKey(selected) : null;
 		if (selectedKey && !schedules.some((schedule) => scheduleKey(schedule) === selectedKey)) {
 			selected = null;
 		}
 	});
+
+	function toggle(schedule: Schedule) {
+		selected = selected && scheduleKey(selected) === scheduleKey(schedule) ? null : schedule;
+	}
 </script>
 
 <section class="mx-auto w-full max-w-6xl px-3 py-5" aria-label="Schedule comparison">
-	<div class="mb-4 flex flex-wrap items-end justify-between gap-2">
-		<div>
-			<h2 class="text-3xl font-bold">People & matches</h2>
-			<p class="text-sm opacity-70">
-				{schedules.length}
-				{schedules.length === 1 ? 'person' : 'people'} shown. Choose a person to load their full schedule.
-			</p>
-		</div>
-		<p class="text-sm opacity-70" aria-label="Shared class legend">
-			<span class="badge badge-success mr-1" aria-hidden="true">2 shared</span> classes in common
+	<div class="mb-4">
+		<h2 class="text-3xl font-bold">Schedules</h2>
+		<p class="text-sm opacity-70">
+			{schedules.length}
+			{schedules.length === 1 ? 'schedule' : 'schedules'} shown. Open a card to see the full schedule.
 		</p>
 	</div>
 
@@ -48,43 +48,45 @@
 			<span>{emptyMessage}</span>
 		</div>
 	{:else}
-		<div class="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(20rem,3fr)]">
-			<div class="overflow-hidden rounded-box border border-base-300 bg-base-100">
-				<div class="max-h-[32rem] overflow-y-auto overscroll-contain" aria-label="People">
-					{#each schedules as schedule (scheduleKey(schedule))}
-						{@const key = scheduleKey(schedule)}
-						{@const matches = sharedPeriods(you.schedule, schedule).length}
-						{@const isYou = key === scheduleKey(you.schedule)}
-						<button
-							type="button"
-							disabled={!hydrated}
-							class="flex min-h-16 w-full items-center gap-3 border-b border-base-300 px-4 py-3 text-left last:border-b-0 hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-primary {selected &&
-							scheduleKey(selected) === key
-								? 'bg-base-200'
-								: ''} {isYou ? 'bg-primary/10 text-primary' : ''}"
-							aria-pressed={selected ? scheduleKey(selected) === key : false}
-							aria-current={isYou ? 'true' : undefined}
-							data-current-user={isYou || undefined}
-							onclick={() => (selected = schedule)}
-						>
-							<span class="min-w-0 flex-1">
-								<span class="block truncate text-lg font-medium" title={schedule.student}
-									>{schedule.student}</span
+		<div class="grid items-start gap-4 md:grid-cols-2" aria-label="Schedule cards">
+			{#each schedules as schedule (scheduleKey(schedule))}
+				{@const key = scheduleKey(schedule)}
+				{@const matches = sharedPeriods(you.schedule, schedule).length}
+				{@const isYou = key === scheduleKey(you.schedule)}
+				{@const expanded = selected ? scheduleKey(selected) === key : false}
+				<article
+					class="min-w-0 overflow-hidden rounded-box border bg-base-100 shadow-sm transition-shadow {expanded
+						? 'border-primary shadow-md md:col-span-2'
+						: 'border-base-300'} {isYou ? 'ring-2 ring-primary/30' : ''}"
+					data-current-user={isYou || undefined}
+				>
+					<button
+						type="button"
+						disabled={!hydrated}
+						class="flex min-h-20 w-full items-center gap-3 px-5 py-4 text-left hover:bg-base-200 focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-primary"
+						aria-expanded={expanded}
+						onclick={() => toggle(schedule)}
+					>
+						<span class="min-w-0 flex-1">
+							<span class="block break-words text-xl font-bold">{schedule.student}</span>
+							<span class="mt-1 flex flex-wrap gap-2">
+								{#if isYou}<span class="badge badge-primary badge-sm">You</span>{/if}
+								<span
+									class="badge badge-sm"
+									class:badge-success={matches > 0}
+									class:badge-ghost={matches === 0}>{matches} shared</span
 								>
-								{#if isYou}<span class="text-xs font-bold text-primary">You</span>{/if}
 							</span>
-							<span
-								class="badge shrink-0"
-								class:badge-success={matches > 0}
-								class:badge-ghost={matches === 0}
-							>
-								{matches} shared
-							</span>
+						</span>
+						<span class="hidden text-sm font-medium opacity-70 sm:inline">
+							{expanded ? 'Hide schedule' : 'View schedule'}
+						</span>
+						<span aria-hidden="true" class="btn btn-circle btn-ghost btn-sm pointer-events-none">
 							<svg
 								viewBox="0 0 20 20"
 								fill="currentColor"
-								class="size-5 shrink-0"
-								aria-hidden="true"
+								class="size-5 transition-transform"
+								class:rotate-90={expanded}
 							>
 								<path
 									fill-rule="evenodd"
@@ -92,32 +94,21 @@
 									clip-rule="evenodd"
 								/>
 							</svg>
-						</button>
-					{/each}
-				</div>
-			</div>
-
-			<div class="min-w-0 rounded-box border border-base-300 bg-base-100 p-4 lg:sticky lg:top-4">
-				{#if selected}
-					<div class="mb-2 flex items-start justify-between gap-3">
-						<h3 class="min-w-0 break-words text-2xl font-bold">{selected.student}'s schedule</h3>
-						{#if scheduleKey(selected) === scheduleKey(you.schedule)}
-							<span class="badge badge-primary shrink-0">You</span>
-						{/if}
-					</div>
-					<ScheduleDisplay them={selected} you={you.schedule} {getClass} />
-				{:else}
-					<div class="flex min-h-48 items-center justify-center p-6 text-center" role="status">
-						<div>
-							<h3 class="text-2xl font-bold">Select a person</h3>
-							<p class="mt-1 max-w-sm opacity-70">
-								Schedule details stay unloaded until you choose someone, keeping large rooms quick
-								to scan.
-							</p>
+						</span>
+					</button>
+					{#if expanded}
+						<div class="border-t border-base-300 p-4 sm:p-5">
+							<div class="mb-3 flex items-start justify-between gap-3">
+								<h3 class="min-w-0 break-words text-2xl font-bold">
+									{schedule.student}'s schedule
+								</h3>
+								{#if isYou}<span class="badge badge-primary shrink-0">You</span>{/if}
+							</div>
+							<ScheduleDisplay them={schedule} you={you.schedule} {getClass} />
 						</div>
-					</div>
-				{/if}
-			</div>
+					{/if}
+				</article>
+			{/each}
 		</div>
 	{/if}
 </section>

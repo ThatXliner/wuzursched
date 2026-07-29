@@ -12,7 +12,6 @@
 	import { resolve } from '$app/paths';
 	import { formatClassName, formatTeacherName, sqlEscape, normalizeClassName } from '$lib/utils';
 	import { onMount } from 'svelte';
-	import { SvelteMap } from 'svelte/reactivity';
 
 	import type { Schedule, VirtualSchedule } from '$lib/schedule';
 	import type { Class, Classes, ClassWithUsage } from './types';
@@ -35,10 +34,11 @@
 	let roomConfig = $state(data.roomConfig);
 	// svelte-ignore state_referenced_locally
 	let auditLog = $state(data.auditLog);
-	// Keep the resolved promise stable so await blocks do not restart on every render.
-	const classRequests = new SvelteMap<string, Promise<Class>>();
+	// Keep this cache non-reactive: getClass runs inside derived schedule views, where mutating a
+	// reactive collection would trigger Svelte's unsafe-mutation guard.
+	const classRequests: Record<string, Promise<Class> | undefined> = Object.create(null);
 	function getClass(id: string): Promise<Class> {
-		const existing = classRequests.get(id);
+		const existing = classRequests[id];
 		if (existing) return existing;
 
 		const request = Promise.resolve(
@@ -52,10 +52,10 @@
 					return data;
 				})
 		).catch((error) => {
-			classRequests.delete(id);
+			delete classRequests[id];
 			throw error;
 		});
-		classRequests.set(id, request);
+		classRequests[id] = request;
 		return request;
 	}
 	async function getClasses(room: string) {
@@ -69,6 +69,9 @@
 	let hasResolvedIdentity = $derived(you != null && you !== 'tentative');
 	let editing = $state(false);
 	let importingEditKey = $state(false);
+	let showingEditAccessInfo = $state(false);
+	let confirmingEditKeyRotation = $state(false);
+	let rotatingEditKey = $state(false);
 	let importValue = $state('');
 	let realtimeStatus: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR' = $state('CLOSED');
 	let room = $derived(page.params.room!);
@@ -420,24 +423,24 @@
 		addToast('Edit access restored on this browser', 'success');
 	}
 	async function rotateEditKey() {
-		if (
-			you === null ||
-			you === 'tentative' ||
-			!you.editToken ||
-			!window.confirm('Replace your edit key? Any previously copied key will stop working.')
-		)
-			return;
-		const { data: editToken, error } = await supabase.rpc('rotate_schedule_edit_capability', {
-			p_room: room,
-			p_student: you.name,
-			p_edit_token: you.editToken
-		});
-		if (error || !editToken) {
-			addToast(error?.message ?? 'Could not replace the edit key', 'error');
-			return;
+		if (you === null || you === 'tentative' || !you.editToken || rotatingEditKey) return;
+		rotatingEditKey = true;
+		try {
+			const { data: editToken, error } = await supabase.rpc('rotate_schedule_edit_capability', {
+				p_room: room,
+				p_student: you.name,
+				p_edit_token: you.editToken
+			});
+			if (error || !editToken) {
+				addToast(error?.message ?? 'Could not replace the edit key', 'error');
+				return;
+			}
+			persistYou({ ...you, editToken });
+			confirmingEditKeyRotation = false;
+			addToast('Edit key replaced; copy the new transfer code if you need a backup', 'success');
+		} finally {
+			rotatingEditKey = false;
 		}
-		persistYou({ ...you, editToken });
-		addToast('Edit key replaced; copy the new transfer code if you need a backup', 'success');
 	}
 	async function addClass({
 		className,
@@ -538,6 +541,169 @@
 		</div>
 	</dialog>
 {/if}
+{#if showingEditAccessInfo && you !== null && you !== 'tentative'}
+	<dialog class="modal modal-bottom modal-open sm:modal-middle">
+		<div class="modal-box max-w-3xl">
+			<h3 class="text-2xl font-bold">How edit access works</h3>
+			<p class="mt-2 opacity-75">
+				Wuzursched has no accounts. Instead, an edit key connects this browser to
+				<strong>{you.name}</strong>'s schedule.
+			</p>
+
+			<div class="my-6 grid gap-3 md:grid-cols-3">
+				<div class="rounded-box border border-base-300 bg-base-200 p-4">
+					<div class="mb-3 flex items-center gap-3">
+						<span
+							class="flex size-11 items-center justify-center rounded-full bg-primary text-primary-content"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								class="size-6"
+								aria-hidden="true"
+							>
+								<rect x="3" y="4" width="18" height="14" rx="2"></rect>
+								<path d="M8 21h8M12 18v3"></path>
+							</svg>
+						</span>
+						<span class="badge badge-primary">1</span>
+					</div>
+					<h4 class="font-bold">Saved in this browser</h4>
+					<p class="mt-1 text-sm opacity-75">
+						The key is stored on this device so you can edit without signing in.
+					</p>
+				</div>
+
+				<div class="rounded-box border border-base-300 bg-base-200 p-4">
+					<div class="mb-3 flex items-center gap-3">
+						<span
+							class="flex size-11 items-center justify-center rounded-full bg-secondary text-secondary-content"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								class="size-6"
+								aria-hidden="true"
+							>
+								<rect x="9" y="9" width="11" height="11" rx="2"></rect>
+								<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+							</svg>
+						</span>
+						<span class="badge badge-secondary">2</span>
+					</div>
+					<h4 class="font-bold">Copy a backup</h4>
+					<p class="mt-1 text-sm opacity-75">
+						Copy edit access before clearing browser data or changing devices.
+					</p>
+				</div>
+
+				<div class="rounded-box border border-base-300 bg-base-200 p-4">
+					<div class="mb-3 flex items-center gap-3">
+						<span
+							class="flex size-11 items-center justify-center rounded-full bg-accent text-accent-content"
+						>
+							<svg
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								class="size-6"
+								aria-hidden="true"
+							>
+								<path d="M5 12h14M13 6l6 6-6 6"></path>
+							</svg>
+						</span>
+						<span class="badge badge-accent">3</span>
+					</div>
+					<h4 class="font-bold">Restore it elsewhere</h4>
+					<p class="mt-1 text-sm opacity-75">
+						Choose your existing schedule, then paste the copied code to restore editing.
+					</p>
+				</div>
+			</div>
+
+			<div class="alert alert-warning">
+				<svg
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					class="size-6 shrink-0"
+					aria-hidden="true"
+				>
+					<path d="M12 9v4M12 17h.01"></path>
+					<path
+						d="M10.3 3.6 2.4 17.2A2 2 0 0 0 4.1 20h15.8a2 2 0 0 0 1.7-2.8L13.7 3.6a2 2 0 0 0-3.4 0Z"
+					></path>
+				</svg>
+				<span>
+					If this browser data and every copied code are lost, edit access cannot currently be
+					recovered.
+				</span>
+			</div>
+
+			<div class="mt-4 space-y-1 text-sm opacity-75">
+				<p><strong>Replace edit key</strong> invalidates every previously copied code.</p>
+				<p>
+					<strong>Reset who you are</strong> only forgets your identity on this browser; it does not delete
+					the schedule.
+				</p>
+			</div>
+
+			<div class="modal-action">
+				<button class="btn btn-ghost" onclick={() => (showingEditAccessInfo = false)}>Close</button>
+				{#if you.editToken}
+					<button
+						class="btn btn-primary"
+						use:copyToClipboard={{
+							message: 'Schedule transfer code copied to clipboard',
+							value: transferCode
+						}}>Copy edit access</button
+					>
+				{:else}
+					<button
+						class="btn btn-primary"
+						onclick={() => {
+							showingEditAccessInfo = false;
+							importingEditKey = true;
+						}}>Restore edit access</button
+					>
+				{/if}
+			</div>
+		</div>
+	</dialog>
+{/if}
+{#if confirmingEditKeyRotation && you !== null && you !== 'tentative' && you.editToken}
+	<dialog class="modal modal-bottom modal-open sm:modal-middle">
+		<div class="modal-box">
+			<h3 class="text-lg font-bold">Replace edit access key?</h3>
+			<p class="py-4">
+				This will immediately invalidate every edit-access code previously copied for
+				<strong>{you.name}</strong>. This browser will keep edit access. You’ll need to copy a new
+				code afterward.
+			</p>
+			<div class="modal-action">
+				<button
+					class="btn btn-ghost"
+					disabled={rotatingEditKey}
+					onclick={() => (confirmingEditKeyRotation = false)}>Cancel</button
+				>
+				<button class="btn btn-warning" disabled={rotatingEditKey} onclick={rotateEditKey}>
+					{#if rotatingEditKey}
+						<span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+						Replacing…
+					{:else}
+						Replace key
+					{/if}
+				</button>
+			</div>
+		</div>
+	</dialog>
+{/if}
 {#if you === null}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
 		<ToastList />
@@ -565,9 +731,7 @@
 <div class="hero min-h-[30vh]">
 	<div class="hero-content flex-col">
 		<h1 class="text-5xl text-center font-bold">
-			Schedules for room <code class="bg-base-200 p-1 rounded-lg"
-				>{room.slice(0, 8)}</code
-			>
+			Schedules for room <code class="bg-base-200 p-1 rounded-lg">{room.slice(0, 8)}</code>
 		</h1>
 		{#if roomConfig.announcement}
 			<div class="alert alert-info mt-3 max-w-2xl whitespace-pre-wrap">
@@ -577,29 +741,29 @@
 		<!--
 			Button row
 		 -->
-		<div class="flex justify-evenly flex-row space-x-4 mt-3">
-			<div class="tooltip tooltip-right md:tooltip-top" data-tip="Copy room link to clipboard">
-				<button
-					class="btn btn-accent"
-					aria-label="Copy room link"
-					use:copyToClipboard={{
-						message: 'Room URL copied to clipboard',
-						value: window.location.href
-					}}
-					><svg
-						xmlns="http://www.w3.org/2000/svg"
-						viewBox="0 0 24 24"
-						fill="currentColor"
-						class="w-6 h-6"
-					>
-						<path
-							fill-rule="evenodd"
-							d="M10.5 3A1.501 1.501 0 009 4.5h6A1.5 1.5 0 0013.5 3h-3zm-2.693.178A3 3 0 0110.5 1.5h3a3 3 0 012.694 1.678c.497.042.992.092 1.486.15 1.497.173 2.57 1.46 2.57 2.929V19.5a3 3 0 01-3 3H6.75a3 3 0 01-3-3V6.257c0-1.47 1.073-2.756 2.57-2.93.493-.057.989-.107 1.487-.15z"
-							clip-rule="evenodd"
-						/>
-					</svg>
-				</button>
-			</div>
+		<div class="mt-3 flex flex-wrap justify-center gap-3">
+			<button
+				class="btn btn-accent"
+				aria-label="Copy room link"
+				use:copyToClipboard={{
+					message: 'Room URL copied to clipboard',
+					value: window.location.href
+				}}
+				><svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					class="w-6 h-6"
+					aria-hidden="true"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M10.5 3A1.501 1.501 0 009 4.5h6A1.5 1.5 0 0013.5 3h-3zm-2.693.178A3 3 0 0110.5 1.5h3a3 3 0 012.694 1.678c.497.042.992.092 1.486.15 1.497.173 2.57 1.46 2.57 2.929V19.5a3 3 0 01-3 3H6.75a3 3 0 01-3-3V6.257c0-1.47 1.073-2.756 2.57-2.93.493-.057.989-.107 1.487-.15z"
+						clip-rule="evenodd"
+					/>
+				</svg>
+				<span class="hidden sm:inline">Copy room link</span>
+			</button>
 			<a href={resolve('/')} class="btn" title="Go home"
 				><svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -617,22 +781,20 @@
 				</svg></a
 			>
 			<div
-				class="tooltip"
-				data-tip={you != null && you !== 'tentative'
+				class="form-control rounded-box bg-base-200 p-1"
+				title={you != null && you !== 'tentative'
 					? 'Only show schedules with matching classes'
 					: 'Select who you are to filter matching schedules'}
 			>
-				<div class="form-control bg-base-200 rounded-box p-1">
-					<label class="label cursor-pointer space-x-3">
-						<span class="label-text">Only show matching</span>
-						<input
-							type="checkbox"
-							class="toggle toggle-primary"
-							bind:checked={onlyMatching}
-							disabled={you == null || you === 'tentative'}
-						/>
-					</label>
-				</div>
+				<label class="label cursor-pointer space-x-3">
+					<span class="label-text">Only show matching</span>
+					<input
+						type="checkbox"
+						class="toggle toggle-primary"
+						bind:checked={onlyMatching}
+						disabled={you == null || you === 'tentative'}
+					/>
+				</label>
 			</div>
 			{#if you !== null && you !== 'tentative'}
 				{#if you.editToken}
@@ -644,12 +806,32 @@
 							value: transferCode
 						}}>Copy edit access</button
 					>
-					<button class="btn btn-outline" onclick={rotateEditKey}>Replace edit key</button>
+					<button class="btn btn-outline" onclick={() => (confirmingEditKeyRotation = true)}
+						>Replace edit key</button
+					>
 				{:else}
 					<button class="btn btn-primary btn-outline" onclick={() => (importingEditKey = true)}
 						>Restore edit access</button
 					>
 				{/if}
+				<button
+					class="btn btn-circle btn-ghost"
+					aria-label="How edit access works"
+					title="How edit access works"
+					onclick={() => (showingEditAccessInfo = true)}
+				>
+					<svg
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						class="size-6"
+						aria-hidden="true"
+					>
+						<circle cx="12" cy="12" r="9"></circle>
+						<path d="M12 11v5M12 8h.01"></path>
+					</svg>
+				</button>
 				<button class="btn btn-error" onclick={resetIdentity}>Reset who you are</button>
 			{/if}
 			{#if !data.isAdmin}
@@ -677,14 +859,6 @@
 				</details>
 			{/if}
 		</div>
-		{#if you !== null && you !== 'tentative'}
-			<div class="alert alert-info mx-auto mt-3 max-w-2xl text-sm">
-				<span>
-					Your edit key is stored only in this browser. Use “Copy edit access” before clearing site
-					data or moving devices. Without a copied key, the current version cannot recover access.
-				</span>
-			</div>
-		{/if}
 		{#if room == 'a0ac4ff8-46aa-41a7-834a-9dc56cd0e06e'}
 			<div class="flex flex-col justify-center mx-auto">
 				<div class="w-sm mx-auto">

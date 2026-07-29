@@ -213,6 +213,18 @@ test('only the edit-key holder can update a schedule and everyone receives the u
 		}
 	);
 	await page.goto(`/room/${room}`);
+	await page.getByRole('button', { name: 'How edit access works' }).click();
+	const editAccessDialog = page.getByRole('dialog').filter({ hasText: 'How edit access works' });
+	await expect(editAccessDialog).toBeVisible();
+	await expect(editAccessDialog.getByText('Saved in this browser')).toBeVisible();
+	await expect(editAccessDialog.getByText('Copy a backup')).toBeVisible();
+	await expect(editAccessDialog.getByText('Restore it elsewhere')).toBeVisible();
+	await expect(
+		editAccessDialog.getByText('edit access cannot currently be recovered')
+	).toBeVisible();
+	await editAccessDialog.getByRole('button', { name: 'Close' }).click();
+	await expect(editAccessDialog).not.toBeVisible();
+
 	await page.getByRole('button', { name: 'Edit my schedule' }).click();
 	const editDialog = page.getByRole('dialog').filter({ hasText: 'Edit your schedule' });
 	await editDialog.getByRole('textbox', { name: 'Name' }).fill(editedName);
@@ -236,11 +248,23 @@ test('only the edit-key holder can update a schedule and everyone receives the u
 		.single();
 	expect(updated?.student).toBe(editedName);
 
-	const { data: replacementToken, error: rotateError } = await supabase.rpc(
-		'rotate_schedule_edit_capability',
-		{ p_room: room, p_student: editedName, p_edit_token: editToken! }
-	);
-	expect(rotateError).toBeNull();
+	await page.getByRole('button', { name: 'Replace edit key' }).click();
+	const replaceDialog = page.getByRole('dialog').filter({ hasText: 'Replace edit access key?' });
+	await expect(replaceDialog).toBeVisible();
+	await expect(
+		replaceDialog.getByText(
+			`This will immediately invalidate every edit-access code previously copied for ${editedName}.`
+		)
+	).toBeVisible();
+	await replaceDialog.getByRole('button', { name: 'Replace key' }).click();
+	await expect(replaceDialog).not.toBeVisible();
+	await expect(page.getByText('Edit key replaced; copy the new transfer code')).toBeVisible();
+	const replacementToken = await page.evaluate((storageKey) => {
+		const identity = JSON.parse(localStorage.getItem(storageKey) ?? '{}') as {
+			editToken?: string;
+		};
+		return identity.editToken;
+	}, room);
 	expect(replacementToken).toMatch(/^[a-f0-9]{64}$/);
 	const { data: oldKeyValid } = await supabase.rpc('verify_schedule_edit_capability', {
 		p_room: room,
