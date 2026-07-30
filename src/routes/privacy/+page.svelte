@@ -73,11 +73,12 @@
 				<h3 class="mt-5 text-2xl font-bold">AI-assisted screenshot import</h3>
 				<p class="mt-2">
 					If you choose to import a schedule screenshot, Wuzursched sends the image to Google’s
-					Gemma service to extract class, period, and teacher information. Wuzursched processes the
+					Gemini service to extract class, period, and teacher information. Wuzursched processes the
 					image in memory for this request and does not intentionally retain it after processing.
 					Google may process the image and related technical information under its applicable
-					service terms and privacy commitments. You can avoid this processing by entering or
-					pasting schedule information manually.
+					service terms and privacy commitments. Depending on the service tier used by the
+					Wuzursched deployment, Google may use submitted content to improve its products. You can
+					avoid this processing by entering or pasting schedule information manually.
 				</p>
 			</section>
 

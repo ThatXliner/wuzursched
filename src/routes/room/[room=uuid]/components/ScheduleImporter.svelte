@@ -173,7 +173,7 @@
 		</form>
 		<h3 class="text-3xl font-bold">Import your schedule</h3>
 		<p class="mt-2 text-sm">
-			Screenshots are securely sent to Google’s Gemma service for AI-assisted reading and are not
+			Screenshots are securely sent to Google’s Gemini service for AI-assisted reading and are not
 			intentionally retained by Wuzursched after the request. Review every result before applying
 			it. Pasted text is processed locally in your browser. See our
 			<a href={resolve('/privacy')} class="link">Privacy Policy</a>.
@@ -198,7 +198,7 @@
 		{#if processing}
 			<div class="my-4" role="status">
 				<progress class="progress progress-primary w-full"></progress>
-				<p>Reading image with Gemma…</p>
+				<p>Reading image with Gemini…</p>
 			</div>
 		{/if}
 

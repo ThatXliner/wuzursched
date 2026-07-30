@@ -8,10 +8,10 @@ import {
 	validateScheduleImage
 } from '../src/lib/scheduleImport.ts';
 import {
-	extractScheduleWithGemma,
-	GemmaScheduleImportError,
-	validateGemmaScheduleRows
-} from '../src/lib/server/gemmaScheduleImport.ts';
+	extractScheduleWithGemini,
+	GeminiScheduleImportError,
+	validateGeminiScheduleRows
+} from '../src/lib/server/geminiScheduleImport.ts';
 
 const fixtures = new URL('./fixtures/schedule-import/', import.meta.url);
 
@@ -105,9 +105,9 @@ describe('schedule import', () => {
 		assert.equal(validateScheduleImage({ type: 'image/jpeg', size: 10 * 1024 * 1024 }), '');
 	});
 
-	it('validates, normalizes, de-duplicates, and orders Gemma rows', () => {
+	it('validates, normalizes, de-duplicates, and orders Gemini rows', () => {
 		assert.deepEqual(
-			validateGemmaScheduleRows([
+			validateGeminiScheduleRows([
 				{
 					period: '2B',
 					className: '  English   10 ',
@@ -144,19 +144,19 @@ describe('schedule import', () => {
 		);
 	});
 
-	it('rejects semantically invalid Gemma rows', () => {
+	it('rejects semantically invalid Gemini rows', () => {
 		assert.throws(
 			() =>
-				validateGemmaScheduleRows([
+				validateGeminiScheduleRows([
 					{ period: '5a', className: 'Biology', teacherFirst: 'Jane', teacherLast: 'Smith' }
 				]),
-			GemmaScheduleImportError
+			GeminiScheduleImportError
 		);
 	});
 
-	it('sends the image to Gemma and validates its structured response', async () => {
+	it('sends the image to Gemini and validates its structured response', async () => {
 		let request: { url: string; init?: RequestInit } | undefined;
-		const rows = await extractScheduleWithGemma({
+		const rows = await extractScheduleWithGemini({
 			apiKey: 'server-secret',
 			image: {
 				type: 'image/png',
@@ -188,6 +188,7 @@ describe('schedule import', () => {
 		});
 
 		assert.equal(request?.url.endsWith(':generateContent'), true);
+		assert.equal(request?.url.includes('/gemini-3.6-flash:'), true);
 		assert.equal(new Headers(request?.init?.headers).get('x-goog-api-key'), 'server-secret');
 		assert.equal(request?.url.includes('server-secret'), false);
 		assert.deepEqual(

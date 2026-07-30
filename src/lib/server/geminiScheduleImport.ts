@@ -2,7 +2,7 @@ import { IMPORT_PERIODS, type ImportPeriod, type ScheduleCandidate } from '../sc
 
 const GEMINI_API_ROOT = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-export const DEFAULT_GEMMA_MODEL = 'gemma-4-26b-a4b-it';
+export const DEFAULT_GEMINI_MODEL = 'gemini-3.6-flash';
 
 export const SCHEDULE_EXTRACTION_PROMPT = `Read this student schedule screenshot and extract every visible class row.
 
@@ -52,12 +52,12 @@ type GeminiResponse = {
 	error?: { message?: string };
 };
 
-export class GemmaScheduleImportError extends Error {
+export class GeminiScheduleImportError extends Error {
 	readonly kind: 'configuration' | 'upstream' | 'invalid-output';
 
 	constructor(message: string, kind: 'configuration' | 'upstream' | 'invalid-output') {
 		super(message);
-		this.name = 'GemmaScheduleImportError';
+		this.name = 'GeminiScheduleImportError';
 		this.kind = kind;
 	}
 }
@@ -67,16 +67,16 @@ function clean(value: string) {
 }
 
 /** Treat model output as untrusted input and reduce it to the app's schedule domain. */
-export function validateGemmaScheduleRows(value: unknown): ScheduleCandidate[] {
+export function validateGeminiScheduleRows(value: unknown): ScheduleCandidate[] {
 	if (!Array.isArray(value)) {
-		throw new GemmaScheduleImportError('Gemma returned an invalid schedule.', 'invalid-output');
+		throw new GeminiScheduleImportError('Gemini returned an invalid schedule.', 'invalid-output');
 	}
 
 	const rows = new Map<ImportPeriod, ScheduleCandidate>();
 	for (const item of value) {
 		if (typeof item !== 'object' || item === null) {
-			throw new GemmaScheduleImportError(
-				'Gemma returned an invalid schedule row.',
+			throw new GeminiScheduleImportError(
+				'Gemini returned an invalid schedule row.',
 				'invalid-output'
 			);
 		}
@@ -87,8 +87,8 @@ export function validateGemmaScheduleRows(value: unknown): ScheduleCandidate[] {
 			typeof record.teacherFirst !== 'string' ||
 			typeof record.teacherLast !== 'string'
 		) {
-			throw new GemmaScheduleImportError(
-				'Gemma returned an incomplete schedule row.',
+			throw new GeminiScheduleImportError(
+				'Gemini returned an incomplete schedule row.',
 				'invalid-output'
 			);
 		}
@@ -96,8 +96,8 @@ export function validateGemmaScheduleRows(value: unknown): ScheduleCandidate[] {
 		const period = record.period.toLowerCase() as ImportPeriod;
 		const className = clean(record.className);
 		if (!IMPORT_PERIODS.includes(period) || !className) {
-			throw new GemmaScheduleImportError(
-				'Gemma returned an unsupported schedule row.',
+			throw new GeminiScheduleImportError(
+				'Gemini returned an unsupported schedule row.',
 				'invalid-output'
 			);
 		}
@@ -116,9 +116,9 @@ export function validateGemmaScheduleRows(value: unknown): ScheduleCandidate[] {
 	});
 }
 
-export async function extractScheduleWithGemma({
+export async function extractScheduleWithGemini({
 	apiKey,
-	model = DEFAULT_GEMMA_MODEL,
+	model = DEFAULT_GEMINI_MODEL,
 	image,
 	fetcher = fetch
 }: {
@@ -128,7 +128,10 @@ export async function extractScheduleWithGemma({
 	fetcher?: typeof fetch;
 }): Promise<ScheduleCandidate[]> {
 	if (!apiKey) {
-		throw new GemmaScheduleImportError('Gemma schedule import is not configured.', 'configuration');
+		throw new GeminiScheduleImportError(
+			'Gemini schedule import is not configured.',
+			'configuration'
+		);
 	}
 
 	const bytes = new Uint8Array(await image.arrayBuffer());
@@ -151,10 +154,8 @@ export async function extractScheduleWithGemma({
 					}
 				],
 				generationConfig: {
-					thinkingConfig: { thinkingLevel: 'minimal' },
 					responseMimeType: 'application/json',
-					responseSchema,
-					temperature: 0
+					responseSchema
 				}
 			})
 		}
@@ -164,12 +165,12 @@ export async function extractScheduleWithGemma({
 	try {
 		payload = (await response.json()) as GeminiResponse;
 	} catch {
-		throw new GemmaScheduleImportError('Gemma returned an unreadable response.', 'upstream');
+		throw new GeminiScheduleImportError('Gemini returned an unreadable response.', 'upstream');
 	}
 
 	if (!response.ok) {
-		throw new GemmaScheduleImportError(
-			payload.error?.message || 'Gemma could not process this image.',
+		throw new GeminiScheduleImportError(
+			payload.error?.message || 'Gemini could not process this image.',
 			'upstream'
 		);
 	}
@@ -179,13 +180,13 @@ export async function extractScheduleWithGemma({
 		.join('')
 		.trim();
 	if (!text) {
-		throw new GemmaScheduleImportError('Gemma did not find a schedule.', 'invalid-output');
+		throw new GeminiScheduleImportError('Gemini did not find a schedule.', 'invalid-output');
 	}
 
 	try {
-		return validateGemmaScheduleRows(JSON.parse(text));
+		return validateGeminiScheduleRows(JSON.parse(text));
 	} catch (error) {
-		if (error instanceof GemmaScheduleImportError) throw error;
-		throw new GemmaScheduleImportError('Gemma returned invalid JSON.', 'invalid-output');
+		if (error instanceof GeminiScheduleImportError) throw error;
+		throw new GeminiScheduleImportError('Gemini returned invalid JSON.', 'invalid-output');
 	}
 }

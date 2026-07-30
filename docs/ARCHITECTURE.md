@@ -32,7 +32,7 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
    on the room's `classes` and `schedules` rows, and refreshes both tables from Postgres.
 4. `InfoInput.svelte` requires a student name and one distinct class UUID for each of the eight A/B
    periods. `ClassPicker.svelte` can select an existing room class or insert a normalized class.
-   `ScheduleImporter.svelte` can prefill the same form from pasted text or Gemma-assisted
+   `ScheduleImporter.svelte` can prefill the same form from pasted text or Gemini-assisted
    screenshot extraction; the user reviews matches and confirms the completed form before
    submission.
 5. The room page calls the `create_schedule` security-definer function. It inserts one `schedules`
@@ -191,12 +191,12 @@ filter predicates.
 
 `ScheduleImporter.svelte` accepts PNG, JPEG, or WebP files up to 10 MB, pasted images, or pasted
 text. Pasted text is parsed locally. Screenshots are posted to `/api/schedule-import`, which keeps
-the Google AI API key server-only, sends the image to Gemma 4, and validates the structured result
+the Google AI API key server-only, sends the image to Gemini, and validates the structured result
 before returning it. Responses are not cached, and the endpoint applies a best-effort per-instance
 rate limit. Wuzursched does not intentionally retain source images after the request.
 
 For pasted text, `src/lib/scheduleImport.ts` extracts rows labeled `1A` through `4B` and parses
-class and teacher text, including dotted titles such as `Dr.`. Gemma screenshot output enters the
+class and teacher text, including dotted titles such as `Dr.`. Gemini screenshot output enters the
 pipeline as the same `ScheduleCandidate` shape. Both paths compare candidates with the room's
 classes using normalized Levenshtein similarity weighted 72% toward the class and 28% toward the
 teacher. Scores at least 0.82 are selected automatically; scores from 0.5 to 0.82 are suggestions;

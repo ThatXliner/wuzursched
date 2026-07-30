@@ -1,9 +1,9 @@
 import { env } from '$env/dynamic/private';
 import {
-	DEFAULT_GEMMA_MODEL,
-	extractScheduleWithGemma,
-	GemmaScheduleImportError
-} from '$lib/server/gemmaScheduleImport';
+	DEFAULT_GEMINI_MODEL,
+	extractScheduleWithGemini,
+	GeminiScheduleImportError
+} from '$lib/server/geminiScheduleImport';
 import { MAX_SCHEDULE_IMAGE_SIZE, validateScheduleImage } from '$lib/scheduleImport';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
@@ -24,7 +24,7 @@ function isRateLimited(address: string, now = Date.now()) {
 }
 
 export const POST: RequestHandler = async ({ request, getClientAddress, fetch }) => {
-	if (!env.GEMMA_API_KEY) {
+	if (!env.GEMINI_API_KEY) {
 		return json(
 			{ error: 'Screenshot import is not configured on this deployment.' },
 			{ status: 503, headers: { 'cache-control': 'no-store' } }
@@ -72,17 +72,17 @@ export const POST: RequestHandler = async ({ request, getClientAddress, fetch })
 	}
 
 	try {
-		const rows = await extractScheduleWithGemma({
-			apiKey: env.GEMMA_API_KEY,
-			model: env.GEMMA_MODEL || DEFAULT_GEMMA_MODEL,
+		const rows = await extractScheduleWithGemini({
+			apiKey: env.GEMINI_API_KEY,
+			model: env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL,
 			image,
 			fetcher: fetch
 		});
 		return json({ rows }, { headers: { 'cache-control': 'no-store' } });
 	} catch (error) {
-		console.error('Gemma schedule import failed', error);
+		console.error('Gemini schedule import failed', error);
 		const status =
-			error instanceof GemmaScheduleImportError && error.kind === 'invalid-output' ? 422 : 502;
+			error instanceof GeminiScheduleImportError && error.kind === 'invalid-output' ? 422 : 502;
 		return json(
 			{
 				error:
