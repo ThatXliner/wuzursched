@@ -87,28 +87,35 @@
 	}
 </script>
 
-<div class="tooltip" data-tip={selectedClassName ? displayClass(selectedClassName) : undefined}>
-	<button class="btn m-1" class:btn-success={selected != null} onclick={() => dialog.showModal()}
+<div
+	class="tooltip w-full"
+	data-tip={selectedClassName ? displayClass(selectedClassName) : undefined}
+>
+	<button class="btn w-full" class:btn-success={selected != null} onclick={() => dialog.showModal()}
 		>{period}</button
 	>
 </div>
 
 <dialog bind:this={dialog} class="modal">
-	<form method="dialog" class="modal-box">
+	<form
+		method="dialog"
+		class="modal-box rounded-box w-[calc(100%-2rem)] max-w-2xl overflow-visible p-5 sm:p-6"
+	>
 		<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 		{#if canCreateClass}
 			<div class="form-control">
-				<span>Search/Create a class for {period}</span>
-				<label class="join flex-wrap">
+				<h3 class="pr-10 text-lg font-semibold">Search or create a class for {period}</h3>
+				<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-12">
 					<input
 						type="text"
 						placeholder="Class name"
-						class="input input-bordered w-32 join-item"
+						aria-label="Class name"
+						class="input input-bordered col-span-2 w-full sm:col-span-4"
 						bind:value={className}
 					/>
 					<select
 						aria-label="Teacher name type"
-						class="select select-bordered join-item"
+						class="select select-bordered col-span-2 w-full sm:col-span-3"
 						bind:value={identityKind}
 					>
 						<option value="first-name">First name</option>
@@ -119,13 +126,13 @@
 							type="text"
 							aria-label="Teacher first name"
 							placeholder="Jane"
-							class="input input-bordered w-24 join-item"
+							class="input input-bordered w-full sm:col-span-2"
 							bind:value={firstName}
 						/>
 					{:else}
 						<select
 							aria-label="Teacher title"
-							class="select select-bordered join-item"
+							class="select select-bordered w-full sm:col-span-2"
 							bind:value={selectedTitle}
 						>
 							{#each TEACHER_TITLES as title (title)}
@@ -137,12 +144,12 @@
 						type="text"
 						aria-label="Teacher last name"
 						placeholder="Arild"
-						class="input input-bordered w-24 join-item"
+						class="input input-bordered w-full sm:col-span-2"
 						bind:value={lastName}
 					/>
 					<button
 						type="button"
-						class="btn btn-primary join-item"
+						class="btn btn-primary col-span-2 sm:col-span-1"
 						aria-label="Create class"
 						onclick={async (event) => {
 							if (!isValidClassInfo) {
@@ -192,8 +199,8 @@
 								clip-rule="evenodd"
 							/>
 						</svg></button
-					></label
-				>
+					>
+				</div>
 				<p class="mt-2 text-sm opacity-70">
 					Creating a class publishes its name and teacher to everyone with the room link. See our
 					<a href={resolve('/privacy')} class="link">Privacy Policy</a>.
@@ -204,7 +211,7 @@
 				Search the admin-maintained class list. Visitor class creation is disabled.
 			</p>
 		{/if}
-		<ul class="menu h-60 overflow-hidden overflow-y-scroll flex-nowrap">
+		<ul class="menu mt-2 h-60 flex-nowrap overflow-y-auto p-0">
 			<li class="menu-title">Classes</li>
 			{#each filtered as entry (entry.item.id)}
 				{@const klass = entry.item}

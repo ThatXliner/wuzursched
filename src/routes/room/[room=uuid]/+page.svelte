@@ -23,6 +23,7 @@
 	import Engineer from './Engineer.svelte';
 	import { normalizeTeacherIdentity, type TeacherIdentityInput } from '$lib/teacher';
 	import AdminPanel from './AdminPanel.svelte';
+	import AuditLog from './components/AuditLog.svelte';
 	import { applyDatabaseChange, replayDatabaseChanges, type DatabaseChange } from '$lib/realtime';
 	import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -501,7 +502,9 @@
 <ToastList />
 {#if editing && you !== null && you !== 'tentative' && you.editToken}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
-		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
+		<div
+			class="modal-box h-fit max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto sm:w-[calc(100%-2rem)]"
+		>
 			<h3 class="font-bold text-lg">Edit your schedule</h3>
 			<p class="py-4">Update your name or class selections.</p>
 			<InfoInput
@@ -707,7 +710,9 @@
 {#if you === null}
 	<dialog class="modal modal-bottom modal-open sm:modal-middle">
 		<ToastList />
-		<div class="modal-box max-h-screen h-fit max-w-screen overflow-visible">
+		<div
+			class="modal-box h-fit max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto sm:w-[calc(100%-2rem)]"
+		>
 			<h3 class="font-bold text-lg">But first...</h3>
 			<p class="py-4">Please enter your information</p>
 			<InfoInput
@@ -781,12 +786,12 @@
 				</svg></a
 			>
 			<div
-				class="form-control rounded-box bg-base-200 p-1"
+				class="form-control rounded-field bg-base-200"
 				title={you != null && you !== 'tentative'
 					? 'Only show schedules with matching classes'
 					: 'Select who you are to filter matching schedules'}
 			>
-				<label class="label cursor-pointer space-x-3">
+				<label class="label min-h-10 cursor-pointer gap-3 px-3 py-1">
 					<span class="label-text">Only show matching</span>
 					<input
 						type="checkbox"
@@ -918,20 +923,8 @@
 		class="collapse collapse-arrow mx-auto my-8 w-11/12 max-w-5xl border border-base-300 bg-base-100"
 	>
 		<summary class="collapse-title text-xl font-medium">Public admin audit log</summary>
-		<div class="collapse-content overflow-x-auto">
-			<table class="table table-sm">
-				<thead><tr><th>Time</th><th>Change</th><th>Affected record</th></tr></thead>
-				<tbody>
-					{#each auditLog as entry (entry.id)}
-						<tr>
-							<td>{new Date(entry.created_at).toLocaleString()}</td>
-							<td>{entry.action} {entry.affected_table}</td>
-							<td><code class="text-xs">{JSON.stringify(entry.affected_record)}</code></td>
-						</tr>
-					{:else}<tr><td colspan="3">No admin changes yet.</td></tr>
-					{/each}
-				</tbody>
-			</table>
+		<div class="collapse-content">
+			<AuditLog entries={auditLog} />
 		</div>
 	</details>
 {/if}

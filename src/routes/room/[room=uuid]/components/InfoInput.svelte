@@ -78,75 +78,89 @@
 
 <ScheduleImporter {classes} {addClass} {canCreateClass} onapply={applyImportedSchedule} />
 
-<div class="form-control">
-	<label class="label justify-center">
-		<span class="label-text px-3">Name</span>
-		<input bind:value={name} type="text" placeholder="Bryan Hu" class="input input-bordered" />
-	</label>
-</div>
-<!-- We don't use details + summary tags because those will
-	stay open when we click on other buttons -->
-<div class="flex flex-row justify-evenly">
-	<!-- TODO: no w-36 but instead a more responsive solution with
-	flexbox -->
-	<div class="w-36">
-		{#each aDay as period (period)}
-			<ClassPicker
-				selected={periods[period]}
-				updateSelected={(selected) => {
-					periods = { ...periods, [period]: selected };
-				}}
-				{addClass}
-				{canCreateClass}
-				{classNameFormat}
-				{teacherNameFormat}
-				period={period.toUpperCase()}
-				classes={classes.map((x) =>
-					Object.assign({}, x, {
-						used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
-					})
-				)}
-			/>
-		{/each}
-	</div>
-	<div class="w-36">
-		{#each bDay as period (period)}
-			<ClassPicker
-				selected={periods[period]}
-				updateSelected={(selected) => {
-					periods = { ...periods, [period]: selected };
-				}}
-				{addClass}
-				{canCreateClass}
-				{classNameFormat}
-				{teacherNameFormat}
-				period={period.toUpperCase()}
-				classes={classes.map((x) =>
-					Object.assign({}, x, {
-						used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
-					})
-				)}
-			/>
-		{/each}
-	</div>
-</div>
-
-<div class="form-control mt-6">
-	<label class="label justify-start gap-3 cursor-pointer">
+<div class="mx-auto w-full max-w-2xl">
+	<label class="grid items-center gap-2 sm:grid-cols-[auto_1fr]">
+		<span class="label-text font-medium sm:px-1">Name</span>
 		<input
-			class="checkbox checkbox-primary"
-			type="checkbox"
-			bind:checked={confirmed}
-			disabled={!isValid || submitting}
+			bind:value={name}
+			type="text"
+			placeholder="Bryan Hu"
+			class="input input-bordered w-full"
 		/>
-		<span>I reviewed this schedule and confirm it is ready to submit.</span>
 	</label>
-	<button class="btn btn-primary" disabled={!isValid || !confirmed || submitting} onclick={submit}>
-		{submitting ? 'Saving…' : submitLabel}
-	</button>
-	<p class="mx-auto mt-3 max-w-md text-center text-sm opacity-70">
-		By submitting, you agree to the <a href={resolve('/terms')} class="link">Terms of Service</a>
-		and acknowledge the <a href={resolve('/privacy')} class="link">Privacy Policy</a>. Your name,
-		classes, and teachers will be visible to anyone with this room link.
-	</p>
+
+	<!-- We don't use details + summary tags because those will
+		stay open when we click on other buttons -->
+	<div class="mt-5 grid grid-cols-2 gap-5 sm:gap-8">
+		<div class="mx-auto w-full max-w-48">
+			<p class="mb-1 text-center text-sm font-semibold opacity-60">A Day</p>
+			<div class="grid grid-cols-2 gap-2">
+				{#each aDay as period (period)}
+					<ClassPicker
+						selected={periods[period]}
+						updateSelected={(selected) => {
+							periods = { ...periods, [period]: selected };
+						}}
+						{addClass}
+						{canCreateClass}
+						{classNameFormat}
+						{teacherNameFormat}
+						period={period.toUpperCase()}
+						classes={classes.map((x) =>
+							Object.assign({}, x, {
+								used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
+							})
+						)}
+					/>
+				{/each}
+			</div>
+		</div>
+		<div class="mx-auto w-full max-w-48">
+			<p class="mb-1 text-center text-sm font-semibold opacity-60">B Day</p>
+			<div class="grid grid-cols-2 gap-2">
+				{#each bDay as period (period)}
+					<ClassPicker
+						selected={periods[period]}
+						updateSelected={(selected) => {
+							periods = { ...periods, [period]: selected };
+						}}
+						{addClass}
+						{canCreateClass}
+						{classNameFormat}
+						{teacherNameFormat}
+						period={period.toUpperCase()}
+						classes={classes.map((x) =>
+							Object.assign({}, x, {
+								used: values.includes(x.id) ? PERIODS[values.indexOf(x.id)] : undefined
+							})
+						)}
+					/>
+				{/each}
+			</div>
+		</div>
+	</div>
+
+	<div class="mt-6">
+		<label class="flex cursor-pointer items-start gap-3">
+			<input
+				class="checkbox checkbox-primary mt-0.5 shrink-0"
+				type="checkbox"
+				bind:checked={confirmed}
+				disabled={!isValid || submitting}
+			/>
+			<span>I reviewed this schedule and confirm it is ready to submit.</span>
+		</label>
+		<button
+			class="btn btn-primary mt-4 w-full"
+			disabled={!isValid || !confirmed || submitting}
+			onclick={submit}
+		>
+			{submitting ? 'Saving…' : submitLabel}
+		</button>
+		<p class="mx-auto mt-3 max-w-lg text-center text-sm opacity-70">
+			By submitting, you agree to the <a href={resolve('/terms')} class="link">Terms of Service</a>
+			and acknowledge the <a href={resolve('/privacy')} class="link">Privacy Policy</a>. Your name,
+			classes, and teachers will be visible to anyone with this room link.
+		</p>
+	</div>
 </div>

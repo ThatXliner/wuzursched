@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Schedule } from '$lib/schedule';
 	import type { Class } from './types';
+	import AuditLog from './components/AuditLog.svelte';
 
 	let {
 		roomConfig,
@@ -194,22 +195,7 @@
 	<div class="card border border-base-300 bg-base-100 shadow">
 		<div class="card-body">
 			<h3 class="card-title">Public audit log</h3>
-			<div class="overflow-x-auto">
-				<table class="table table-sm">
-					<thead><tr><th>Time</th><th>Action</th><th>Record</th></tr></thead>
-					<tbody>
-						{#each auditLog as entry (entry.id)}
-							<tr>
-								<td>{new Date(entry.created_at).toLocaleString()}</td>
-								<td>{entry.action} {entry.affected_table}</td>
-								<td><code class="text-xs">{JSON.stringify(entry.affected_record)}</code></td>
-							</tr>
-						{:else}
-							<tr><td colspan="3">No admin changes yet.</td></tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
+			<AuditLog entries={auditLog} />
 		</div>
 	</div>
 </section>
