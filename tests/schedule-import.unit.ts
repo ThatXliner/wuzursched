@@ -7,6 +7,11 @@ import {
 	toUnfinishedSchedule,
 	validateScheduleImage
 } from '../src/lib/scheduleImport.ts';
+import {
+	extractScheduleWithGemma,
+	GemmaScheduleImportError,
+	validateGemmaScheduleRows
+} from '../src/lib/server/gemmaScheduleImport.ts';
 
 const fixtures = new URL('./fixtures/schedule-import/', import.meta.url);
 
@@ -98,5 +103,99 @@ describe('schedule import', () => {
 		assert.match(validateScheduleImage({ type: 'application/pdf', size: 1 }), /PNG/);
 		assert.match(validateScheduleImage({ type: 'image/png', size: 10 * 1024 * 1024 + 1 }), /10 MB/);
 		assert.equal(validateScheduleImage({ type: 'image/jpeg', size: 10 * 1024 * 1024 }), '');
+	});
+
+	it('validates, normalizes, de-duplicates, and orders Gemma rows', () => {
+		assert.deepEqual(
+			validateGemmaScheduleRows([
+				{
+					period: '2B',
+					className: '  English   10 ',
+					teacherFirst: 'Dr.',
+					teacherLast: ' Lee '
+				},
+				{
+					period: '1a',
+					className: 'Biology',
+					teacherFirst: 'Jane',
+					teacherLast: 'Smith'
+				},
+				{
+					period: '1A',
+					className: 'AP Biology',
+					teacherFirst: 'Jane',
+					teacherLast: 'Smith'
+				}
+			]),
+			[
+				{
+					period: '1a',
+					className: 'AP Biology',
+					teacherFirst: 'Jane',
+					teacherLast: 'Smith'
+				},
+				{
+					period: '2b',
+					className: 'English 10',
+					teacherFirst: 'Dr',
+					teacherLast: 'Lee'
+				}
+			]
+		);
+	});
+
+	it('rejects semantically invalid Gemma rows', () => {
+		assert.throws(
+			() =>
+				validateGemmaScheduleRows([
+					{ period: '5a', className: 'Biology', teacherFirst: 'Jane', teacherLast: 'Smith' }
+				]),
+			GemmaScheduleImportError
+		);
+	});
+
+	it('sends the image to Gemma and validates its structured response', async () => {
+		let request: { url: string; init?: RequestInit } | undefined;
+		const rows = await extractScheduleWithGemma({
+			apiKey: 'server-secret',
+			image: {
+				type: 'image/png',
+				arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer
+			},
+			fetcher: async (input, init) => {
+				request = { url: String(input), init };
+				return Response.json({
+					candidates: [
+						{
+							content: {
+								parts: [
+									{
+										text: JSON.stringify([
+											{
+												period: '1a',
+												className: 'Biology',
+												teacherFirst: 'Jane',
+												teacherLast: 'Smith'
+											}
+										])
+									}
+								]
+							}
+						}
+					]
+				});
+			}
+		});
+
+		assert.equal(request?.url.endsWith(':generateContent'), true);
+		assert.equal(new Headers(request?.init?.headers).get('x-goog-api-key'), 'server-secret');
+		assert.equal(request?.url.includes('server-secret'), false);
+		assert.deepEqual(
+			rows.map((row) => row.period),
+			['1a']
+		);
+		const body = JSON.parse(String(request?.init?.body));
+		assert.equal(body.contents[0].parts[0].inlineData.data, 'AQID');
+		assert.equal(body.generationConfig.responseMimeType, 'application/json');
 	});
 });

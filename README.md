@@ -38,6 +38,7 @@ More in the [screenshot gallery](./docs/SCREENSHOTS.md).
 - **🌗 Chalkboard mode** — dark mode swaps the paper for a dusty chalkboard, following your system preference automatically.
 - **🧠 Remembers you** — your identity per room is stored locally, so you only enter your schedule once.
 - **✏️ Private editing** — update your name or classes later with a room-scoped edit key that never appears in the public room data.
+- **📷 AI-assisted import** — use Gemma 4 to extract a schedule from a screenshot, then review every class before applying it.
 
 ## 🏫 How it works
 
@@ -101,6 +102,17 @@ server-only service-role key used by database-backed tests. See the
 [development guide](./docs/DEVELOPMENT.md) for troubleshooting, migrations, generated types,
 testing, and deployment.
 
+Screenshot import additionally requires a server-only Google AI API key:
+
+```dotenv
+GEMMA_API_KEY=your-google-ai-api-key
+# Optional; defaults to gemma-4-26b-a4b-it
+GEMMA_MODEL=gemma-4-26b-a4b-it
+```
+
+Never expose `GEMMA_API_KEY` through a `PUBLIC_` environment variable. Without it, pasted-text
+import continues to work and the screenshot endpoint returns a configuration error.
+
 ### Useful scripts
 
 | Command                       | What it does                                      |
@@ -131,7 +143,7 @@ src/
 │   └── room/[room=uuid]/ # The room: view, search, and compare schedules
 │       └── components/   #   Route-local schedule entry UI
 │           ├── InfoInput.svelte       # Schedule entry form
-│           ├── ScheduleImporter.svelte # Browser-local screenshot/text import
+│           ├── ScheduleImporter.svelte # Gemma screenshot and browser-local text import
 │           └── ClassPicker.svelte     # Searchable class dropdown
 supabase/
 ├── migrations/           # Database schema

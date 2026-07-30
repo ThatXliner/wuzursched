@@ -70,7 +70,7 @@ function parseDetails(value: string) {
 	return { className, ...splitTeacher(teacher) };
 }
 
-/** Extracts schedule rows from OCR output or pasted text without retaining the source image. */
+/** Extracts schedule rows from pasted or previously recognized text. */
 export function extractScheduleCandidates(text: string): ScheduleCandidate[] {
 	const candidates = new Map<ImportPeriod, ScheduleCandidate>();
 	const lines = text

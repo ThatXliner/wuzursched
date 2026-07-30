@@ -10,15 +10,15 @@ Wuzursched is a SvelteKit application backed directly by Supabase Postgres. Ther
 account or application API layer: server loads and browser components both use the public Supabase
 client, and Postgres row-level security (RLS) is the authorization boundary.
 
-| Concern                 | Source of truth                        | Main code                                                                                       |
-| ----------------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Supabase clients        | Public URL and anonymous key           | `src/hooks.server.ts`, `src/routes/+layout.ts`                                                  |
-| Room creation           | `rooms` row                            | `src/routes/create/+server.ts`                                                                  |
-| Initial room data       | Server load plus usage-count RPC       | `src/routes/room/[room=uuid]/+page.server.ts`, `get_classes_with_usage`                          |
-| Classes and submissions | `classes` and `schedules` tables       | The room route's `components/InfoInput.svelte` and `components/ClassPicker.svelte`              |
-| Browser identity        | Room-keyed `localStorage` value        | `src/routes/room/[room=uuid]/+page.svelte`                                                      |
-| Live updates            | Supabase Realtime publications         | The room page, `src/lib/realtime.ts`, and `supabase/migrations/20240715235333_add_realtime.sql` |
-| Comparison UI           | Same class UUID in the same period     | `ViewSchedules.svelte`, `ScheduleDisplay.svelte`, `Search.svelte`                               |
+| Concern                 | Source of truth                    | Main code                                                                                       |
+| ----------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Supabase clients        | Public URL and anonymous key       | `src/hooks.server.ts`, `src/routes/+layout.ts`                                                  |
+| Room creation           | `rooms` row                        | `src/routes/create/+server.ts`                                                                  |
+| Initial room data       | Server load plus usage-count RPC   | `src/routes/room/[room=uuid]/+page.server.ts`, `get_classes_with_usage`                         |
+| Classes and submissions | `classes` and `schedules` tables   | The room route's `components/InfoInput.svelte` and `components/ClassPicker.svelte`              |
+| Browser identity        | Room-keyed `localStorage` value    | `src/routes/room/[room=uuid]/+page.svelte`                                                      |
+| Live updates            | Supabase Realtime publications     | The room page, `src/lib/realtime.ts`, and `supabase/migrations/20240715235333_add_realtime.sql` |
+| Comparison UI           | Same class UUID in the same period | `ViewSchedules.svelte`, `ScheduleDisplay.svelte`, `Search.svelte`                               |
 
 ## Room lifecycle and data path
 
@@ -32,8 +32,9 @@ client, and Postgres row-level security (RLS) is the authorization boundary.
    on the room's `classes` and `schedules` rows, and refreshes both tables from Postgres.
 4. `InfoInput.svelte` requires a student name and one distinct class UUID for each of the eight A/B
    periods. `ClassPicker.svelte` can select an existing room class or insert a normalized class.
-   `ScheduleImporter.svelte` can prefill the same form from pasted text or browser-local screenshot
-   OCR; the user reviews matches and confirms the completed form before submission.
+   `ScheduleImporter.svelte` can prefill the same form from pasted text or Gemma-assisted
+   screenshot extraction; the user reviews matches and confirms the completed form before
+   submission.
 5. The room page calls the `create_schedule` security-definer function. It inserts one `schedules`
    row plus a private hash of a newly generated edit key, then returns the unhashed key once to the
    submitting browser. The schedule stores the room and student plus eight foreign keys into
@@ -189,16 +190,19 @@ filter predicates.
 ## Schedule screenshot and text import
 
 `ScheduleImporter.svelte` accepts PNG, JPEG, or WebP files up to 10 MB, pasted images, or pasted
-text. Tesseract OCR runs in the browser: the image is not uploaded to Wuzursched or an OCR service,
-though the worker may download its language model. The source image is discarded after processing.
+text. Pasted text is parsed locally. Screenshots are posted to `/api/schedule-import`, which keeps
+the Google AI API key server-only, sends the image to Gemma 4, and validates the structured result
+before returning it. Responses are not cached, and the endpoint applies a best-effort per-instance
+rate limit. Wuzursched does not intentionally retain source images after the request.
 
-`src/lib/scheduleImport.ts` extracts rows labeled `1A` through `4B`, parses class and teacher text
-(including dotted titles such as `Dr.`), and compares candidates with the room's classes using
-normalized Levenshtein similarity weighted 72% toward the class and 28% toward the teacher. Scores
-at least 0.82 are selected automatically; scores from 0.5 to 0.82 are suggestions; lower scores are
-unresolved. Users can edit every row, choose a room class, or explicitly approve creation of
-unmatched classes. Applying an import only prefills the normal schedule form; the separate review
-checkbox still gates schedule submission.
+For pasted text, `src/lib/scheduleImport.ts` extracts rows labeled `1A` through `4B` and parses
+class and teacher text, including dotted titles such as `Dr.`. Gemma screenshot output enters the
+pipeline as the same `ScheduleCandidate` shape. Both paths compare candidates with the room's
+classes using normalized Levenshtein similarity weighted 72% toward the class and 28% toward the
+teacher. Scores at least 0.82 are selected automatically; scores from 0.5 to 0.82 are suggestions;
+lower scores are unresolved. Users can edit every row, choose a room class, or explicitly approve
+creation of unmatched classes. Applying an import only prefills the normal schedule form; the
+separate review checkbox still gates schedule submission.
 
 ## Schedule-engineering algorithm
 
