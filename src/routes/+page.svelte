@@ -40,6 +40,14 @@
 					</div>
 					<a href={resolve('/create')} class="btn btn-primary">Create a room</a>
 				</div>
+				<a
+					href={resolve('/room/[room=uuid]', {
+						room: '9a7e704d-7772-435e-8af4-a258b1c68ebd'
+					})}
+					class="btn btn-secondary mt-3"
+				>
+					Valley Christian High School 2027 Schedule
+				</a>
 			</div>
 			<a href={resolve('/credits')} class="link">Credits to our beta testers</a>
 		</div>
