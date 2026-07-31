@@ -46,7 +46,7 @@
 					})}
 					class="btn btn-secondary mt-3"
 				>
-					Valley Christian High School 2027 Schedule
+					Join this year's VCHS room
 				</a>
 			</div>
 			<a href={resolve('/credits')} class="link">Credits to our beta testers</a>
