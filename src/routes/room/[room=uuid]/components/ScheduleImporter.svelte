@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { onMount } from 'svelte';
 	import type { UnfinishedSchedule } from '$lib/schedule';
 	import type { Classes } from '../types';
@@ -37,7 +38,6 @@
 	let rows: PreviewRow[] = $state([]);
 	let error = $state('');
 	let processing = $state(false);
-	let progress = $state(0);
 	let confirmCreates = $state(false);
 	let applying = $state(false);
 	let hasUnresolved = $derived(rows.some((row) => !row.selectedClassId));
@@ -66,26 +66,29 @@
 		error = validateScheduleImage(file);
 		if (error) return;
 		processing = true;
-		progress = 0;
-		let worker: Awaited<ReturnType<(typeof import('tesseract.js'))['createWorker']>> | undefined;
 		try {
-			const { createWorker } = await import('tesseract.js');
-			worker = await createWorker('eng', 1, {
-				logger: (message) => {
-					if (typeof message.progress === 'number') progress = Math.round(message.progress * 100);
-				}
+			const form = new FormData();
+			form.set('image', file);
+			const response = await fetch(resolve('/api/schedule-import'), {
+				method: 'POST',
+				body: form
 			});
-			const result = await worker.recognize(file);
-			sourceText = result.data.text;
-			preview(extractScheduleCandidates(sourceText));
+			const result = (await response.json()) as {
+				rows?: ScheduleCandidate[];
+				error?: string;
+			};
+			if (!response.ok || !result.rows) {
+				throw new Error(result.error || 'The schedule-reading service returned an error.');
+			}
+			preview(result.rows);
 		} catch (reason) {
 			console.error(reason);
 			error =
-				'We could not read that image. Try a clearer screenshot or paste the schedule as text.';
+				reason instanceof Error
+					? reason.message
+					: 'We could not read that image. Try a clearer screenshot or paste the schedule as text.';
 		} finally {
-			await worker?.terminate();
 			processing = false;
-			progress = 0;
 		}
 	}
 
@@ -170,8 +173,10 @@
 		</form>
 		<h3 class="text-3xl font-bold">Import your schedule</h3>
 		<p class="mt-2 text-sm">
-			Your image is read locally in this browser and is never uploaded to Wuzursched or an OCR
-			service. It is discarded as soon as processing finishes. OCR may download its language model.
+			Screenshots are securely sent to Google’s Gemini service for AI-assisted reading and are not
+			intentionally retained by Wuzursched after the request. Review every result before applying
+			it. Pasted text is processed locally in your browser. See our
+			<a href={resolve('/privacy')} class="link">Privacy Policy</a>.
 		</p>
 
 		<label class="mt-4 block">
@@ -192,8 +197,8 @@
 
 		{#if processing}
 			<div class="my-4" role="status">
-				<progress class="progress progress-primary w-full" value={progress} max="100"></progress>
-				<p>Reading image… {progress}%</p>
+				<progress class="progress progress-primary w-full"></progress>
+				<p>Reading image with Gemini…</p>
 			</div>
 		{/if}
 

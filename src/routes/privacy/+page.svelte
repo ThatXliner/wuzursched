@@ -17,7 +17,7 @@
 		<header class="rounded-box border border-base-300 bg-base-100 p-6 shadow-sm md:p-8">
 			<p class="text-lg opacity-70">What Wuzursched knows and why</p>
 			<h1 class="mt-1 text-5xl font-bold md:text-6xl">Privacy Policy</h1>
-			<p class="mt-3 font-semibold">Effective July 14, 2026</p>
+			<p class="mt-3 font-semibold">Effective July 30, 2026</p>
 		</header>
 
 		<div class="mt-8 space-y-8 rounded-box bg-base-100 p-6 shadow-sm md:p-10">
@@ -69,6 +69,17 @@
 					authentication, hosting, and network services. Wuzursched does not currently use
 					advertising cookies or sell personal information.
 				</p>
+
+				<h3 class="mt-5 text-2xl font-bold">AI-assisted screenshot import</h3>
+				<p class="mt-2">
+					If you choose to import a schedule screenshot, Wuzursched sends the image to Google’s
+					Gemini service to extract class, period, and teacher information. Wuzursched processes the
+					image in memory for this request and does not intentionally retain it after processing.
+					Google may process the image and related technical information under its applicable
+					service terms and privacy commitments. Depending on the service tier used by the
+					Wuzursched deployment, Google may use submitted content to improve its products. You can
+					avoid this processing by entering or pasting schedule information manually.
+				</p>
 			</section>
 
 			<section>
@@ -76,6 +87,9 @@
 				<p class="mt-2">We use information to:</p>
 				<ul class="mt-2 list-disc space-y-1 pl-6">
 					<li>create rooms and display, compare, search, and update schedules in realtime;</li>
+					<li>
+						extract schedule information from screenshots when you request AI-assisted import;
+					</li>
 					<li>remember your identity within a room on your device;</li>
 					<li>operate, troubleshoot, secure, maintain, and improve the service;</li>
 					<li>respond to questions, abuse reports, and deletion requests; and</li>
@@ -95,6 +109,11 @@
 					and realtime data. Vercel hosts and delivers the application and may process request and diagnostic
 					logs. They process information to provide services to Wuzursched under their applicable terms
 					and privacy commitments.
+				</p>
+				<p class="mt-3">
+					<strong>AI processing.</strong> Google processes schedule screenshots only when you choose AI-assisted
+					screenshot import. The extracted results are returned for your review before they are applied
+					to the schedule form.
 				</p>
 				<p class="mt-3">
 					<strong>Legal and safety reasons.</strong> We may preserve or disclose information when reasonably
