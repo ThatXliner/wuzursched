@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 24.x and pnpm 11.9.0, matching `package.json` and CI
+- Node.js 24.22.1 or later in 24.x and pnpm 11.9.0, matching `package.json` and CI
 - Docker running locally
 - Supabase CLI (CI currently pins 2.33.5)
 - Git

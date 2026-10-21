@@ -11,14 +11,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
       - name: Setup Node v24
         uses: actions/setup-node@v4
         with:
-          node-version: 24
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
+          node-version: '24.22.1'
+      - name: Setup PNPM on patched Node
+        uses: pnpm/action-setup@v4
       - name: Setup Supabase v2.108.0
         uses: supabase/setup-cli@v1
         with:
@@ -45,14 +43,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup PNPM
-        uses: pnpm/action-setup@v4
       - name: Setup Node v24
         uses: actions/setup-node@v4
         with:
-          node-version: 24
-          cache: 'pnpm'
-          cache-dependency-path: 'pnpm-lock.yaml'
+          node-version: '24.22.1'
+      - name: Setup PNPM on patched Node
+        uses: pnpm/action-setup@v4
       - name: Setup Supabase v2.108.0
         uses: supabase/setup-cli@v1
         with:
