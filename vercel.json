@@ -1,5 +1,7 @@
 {
 	"github": {
 		"silent": true
-	}
+	},
+	"installCommand": "node scripts/install-secure-node.mjs /tmp/wuzursched-secure-node && PATH=/tmp/wuzursched-secure-node/bin:$PATH pnpm install --frozen-lockfile",
+	"buildCommand": "PATH=/tmp/wuzursched-secure-node/bin:$PATH pnpm run build"
 }
