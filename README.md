@@ -154,3 +154,8 @@ Copyright © 2023 [ThatXliner](https://github.com/ThatXliner). Licensed under th
 <div align="center">
 <sub>Built with 💜 by the <a href="https://vcsdclub.org">Valley Christian Software Development Club</a></sub>
 </div>
+
+## TLS runtime requirement
+
+Use Node.js 24.22.1 or later in the 24.x series for installs, builds, and server execution. These floors include the October 2026 eMudhra CA distrust update.
+Restart or rebuild existing deployments after upgrading; an engine declaration alone does not update a running process.
